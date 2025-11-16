@@ -90,7 +90,7 @@ export function MileageTracker({ onExpenseCreated }: MileageTrackerProps) {
         </div>
 
         <div>
-          <label className="text-sm font-medium">To Address</label>
+          <label className="text-sm font-medium">To Address <span className="text-xs text-muted-foreground ml-1">≈ $0.67/mi deduction</span></label>
           <input
             type="text"
             placeholder="e.g., 456 Park Ave, Boston"

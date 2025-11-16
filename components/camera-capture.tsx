@@ -120,9 +120,9 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
         </div>
 
         <div className="text-center space-y-2">
-          <h3 className="text-lg font-semibold">Snap Your Receipt</h3>
+          <h3 className="text-lg font-semibold">Snap & Save Tax</h3>
           <p className="text-sm text-muted-foreground">
-            Take a photo or upload from your gallery
+            Instantly extract merchant, amount & category. Build your audit trail.
           </p>
         </div>
 
