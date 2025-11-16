@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Trash2, Download } from 'lucide-react'
 import { deleteExpenseFromIndexedDB } from '@/lib/db-utils'
 import { exportToCSV, exportToPDF } from '@/lib/export-utils'
-import posthog from 'posthog-js'
 
 interface Expense {
   id: string
@@ -124,10 +123,7 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
       {/* Export Options */}
       <div className="flex gap-2">
         <Button
-          onClick={() => {
-            posthog.capture('export_csv', { count: expenses.length })
-            exportToCSV(expenses)
-          }}
+          onClick={() => exportToCSV(expenses)}
           variant="outline"
           className="flex-1"
         >
@@ -135,10 +131,7 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
           Export CSV
         </Button>
         <Button
-          onClick={() => {
-            posthog.capture('export_pdf', { count: expenses.length })
-            exportToPDF(expenses)
-          }}
+          onClick={() => exportToPDF(expenses)}
           variant="outline"
           className="flex-1"
         >

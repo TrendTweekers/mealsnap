@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Loader2, MapPin, DollarSign } from 'lucide-react'
-import posthog from 'posthog-js'
 
 const IRS_RATE = 0.67 // 2025 IRS mileage rate
 
@@ -64,13 +63,6 @@ export function MileageTracker({ onExpenseCreated }: MileageTrackerProps) {
     }
 
     onExpenseCreated(expense)
-
-    posthog.capture('mileage_logged', {
-      from,
-      to,
-      distance_miles: distance,
-      deduction,
-    })
 
     // Reset form
     setFrom('')
