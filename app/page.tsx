@@ -131,7 +131,7 @@ export default function Home() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground">ReceiptSnap</h1>
+              <h1 className="text-3xl sm:text-4xl font-bold text-foreground">SnapLedger</h1>
               <p className="text-muted-foreground mt-1">AI-powered expense tracking</p>
             </div>
             <div className="flex items-center gap-4">

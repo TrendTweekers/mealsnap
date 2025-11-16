@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
     const ab  = await file.arrayBuffer();
     const base64 = Buffer.from(ab).toString("base64");
 
-    const model  = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    // Use a model ID that exists on the v1beta endpoint
+    const model  = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent([
       "Return ONLY JSON: {merchant,total,tax,date,category,emoji}",
       { inlineData: { data: base64, mimeType: "image/jpeg" } }
