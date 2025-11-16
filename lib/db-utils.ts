@@ -58,12 +58,12 @@ export async function saveExpenseToIndexedDB(data: any): Promise<Expense> {
   
   const expense: Expense = {
     id: crypto.randomUUID(),
-    merchant: data.merchant || 'Unknown',
+    merchant: data.merchant || 'Unknown', // Handle null merchant from AI
     amount: Math.abs(amount), // Ensure positive
     category: validCategory,
-    date: data.date || new Date().toISOString(),
+    date: data.date || new Date().toISOString().split('T')[0],
     currency: data.currency || 'USD',
-    tax: typeof data.tax === 'number' ? data.tax : Number(data.tax) || 0,
+    tax: data.tax === null ? undefined : (typeof data.tax === 'number' ? data.tax : Number(data.tax) || undefined),
     emoji: data.emoji,
   }
 

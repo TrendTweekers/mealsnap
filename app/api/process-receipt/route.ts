@@ -16,19 +16,60 @@ export async function POST(req: NextRequest) {
     // Use a currently supported multimodal model ID
     const model  = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
-    const prompt = `Analyze this receipt image and return ONLY valid JSON with no markdown:
+    const prompt = `Analyze the receipt image and return ONLY valid JSON with no markdown, no commentary.
+
 {
-  "merchant": "store name",
+  "merchant": "Clean store/brand name with no extra text",
   "total": number,
-  "tax": number,
-  "date": "YYYY-MM-DD",
-  "category": "Meals & Entertainment|Travel|Software & Subscriptions|Office Supplies|Shopping|Other",
-  "emoji": "relevant emoji",
-  "currency": "ISO currency code from receipt (PLN, USD, EUR, etc)"
+  "tax": number | null,
+  "date": "YYYY-MM-DD" | null,
+  "category": "Meals & Entertainment" | "Travel" | "Software & Subscriptions" | "Office Supplies" | "Shopping" | "Other",
+  "emoji": "one relevant emoji",
+  "currency": "PLN" | "USD" | "EUR" | "GBP" | "other detected currency code"
 }
-CRITICAL: 
-- Extract the ACTUAL currency shown on the receipt. If you see "zł", return "PLN". If you see "$", return "USD". If you see "€", return "EUR". If you are unsure, make your best reasonable guess.
-- Category must be EXACTLY one of: "Meals & Entertainment", "Travel", "Software & Subscriptions", "Office Supplies", "Shopping", or "Other".`;
+
+CRITICAL RULES:
+
+1. **Merchant**
+   - Extract only the true store name (e.g., "COS", "ZARA", "H&M").
+   - Remove extra words like street addresses, hashtags, IDs, timestamps, or register numbers.
+   - NEVER make up a merchant if unreadable — return null.
+
+2. **Total**
+   - Extract the final total the customer paid.
+   - Convert commas to dots if needed ("450,20" → 450.20).
+   - Must be a number, not a string.
+
+3. **Tax**
+   - If the receipt includes VAT, sales tax, or GST — extract it.
+   - If tax is not explicitly shown, return null. Do NOT guess.
+
+4. **Date**
+   - Normalize all formats to "YYYY-MM-DD".
+   - Accept formats like "12/11/24", "2024-11-12", "11.12.2024".
+   - If no date is present, return null.
+
+5. **Category (must be EXACT)**
+   - Meals & Entertainment
+   - Travel
+   - Software & Subscriptions
+   - Office Supplies
+   - Shopping
+   - Other
+
+6. **Currency detection**
+   - Detect the EXACT currency printed:
+       - "zł" → PLN
+       - "PLN" → PLN
+       - "$" → USD
+       - "€" → EUR
+       - "£" → GBP
+   - If ambiguous, choose the most likely based on symbols.
+   - Never guess symbols that don't appear.
+
+7. **JSON formatting**
+   - Return ONLY valid JSON.
+   - No markdown, no backticks, no explanations.`;
 
     const result = await model.generateContent([
       prompt,
