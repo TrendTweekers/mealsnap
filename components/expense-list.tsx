@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Trash2, Download } from 'lucide-react'
 import { deleteExpenseFromIndexedDB } from '@/lib/db-utils'
 import { exportToCSV, exportToPDF } from '@/lib/export-utils'
+import posthog from 'posthog-js'
 
 interface Expense {
   id: string
@@ -46,6 +47,18 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
     const amount = Number(exp.amount)
     return sum + (isFinite(amount) ? amount : 0)
   }, 0)
+
+  const currencySymbol = (currency?: string) => {
+    if (!currency) return '$'
+    const map: Record<string, string> = {
+      USD: '$',
+      PLN: 'zł',
+      EUR: '€',
+      GBP: '£',
+      JPY: '¥',
+    }
+    return map[currency] || currency
+  }
   
   const categoryBreakdown = validExpenses.reduce((acc, exp) => {
     const amount = Number(exp.amount)
@@ -75,7 +88,10 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="p-4 bg-primary/5 border-primary/20">
           <p className="text-sm text-muted-foreground">Total Spent</p>
-          <p className="text-2xl font-bold text-primary">${totalAmount.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-primary">
+            {currencySymbol(validExpenses[0]?.currency)}
+            {totalAmount.toFixed(2)}
+          </p>
         </Card>
         <Card className="p-4 bg-accent/5 border-accent/20">
           <p className="text-sm text-muted-foreground">Transactions</p>
@@ -95,7 +111,10 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
             {Object.entries(categoryBreakdown).map(([category, amount]) => (
               <div key={category} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{category}</span>
-                <span className="font-medium text-foreground">${amount.toFixed(2)}</span>
+                <span className="font-medium text-foreground">
+                  {currencySymbol(validExpenses[0]?.currency)}
+                  {amount.toFixed(2)}
+                </span>
               </div>
             ))}
           </div>
@@ -105,7 +124,10 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
       {/* Export Options */}
       <div className="flex gap-2">
         <Button
-          onClick={() => exportToCSV(expenses)}
+          onClick={() => {
+            posthog.capture('export_csv', { count: expenses.length })
+            exportToCSV(expenses)
+          }}
           variant="outline"
           className="flex-1"
         >
@@ -113,7 +135,10 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
           Export CSV
         </Button>
         <Button
-          onClick={() => exportToPDF(expenses)}
+          onClick={() => {
+            posthog.capture('export_pdf', { count: expenses.length })
+            exportToPDF(expenses)
+          }}
           variant="outline"
           className="flex-1"
         >
@@ -142,7 +167,10 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
                   </p>
                 </div>
                 <div className="text-right space-y-2">
-                  <p className="text-lg font-bold text-primary">${isFinite(amount) ? amount.toFixed(2) : '0.00'}</p>
+                  <p className="text-lg font-bold text-primary">
+                    {currencySymbol(expense.currency)}
+                    {isFinite(amount) ? amount.toFixed(2) : '0.00'}
+                  </p>
                   <Button
                     onClick={() => handleDelete(expense.id)}
                     variant="ghost"

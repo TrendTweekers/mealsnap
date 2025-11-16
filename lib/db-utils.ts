@@ -4,6 +4,9 @@ interface Expense {
   amount: number
   category: string
   date: string
+  currency?: string      // Original currency, e.g. USD, PLN, EUR
+  tax?: number           // Tax amount in original currency
+  emoji?: string         // Optional emoji from AI
   receipt?: string
 }
 
@@ -52,6 +55,9 @@ export async function saveExpenseToIndexedDB(data: any): Promise<Expense> {
     amount: Math.abs(amount), // Ensure positive
     category: data.category || 'Other',
     date: data.date || new Date().toISOString(),
+    currency: data.currency || 'USD',
+    tax: typeof data.tax === 'number' ? data.tax : Number(data.tax) || 0,
+    emoji: data.emoji,
   }
 
   // Save expense

@@ -12,6 +12,7 @@ import { TaxPacketModal } from '@/components/tax-packet-modal'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Settings as SettingsIcon } from 'lucide-react'
+import posthog from 'posthog-js'
 
 export default function Home() {
   const [expenses, setExpenses] = useState<any[]>([])
@@ -122,6 +123,12 @@ export default function Home() {
   }
 
   const isFreemiumLimited = scanCount >= 10
+
+  useEffect(() => {
+    if (isFreemiumLimited) {
+      posthog.capture('free_scans_depleted', { scanCount })
+    }
+  }, [isFreemiumLimited, scanCount])
   const scansRemaining = Math.max(0, 10 - scanCount)
 
   return (

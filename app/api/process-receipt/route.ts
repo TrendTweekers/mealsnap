@@ -15,8 +15,21 @@ export async function POST(req: NextRequest) {
 
     // Use a currently supported multimodal model ID
     const model  = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
+    const prompt = `Analyze this receipt image and return ONLY valid JSON with no markdown:
+{
+  "merchant": "store name",
+  "total": number,
+  "tax": number,
+  "date": "YYYY-MM-DD",
+  "category": "food|transport|shopping|entertainment|other",
+  "emoji": "relevant emoji",
+  "currency": "ISO currency code from receipt (PLN, USD, EUR, etc)"
+}
+CRITICAL: Extract the ACTUAL currency shown on the receipt. If you see "zł", return "PLN". If you see "$", return "USD". If you see "€", return "EUR". If you are unsure, make your best reasonable guess.`;
+
     const result = await model.generateContent([
-      "Return ONLY JSON: {merchant,total,tax,date,category,emoji}",
+      prompt,
       { inlineData: { data: base64, mimeType: "image/jpeg" } }
     ]);
 
