@@ -95,6 +95,14 @@ export default function Home() {
     setExpenses(expenses.filter(e => e.id !== id))
   }
 
+  const handleExpenseRestored = async (expense: any) => {
+    await handleExpenseAdded(expense)
+  }
+
+  const handleNavigateToScan = () => {
+    setActiveTab('scan')
+  }
+
   const handleResetScans = async () => {
     const db = await openIndexedDB()
     const tx = db.transaction('metadata', 'readwrite')
@@ -231,6 +239,8 @@ export default function Home() {
             <ExpenseList
               expenses={expenses}
               onExpenseDeleted={handleExpenseDeleted}
+              onExpenseRestored={handleExpenseRestored}
+              onNavigateToScan={handleNavigateToScan}
             />
           </TabsContent>
         </Tabs>

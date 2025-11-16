@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Loader2, MapPin, DollarSign } from 'lucide-react'
 import { getMileageSettings, saveMileageSettings, type MileageSettings } from '@/lib/constants'
+import { toast } from 'sonner'
+import { track } from '@/lib/analytics'
 
 const IRS_RATE = 0.67 // 2025 IRS mileage rate
 
@@ -31,8 +33,11 @@ export function MileageTracker({ onExpenseCreated }: MileageTrackerProps) {
   }
 
   const calculateMileage = async () => {
+    // Validate required fields
     if (!from.trim() || !to.trim()) {
-      setError('Please enter both addresses')
+      const errorMsg = 'Please enter both addresses'
+      setError(errorMsg)
+      toast.error('Couldn\'t calculate mileage. Please check the addresses and try again.')
       return
     }
 
@@ -59,8 +64,17 @@ export function MileageTracker({ onExpenseCreated }: MileageTrackerProps) {
         ? distanceInMeters / 1609.34 // Convert to miles
         : distanceInMeters / 1000     // Convert to km
       setDistance(distance)
+      
+      track('mileage_calculated', { 
+        distance, 
+        rateType: settings.rateType,
+        from: from.substring(0, 50), // Truncate to avoid PII
+        to: to.substring(0, 50)
+      })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Calculation failed')
+      const errorMessage = err instanceof Error ? err.message : 'Calculation failed'
+      setError(errorMessage)
+      toast.error('Couldn\'t calculate mileage. Please check the addresses and try again.')
     } finally {
       setIsLoading(false)
     }
@@ -168,6 +182,12 @@ export function MileageTracker({ onExpenseCreated }: MileageTrackerProps) {
           <div className="p-3 bg-red-50 dark:bg-red-950 border border-red-200 rounded-lg text-sm text-red-900 dark:text-red-100">
             {error}
           </div>
+        )}
+
+        {distance === null && !error && !isLoading && (
+          <p className="text-sm text-muted-foreground text-center">
+            Enter your route and tap Calculate to see your deduction.
+          </p>
         )}
 
         {distance !== null && (

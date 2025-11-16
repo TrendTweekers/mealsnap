@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { AlertCircle, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
+import { TaxDisclaimer } from '@/components/tax-disclaimer'
 
 interface AuditResult {
   merchant: { status: 'green' | 'amber' | 'red'; message: string }
@@ -146,6 +147,8 @@ export function AuditShield({ expenses, onAuditComplete }: AuditShieldProps) {
           )}
         </Button>
       )}
+
+      <TaxDisclaimer />
     </Card>
   )
 }

@@ -8,12 +8,12 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'SnapLedger — AI Receipt & Mileage Tracker',
-  description: 'Scan receipts, auto-log IRS mileage, export tax-ready CSV/PDF in seconds. 10 free scans/month.',
+  title: 'SnapLedger – Free AI Receipt & Mileage Tracker',
+  description: 'Scan receipts, track mileage, and export tax-ready CSV/PDF in seconds. Free, no login required.',
   generator: 'v0.app',
   openGraph: {
-    title: 'SnapLedger',
-    description: 'AI-powered receipt scanner + IRS mileage calculator',
+    title: 'SnapLedger – Free AI Receipt & Mileage Tracker',
+    description: 'Scan receipts, track mileage, and export tax-ready CSV/PDF in seconds. Free, no login required.',
     url: 'https://v0-receipt-scanner-app.vercel.app',
     siteName: 'SnapLedger',
     images: [
@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'SnapLedger',
-    description: 'AI receipt scanner + IRS mileage calculator',
+    title: 'SnapLedger – Free AI Receipt & Mileage Tracker',
+    description: 'Scan receipts, track mileage, and export tax-ready CSV/PDF in seconds. Free, no login required.',
     creator: '@TrendTweekers',
     images: ['/og-card.png'],
   },

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { Toaster } from 'sonner'
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -10,5 +11,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.style.colorScheme = saved
   }, [])
 
-  return <>{children}</>
+  return (
+    <>
+      {children}
+      <Toaster position="top-center" richColors />
+    </>
+  )
 }

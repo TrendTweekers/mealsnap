@@ -1,6 +1,34 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { ArrowLeft } from 'lucide-react'
+import { TaxDisclaimer } from '@/components/tax-disclaimer'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'About SnapLedger – AI Receipt & Mileage Tracker',
+  description: 'Learn how SnapLedger helps freelancers and small business owners manage receipts and mileage without logins or subscriptions.',
+  openGraph: {
+    title: 'About SnapLedger – AI Receipt & Mileage Tracker',
+    description: 'Learn how SnapLedger helps freelancers and small business owners manage receipts and mileage without logins or subscriptions.',
+    url: 'https://v0-receipt-scanner-app.vercel.app/about',
+    siteName: 'SnapLedger',
+    images: [
+      {
+        url: '/og-card.png',
+        width: 1200,
+        height: 630,
+        alt: 'SnapLedger - Receipt Scanner & Mileage Tracker'
+      }
+    ],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About SnapLedger – AI Receipt & Mileage Tracker',
+    description: 'Learn how SnapLedger helps freelancers and small business owners manage receipts and mileage without logins or subscriptions.',
+    images: ['/og-card.png'],
+  },
+}
 
 export default function AboutPage() {
   return (
@@ -42,9 +70,10 @@ export default function AboutPage() {
           </div>
 
           <div className="pt-4 border-t">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mb-4">
               Built with privacy in mind. All data stays in your browser—no accounts, no servers, no tracking.
             </p>
+            <TaxDisclaimer />
           </div>
         </Card>
       </div>

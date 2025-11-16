@@ -6,6 +6,8 @@ import { Card } from '@/components/ui/card'
 import { Camera, Loader2, AlertCircle, Upload } from 'lucide-react'
 import { saveExpenseToIndexedDB } from '@/lib/db-utils'
 import { applyReceiptRules } from '@/lib/receipt-rules'
+import { toast } from 'sonner'
+import { track } from '@/lib/analytics'
 
 interface CameraCaptureProps {
   onExpenseAdded: (expense: any) => void
@@ -73,10 +75,13 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       const expense = await saveExpenseToIndexedDB(sampleData)
       onExpenseAdded(expense)
       onProcessingComplete?.()
+      
+      track('sample_receipt_used', { merchant: expense.merchant, amount: expense.amount })
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to process sample receipt'
       console.error('[v0] Sample receipt processing failed:', errorMessage)
       setError(errorMessage)
+      toast.error('Couldn\'t process this receipt. Please try again or use a clearer photo.')
     } finally {
       setIsProcessing(false)
       isCancelledRef.current = false
@@ -114,7 +119,10 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       const result = await response.json()
       
       if (!result.ok) {
-        setError(result.error || 'Failed to process receipt')
+        const errorMsg = result.error || 'Failed to process receipt'
+        setError(errorMsg)
+        toast.error('Couldn\'t process this receipt. Please try again or use a clearer photo.')
+        track('scan_error', { error: errorMsg })
         return
       }
       
@@ -134,10 +142,14 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       setPreviewImage(null)
       setSelectedFile(null)
       onProcessingComplete?.()
+      
+      track('scan_success', { merchant: expense.merchant, total: expense.amount, category: expense.category })
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to process receipt'
       console.error('[v0] Processing failed:', errorMessage)
       setError(errorMessage)
+      toast.error('Couldn\'t process this receipt. Please try again or use a clearer photo.')
+      track('scan_error', { error: errorMessage })
     } finally {
       setIsProcessing(false)
       isCancelledRef.current = false

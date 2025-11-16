@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Trash2, Download } from 'lucide-react'
-import { deleteExpenseFromIndexedDB } from '@/lib/db-utils'
+import { Trash2, Download, Camera } from 'lucide-react'
+import { deleteExpenseFromIndexedDB, saveExpenseToIndexedDB } from '@/lib/db-utils'
 import { exportToCSV, exportToPDF } from '@/lib/export-utils'
 import { categoryColors } from '@/lib/constants'
+import { toast } from 'sonner'
+import { track } from '@/lib/analytics'
 
 interface Expense {
   id: string
@@ -14,20 +16,80 @@ interface Expense {
   amount: number
   category: string
   date: string
+  currency?: string
+  tax?: number
+  emoji?: string
   receipt?: string
 }
 
 interface ExpenseListProps {
   expenses: Expense[]
   onExpenseDeleted: (id: string) => void
+  onExpenseRestored?: (expense: Expense) => void
+  onNavigateToScan?: () => void
 }
 
-export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListProps) {
-  const [selectedExpenses, setSelectedExpenses] = useState<string[]>([])
+export default function ExpenseList({ expenses, onExpenseDeleted, onExpenseRestored, onNavigateToScan }: ExpenseListProps) {
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
+  const deletedExpenseRef = useRef<Expense | null>(null)
+  const undoTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const handleDelete = async (id: string) => {
-    await deleteExpenseFromIndexedDB(id)
-    onExpenseDeleted(id)
+  const handleDeleteClick = (id: string) => {
+    setConfirmingDelete(id)
+  }
+
+  const handleDeleteCancel = () => {
+    setConfirmingDelete(null)
+  }
+
+  const handleDeleteConfirm = async (expense: Expense) => {
+    try {
+      // Store expense for undo
+      deletedExpenseRef.current = { ...expense }
+      setConfirmingDelete(null)
+      
+      await deleteExpenseFromIndexedDB(expense.id)
+      onExpenseDeleted(expense.id)
+      
+      track('expense_deleted', { merchant: expense.merchant, amount: expense.amount })
+      
+      // Show toast with undo
+      toast.success('Expense deleted', {
+        action: {
+          label: 'Undo',
+          onClick: handleUndo
+        },
+        duration: 15000
+      })
+      
+      // Clear undo after 15 seconds
+      undoTimeoutRef.current = setTimeout(() => {
+        deletedExpenseRef.current = null
+      }, 15000)
+    } catch (error) {
+      console.error('Failed to delete expense:', error)
+      toast.error('Failed to delete expense. Please try again.')
+    }
+  }
+
+  const handleUndo = async () => {
+    if (!deletedExpenseRef.current) return
+    
+    try {
+      const restored = await saveExpenseToIndexedDB(deletedExpenseRef.current)
+      if (onExpenseRestored) {
+        onExpenseRestored(restored)
+      }
+      deletedExpenseRef.current = null
+      if (undoTimeoutRef.current) {
+        clearTimeout(undoTimeoutRef.current)
+      }
+      track('expense_undo', { merchant: restored.merchant, amount: restored.amount })
+      toast.success('Expense restored')
+    } catch (error) {
+      console.error('Failed to restore expense:', error)
+      toast.error('Failed to restore expense. Please try again.')
+    }
   }
 
   // Filter out invalid expenses and ensure amounts are valid
@@ -64,12 +126,18 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
   if (expenses.length === 0) {
     return (
       <Card className="p-8 text-center">
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="text-6xl">📋</div>
           <h3 className="text-lg font-semibold text-foreground">No expenses yet</h3>
           <p className="text-sm text-muted-foreground">
-            Start scanning receipts to track your expenses
+            Scan a receipt or try the sample to see your first expense here.
           </p>
+          {onNavigateToScan && (
+            <Button onClick={onNavigateToScan} className="mt-4">
+              <Camera className="mr-2 h-4 w-4" />
+              Go to Scan
+            </Button>
+          )}
         </div>
       </Card>
     )
@@ -139,6 +207,7 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
         <h3 className="font-semibold text-foreground">Recent Expenses</h3>
         {validExpenses.map((expense) => {
           const amount = Number(expense.amount)
+          const isConfirming = confirmingDelete === expense.id
           return (
             <Card key={expense.id} className="p-4 hover:bg-secondary/50 transition-colors">
               <div className="flex items-start justify-between gap-4">
@@ -152,20 +221,45 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
                   <p className="text-sm text-muted-foreground">
                     {new Date(expense.date).toLocaleDateString()} at {new Date(expense.date).toLocaleTimeString()}
                   </p>
+                  {isConfirming && (
+                    <div className="mt-3 p-3 bg-muted rounded-lg space-y-2">
+                      <p className="text-sm font-medium text-foreground">Delete this expense?</p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleDeleteCancel}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => handleDeleteConfirm(expense)}
+                          variant="destructive"
+                          size="sm"
+                          className="flex-1"
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="text-right space-y-2">
                   <p className="text-lg font-bold text-primary">
                     {currencySymbol(expense.currency)}
                     {isFinite(amount) ? amount.toFixed(2) : '0.00'}
                   </p>
-                  <Button
-                    onClick={() => handleDelete(expense.id)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:bg-destructive/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!isConfirming && (
+                    <Button
+                      onClick={() => handleDeleteClick(expense.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
