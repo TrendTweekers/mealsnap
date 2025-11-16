@@ -15,6 +15,7 @@ interface CameraCaptureProps {
 export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: CameraCaptureProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+  const isCancelledRef = useRef(false)
   const [isProcessing, setIsProcessing] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -41,22 +42,34 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
   }
 
   const handleProcessReceipt = async () => {
-    if (!selectedFile) return
+    if (!previewImage) return
     setIsProcessing(true)
     setError(null)
+    isCancelledRef.current = false
 
     try {
       console.log('[v0] Starting receipt processing...')
       
-      const form = new FormData();
-      form.append("file", selectedFile);
+      // Extract base64 from data URL
+      const match = previewImage.match(/base64,(.+)$/)
+      const imageBase64 = match ? match[1] : previewImage
+      
+      // convert base64 to real File so FormData works
+      const byteString = atob(imageBase64);
+      const ab = new ArrayBuffer(byteString.length);
+      const ia = new Uint8Array(ab);
+      for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+      const file = new File([ia], "receipt.jpg", { type: "image/jpeg" });
 
-      const res = await fetch('/api/process-receipt', {
+      const form = new FormData();
+      form.append("file", file);
+
+      const response = await fetch('/api/process-receipt', {
         method: 'POST',
-        body: form, // multipart/form-data automatically set
+        body: form // multipart/form-data automatically set
       })
       
-      const result = await res.json()
+      const result = await response.json()
       
       if (!result.ok) {
         setError(result.error || 'Failed to process receipt')
@@ -64,6 +77,12 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       }
       
       console.log('[v0] Receipt processed successfully:', result.data)
+      
+      // Guard: Don't add expense if user clicked Retake during processing
+      if (isCancelledRef.current || !previewImage) {
+        console.log('[v0] Processing cancelled - user clicked Retake')
+        return
+      }
       
       // Apply receipt rules to override category if rule exists
       result.data.category = await applyReceiptRules(result.data.merchant, result.data.category)
@@ -79,6 +98,7 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       setError(errorMessage)
     } finally {
       setIsProcessing(false)
+      isCancelledRef.current = false
     }
   }
 
@@ -101,7 +121,13 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
         )}
 
         <div className="flex gap-3">
-          <Button onClick={() => { setPreviewImage(null); setSelectedFile(null); }} variant="outline" className="flex-1">
+          <Button onClick={() => { 
+            setPreviewImage(null); 
+            setSelectedFile(null); 
+            if (isProcessing) {
+              isCancelledRef.current = true;
+            }
+          }} variant="outline" className="flex-1" disabled={isProcessing}>
             Retake
           </Button>
           <Button onClick={handleProcessReceipt} disabled={isProcessing} className="flex-1">
