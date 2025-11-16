@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Next.js App Router routing is handled automatically by @netlify/plugin-nextjs
+# The plugin creates the necessary serverless functions and routing
