@@ -1,10 +1,4 @@
-interface Expense {
-  id: string
-  merchant: string
-  amount: number
-  category: string
-  date: string
-}
+import type { Expense } from './types'
 
 export function exportToCSV(expenses: Expense[]): void {
   const headers = ['Date', 'Merchant', 'Amount', 'Category']

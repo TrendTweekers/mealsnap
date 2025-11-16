@@ -55,12 +55,17 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       // Hardcoded sample receipt data
       const sampleData = {
         merchant: 'COS',
+        merchantNormalized: 'COS',
         total: 450,
-        tax: 0,
+        subtotal: null,
+        tax: null,
+        taxRate: null,
         date: new Date().toISOString().split('T')[0],
         category: 'Shopping',
         currency: 'PLN',
-        emoji: null
+        emoji: '🛍️',
+        lineItems: [],
+        language: null
       }
       
       // Guard: Don't add expense if user clicked Retake during processing

@@ -1,16 +1,5 @@
 import { DEFAULT_CATEGORIES } from './constants'
-
-interface Expense {
-  id: string
-  merchant: string
-  amount: number
-  category: string
-  date: string
-  currency?: string      // Original currency, e.g. USD, PLN, EUR
-  tax?: number           // Tax amount in original currency
-  emoji?: string         // Optional emoji from AI
-  receipt?: string
-}
+import type { Expense, ReceiptLineItem } from './types'
 
 function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -59,12 +48,17 @@ export async function saveExpenseToIndexedDB(data: any): Promise<Expense> {
   const expense: Expense = {
     id: crypto.randomUUID(),
     merchant: data.merchant || 'Unknown', // Handle null merchant from AI
+    merchantNormalized: data.merchantNormalized || null,
     amount: Math.abs(amount), // Ensure positive
     category: validCategory,
     date: data.date || new Date().toISOString().split('T')[0],
     currency: data.currency || 'USD',
     tax: data.tax === null ? undefined : (typeof data.tax === 'number' ? data.tax : Number(data.tax) || undefined),
+    taxRate: data.taxRate === null || data.taxRate === undefined ? null : (typeof data.taxRate === 'number' ? data.taxRate : Number(data.taxRate) || null),
+    subtotal: data.subtotal === null || data.subtotal === undefined ? null : (typeof data.subtotal === 'number' ? data.subtotal : Number(data.subtotal) || null),
     emoji: data.emoji,
+    lineItems: Array.isArray(data.lineItems) ? data.lineItems : undefined,
+    language: data.language || null,
   }
 
   // Save expense

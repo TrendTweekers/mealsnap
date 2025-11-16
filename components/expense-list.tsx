@@ -9,18 +9,7 @@ import { exportToCSV, exportToPDF } from '@/lib/export-utils'
 import { categoryColors } from '@/lib/constants'
 import { toast } from 'sonner'
 import { track } from '@/lib/analytics'
-
-interface Expense {
-  id: string
-  merchant: string
-  amount: number
-  category: string
-  date: string
-  currency?: string
-  tax?: number
-  emoji?: string
-  receipt?: string
-}
+import type { Expense } from '@/lib/types'
 
 interface ExpenseListProps {
   expenses: Expense[]
