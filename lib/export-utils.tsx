@@ -29,7 +29,7 @@ export function exportToCSV(expenses: Expense[]): void {
     ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
     '',
     '---',
-    `"Exported by SnapLedger - Get 10 free scans: snapledger.app?ref=${getReferralCode()}"`,`
+    `"Exported by SnapLedger - Get 10 free scans: snapledger.app?ref=${getReferralCode()}"`
   ].join('\n')
 
   downloadFile(csv, 'expenses.csv', 'text/csv')
