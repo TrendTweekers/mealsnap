@@ -41,6 +41,48 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
     reader.readAsDataURL(file)
   }
 
+  const handleSampleReceipt = async () => {
+    setIsProcessing(true)
+    setError(null)
+    isCancelledRef.current = false
+
+    try {
+      // Simulate processing delay
+      await new Promise(resolve => setTimeout(resolve, 800))
+      
+      // Hardcoded sample receipt data
+      const sampleData = {
+        merchant: 'COS',
+        total: 450,
+        tax: 0,
+        date: new Date().toISOString().split('T')[0],
+        category: 'Shopping',
+        currency: 'PLN',
+        emoji: null
+      }
+      
+      // Guard: Don't add expense if user clicked Retake during processing
+      if (isCancelledRef.current) {
+        console.log('[v0] Processing cancelled - user clicked Retake')
+        return
+      }
+      
+      // Apply receipt rules to override category if rule exists
+      sampleData.category = await applyReceiptRules(sampleData.merchant, sampleData.category)
+      
+      const expense = await saveExpenseToIndexedDB(sampleData)
+      onExpenseAdded(expense)
+      onProcessingComplete?.()
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process sample receipt'
+      console.error('[v0] Sample receipt processing failed:', errorMessage)
+      setError(errorMessage)
+    } finally {
+      setIsProcessing(false)
+      isCancelledRef.current = false
+    }
+  }
+
   const handleProcessReceipt = async () => {
     if (!previewImage) return
     setIsProcessing(true)
@@ -162,6 +204,16 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
           <Button onClick={() => galleryInputRef.current?.click()} variant="outline" className="w-full" size="lg">
             <Upload className="mr-2 h-4 w-4" />
             Choose from Gallery
+          </Button>
+
+          <Button 
+            onClick={handleSampleReceipt} 
+            variant="outline" 
+            className="w-full" 
+            size="lg"
+            disabled={isProcessing}
+          >
+            Try Sample Receipt
           </Button>
         </div>
 

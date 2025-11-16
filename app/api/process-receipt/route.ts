@@ -22,11 +22,13 @@ export async function POST(req: NextRequest) {
   "total": number,
   "tax": number,
   "date": "YYYY-MM-DD",
-  "category": "food|transport|shopping|entertainment|other",
+  "category": "Meals & Entertainment|Travel|Software & Subscriptions|Office Supplies|Shopping|Other",
   "emoji": "relevant emoji",
   "currency": "ISO currency code from receipt (PLN, USD, EUR, etc)"
 }
-CRITICAL: Extract the ACTUAL currency shown on the receipt. If you see "zł", return "PLN". If you see "$", return "USD". If you see "€", return "EUR". If you are unsure, make your best reasonable guess.`;
+CRITICAL: 
+- Extract the ACTUAL currency shown on the receipt. If you see "zł", return "PLN". If you see "$", return "USD". If you see "€", return "EUR". If you are unsure, make your best reasonable guess.
+- Category must be EXACTLY one of: "Meals & Entertainment", "Travel", "Software & Subscriptions", "Office Supplies", "Shopping", or "Other".`;
 
     const result = await model.generateContent([
       prompt,

@@ -1,7 +1,9 @@
+import { DEFAULT_CATEGORIES, type Category } from './constants'
+
 export interface ReceiptRule {
   id: string
   merchant: string
-  category: 'Food' | 'Travel' | 'Office' | 'Other'
+  category: Category
 }
 
 export async function getReceiptRules(): Promise<ReceiptRule[]> {

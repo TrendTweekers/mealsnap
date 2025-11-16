@@ -1,3 +1,5 @@
+import { DEFAULT_CATEGORIES } from './constants'
+
 interface Expense {
   id: string
   merchant: string
@@ -49,11 +51,16 @@ export async function saveExpenseToIndexedDB(data: any): Promise<Expense> {
     amount = 0
   }
   
+  // Ensure category is one of the default categories
+  const validCategory = DEFAULT_CATEGORIES.includes(data.category as any) 
+    ? data.category 
+    : 'Other'
+  
   const expense: Expense = {
     id: crypto.randomUUID(),
     merchant: data.merchant || 'Unknown',
     amount: Math.abs(amount), // Ensure positive
-    category: data.category || 'Other',
+    category: validCategory,
     date: data.date || new Date().toISOString(),
     currency: data.currency || 'USD',
     tax: typeof data.tax === 'number' ? data.tax : Number(data.tax) || 0,

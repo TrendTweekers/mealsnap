@@ -66,8 +66,11 @@ export function AuditShield({ expenses, onAuditComplete }: AuditShieldProps) {
         <h3 className="text-lg font-semibold flex items-center gap-2">
           🛡️ Pre-Audit Shield
         </h3>
-        <p className="text-sm text-muted-foreground">
-          Verify your receipts before tax season. $2.99/scan-batch.
+        <p className="text-sm text-muted-foreground mb-2">
+          Checks your receipts for missing info and inconsistencies before tax season.
+        </p>
+        <p className="text-sm font-medium text-foreground">
+          $2.99/scan-batch
         </p>
       </div>
 

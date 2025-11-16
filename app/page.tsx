@@ -138,6 +138,12 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-4">
+              <a
+                href="/about"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                About
+              </a>
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-right">
                 <p className="text-xs text-muted-foreground">Free scans remaining</p>
                 <p className="text-2xl font-bold text-primary">{scansRemaining}</p>

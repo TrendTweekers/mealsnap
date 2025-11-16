@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Trash2, Download } from 'lucide-react'
 import { deleteExpenseFromIndexedDB } from '@/lib/db-utils'
 import { exportToCSV, exportToPDF } from '@/lib/export-utils'
+import { categoryColors } from '@/lib/constants'
 
 interface Expense {
   id: string
@@ -19,13 +20,6 @@ interface Expense {
 interface ExpenseListProps {
   expenses: Expense[]
   onExpenseDeleted: (id: string) => void
-}
-
-const categoryColors: Record<string, string> = {
-  'Food': 'bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-200',
-  'Travel': 'bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200',
-  'Office': 'bg-purple-100 text-purple-900 dark:bg-purple-900/30 dark:text-purple-200',
-  'Other': 'bg-gray-100 text-gray-900 dark:bg-gray-900/30 dark:text-gray-200',
 }
 
 export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListProps) {
