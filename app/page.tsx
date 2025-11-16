@@ -3,14 +3,23 @@
 import { useState, useEffect } from 'react'
 import CameraCapture from '@/components/camera-capture'
 import ExpenseList from '@/components/expense-list'
+import { MileageTracker } from '@/components/mileage-tracker'
+import { AuditShield } from '@/components/audit-shield'
+import { PartnerPerksMarketplace } from '@/components/partner-perks-marketplace'
+import { ThemeToggle } from '@/components/theme-toggle'
+import { Settings } from '@/components/settings'
+import { TaxPacketModal } from '@/components/tax-packet-modal'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Settings as SettingsIcon } from 'lucide-react'
 
 export default function Home() {
   const [expenses, setExpenses] = useState<any[]>([])
   const [scanCount, setScanCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('scan')
+  const [showSettings, setShowSettings] = useState(false)
+  const [showTaxPacket, setShowTaxPacket] = useState(false)
 
   // Load data from IndexedDB on mount
   useEffect(() => {
@@ -43,6 +52,16 @@ export default function Home() {
       }
     }
     loadData()
+
+    // Check if today is Jan 1st and user hasn't seen tax packet offer
+    const today = new Date()
+    if (today.getMonth() === 0 && today.getDate() === 1) {
+      const lastTaxOfferDate = localStorage.getItem('lastTaxOfferDate')
+      if (lastTaxOfferDate !== today.toISOString().split('T')[0]) {
+        setShowTaxPacket(true)
+        localStorage.setItem('lastTaxOfferDate', today.toISOString().split('T')[0])
+      }
+    }
   }, [])
 
   const handleExpenseAdded = async (newExpense: any) => {
@@ -115,17 +134,27 @@ export default function Home() {
               <h1 className="text-3xl sm:text-4xl font-bold text-foreground">ReceiptSnap</h1>
               <p className="text-muted-foreground mt-1">AI-powered expense tracking</p>
             </div>
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-right">
-              <p className="text-xs text-muted-foreground">Free scans remaining</p>
-              <p className="text-2xl font-bold text-primary">{scansRemaining}</p>
-              {scanCount > 0 && (
-                <button 
-                  onClick={handleResetScans}
-                  className="text-xs text-primary hover:underline mt-2"
-                >
-                  Reset (test)
-                </button>
-              )}
+            <div className="flex items-center gap-4">
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-right">
+                <p className="text-xs text-muted-foreground">Free scans remaining</p>
+                <p className="text-2xl font-bold text-primary">{scansRemaining}</p>
+                {scanCount > 0 && (
+                  <button 
+                    onClick={handleResetScans}
+                    className="text-xs text-primary hover:underline mt-2"
+                  >
+                    Reset (test)
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="p-2 hover:bg-secondary rounded-lg transition-colors"
+                title="Settings"
+              >
+                <SettingsIcon className="h-5 w-5" />
+              </button>
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -141,9 +170,12 @@ export default function Home() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="scan">Scan Receipt</TabsTrigger>
-            <TabsTrigger value="expenses">Expenses ({expenses.length})</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 mb-6 h-auto">
+            <TabsTrigger value="scan" className="text-xs sm:text-sm">Scan</TabsTrigger>
+            <TabsTrigger value="mileage" className="text-xs sm:text-sm">Mileage</TabsTrigger>
+            <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit</TabsTrigger>
+            <TabsTrigger value="deals" className="text-xs sm:text-sm">Deals</TabsTrigger>
+            <TabsTrigger value="expenses" className="text-xs sm:text-sm">Expenses ({expenses.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="scan" className="space-y-4">
@@ -167,6 +199,25 @@ export default function Home() {
             )}
           </TabsContent>
 
+          <TabsContent value="mileage" className="space-y-4">
+            <MileageTracker
+              onExpenseCreated={handleExpenseAdded}
+            />
+          </TabsContent>
+
+          <TabsContent value="audit" className="space-y-4">
+            <AuditShield
+              expenses={expenses}
+              onAuditComplete={(result) => {
+                console.log('Audit complete:', result)
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="deals" className="space-y-4">
+            <PartnerPerksMarketplace />
+          </TabsContent>
+
           <TabsContent value="expenses" className="space-y-4">
             <ExpenseList
               expenses={expenses}
@@ -175,6 +226,24 @@ export default function Home() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {showSettings && (
+        <Settings
+          expenses={expenses}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showTaxPacket && (
+        <TaxPacketModal
+          expenses={expenses}
+          onClose={() => setShowTaxPacket(false)}
+          onPurchase={async () => {
+            // Redirect to Stripe checkout
+            window.location.href = 'https://buy.stripe.com/test_00g4h96qA5g5ecE5kk'
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -182,7 +251,7 @@ export default function Home() {
 // IndexedDB initialization
 function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('ReceiptSnapDB', 1)
+    const request = indexedDB.open('SnapLedgerDB', 1)
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve(request.result)
     request.onupgradeneeded = (event) => {

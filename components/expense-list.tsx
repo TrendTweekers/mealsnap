@@ -36,9 +36,22 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
     onExpenseDeleted(id)
   }
 
-  const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0)
-  const categoryBreakdown = expenses.reduce((acc, exp) => {
-    acc[exp.category] = (acc[exp.category] || 0) + exp.amount
+  // Filter out invalid expenses and ensure amounts are valid
+  const validExpenses = expenses.filter(exp => {
+    const amount = Number(exp.amount)
+    return isFinite(amount) && amount >= 0
+  })
+
+  const totalAmount = validExpenses.reduce((sum, exp) => {
+    const amount = Number(exp.amount)
+    return sum + (isFinite(amount) ? amount : 0)
+  }, 0)
+  
+  const categoryBreakdown = validExpenses.reduce((acc, exp) => {
+    const amount = Number(exp.amount)
+    if (isFinite(amount)) {
+      acc[exp.category] = (acc[exp.category] || 0) + amount
+    }
     return acc
   }, {} as Record<string, number>)
 
@@ -66,11 +79,11 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
         </Card>
         <Card className="p-4 bg-accent/5 border-accent/20">
           <p className="text-sm text-muted-foreground">Transactions</p>
-          <p className="text-2xl font-bold text-accent">{expenses.length}</p>
+          <p className="text-2xl font-bold text-accent">{validExpenses.length}</p>
         </Card>
         <Card className="p-4 bg-secondary/10 border-secondary/20">
           <p className="text-sm text-muted-foreground">Avg. Per Receipt</p>
-          <p className="text-2xl font-bold text-foreground">${(totalAmount / expenses.length).toFixed(2)}</p>
+          <p className="text-2xl font-bold text-foreground">${validExpenses.length > 0 ? (totalAmount / validExpenses.length).toFixed(2) : '0.00'}</p>
         </Card>
       </div>
 
@@ -112,34 +125,37 @@ export default function ExpenseList({ expenses, onExpenseDeleted }: ExpenseListP
       {/* Expense List */}
       <div className="space-y-3">
         <h3 className="font-semibold text-foreground">Recent Expenses</h3>
-        {expenses.map((expense) => (
-          <Card key={expense.id} className="p-4 hover:bg-secondary/50 transition-colors">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-medium text-foreground">{expense.merchant}</h4>
-                  <span className={`text-xs px-2 py-1 rounded-full ${categoryColors[expense.category] || categoryColors['Other']}`}>
-                    {expense.category}
-                  </span>
+        {validExpenses.map((expense) => {
+          const amount = Number(expense.amount)
+          return (
+            <Card key={expense.id} className="p-4 hover:bg-secondary/50 transition-colors">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-medium text-foreground">{expense.merchant}</h4>
+                    <span className={`text-xs px-2 py-1 rounded-full ${categoryColors[expense.category] || categoryColors['Other']}`}>
+                      {expense.category}
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(expense.date).toLocaleDateString()} at {new Date(expense.date).toLocaleTimeString()}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(expense.date).toLocaleDateString()} at {new Date(expense.date).toLocaleTimeString()}
-                </p>
+                <div className="text-right space-y-2">
+                  <p className="text-lg font-bold text-primary">${isFinite(amount) ? amount.toFixed(2) : '0.00'}</p>
+                  <Button
+                    onClick={() => handleDelete(expense.id)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="text-right space-y-2">
-                <p className="text-lg font-bold text-primary">${expense.amount.toFixed(2)}</p>
-                <Button
-                  onClick={() => handleDelete(expense.id)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          )
+        })}
       </div>
     </div>
   )

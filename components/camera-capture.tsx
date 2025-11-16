@@ -4,8 +4,8 @@ import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Camera, Loader2, AlertCircle, Upload } from 'lucide-react'
-import { processReceiptAction } from '@/app/actions/process-receipt'
 import { saveExpenseToIndexedDB } from '@/lib/db-utils'
+import { applyReceiptRules } from '@/lib/receipt-rules'
 
 interface CameraCaptureProps {
   onExpenseAdded: (expense: any) => void
@@ -45,9 +45,30 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
 
     try {
       console.log('[v0] Starting receipt processing...')
-      const expenseData = await processReceiptAction(previewImage)
-      console.log('[v0] Receipt processed successfully:', expenseData)
-      const expense = await saveExpenseToIndexedDB(expenseData)
+      
+      // Extract base64 from data URL
+      const match = previewImage.match(/base64,(.+)$/)
+      const imageBase64 = match ? match[1] : previewImage
+      
+      const response = await fetch('/api/process-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64 })
+      })
+      
+      const result = await response.json()
+      
+      if (!result.ok) {
+        setError(result.error || 'Failed to process receipt')
+        return
+      }
+      
+      console.log('[v0] Receipt processed successfully:', result.data)
+      
+      // Apply receipt rules to override category if rule exists
+      result.data.category = await applyReceiptRules(result.data.merchant, result.data.category)
+      
+      const expense = await saveExpenseToIndexedDB(result.data)
       onExpenseAdded(expense)
       setPreviewImage(null)
       onProcessingComplete?.()

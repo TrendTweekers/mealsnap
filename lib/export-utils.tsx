@@ -15,9 +15,21 @@ export function exportToCSV(expenses: Expense[]): void {
     exp.category
   ])
 
+  // Add referral footer
+  const getReferralCode = () => {
+    const stored = localStorage.getItem('referralCode')
+    if (stored) return stored
+    const code = `${Date.now()}`
+    localStorage.setItem('referralCode', code)
+    return code
+  }
+
   const csv = [
     headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(',')),
+    '',
+    '---',
+    `"Exported by SnapLedger - Get 10 free scans: snapledger.app?ref=${getReferralCode()}"`,`
   ].join('\n')
 
   downloadFile(csv, 'expenses.csv', 'text/csv')

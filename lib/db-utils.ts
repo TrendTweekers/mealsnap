@@ -9,7 +9,7 @@ interface Expense {
 
 function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('ReceiptSnapDB', 1)
+    const request = indexedDB.open('SnapLedgerDB', 1)
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve(request.result)
     request.onupgradeneeded = (event) => {
@@ -20,18 +20,37 @@ function openIndexedDB(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('metadata')) {
         db.createObjectStore('metadata', { keyPath: 'key' })
       }
+      if (!db.objectStoreNames.contains('rules')) {
+        db.createObjectStore('rules', { keyPath: 'id' })
+      }
     }
   })
 }
 
 export async function saveExpenseToIndexedDB(data: any): Promise<Expense> {
   const db = await openIndexedDB()
+  
+  // Use 'total' from AI or fallback to 'amount'
+  let amount = data.total || data.amount || 0
+  
+  // Ensure it's a valid number
+  if (typeof amount === 'string') {
+    amount = parseFloat(amount.replace(/[^0-9.-]/g, '')) || 0
+  } else {
+    amount = Number(amount) || 0
+  }
+  
+  // Ensure it's finite
+  if (!isFinite(amount)) {
+    amount = 0
+  }
+  
   const expense: Expense = {
     id: crypto.randomUUID(),
-    merchant: data.merchant,
-    amount: parseFloat(String(data.amount)),
-    category: data.category,
-    date: new Date().toISOString(),
+    merchant: data.merchant || 'Unknown',
+    amount: Math.abs(amount), // Ensure positive
+    category: data.category || 'Other',
+    date: data.date || new Date().toISOString(),
   }
 
   // Save expense

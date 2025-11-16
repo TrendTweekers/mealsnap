@@ -6,7 +6,7 @@ const _geist = Geist({ subsets: ["latin"] });
 const _geistMono = Geist_Mono({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'ReceiptSnap - AI Receipt Scanner & Expense Tracker',
+  title: 'SnapLedger - AI Receipt Scanner & Expense Tracker',
   description: 'Snap receipts, track expenses, and generate tax reports with AI. Freemium: 10 free scans/month',
   generator: 'v0.app',
   icons: {
