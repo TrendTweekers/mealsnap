@@ -9,7 +9,8 @@ interface Expense {
 
 function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('SnapLedgerDB', 1)
+    // Bump version to 2 so browsers that created v1 without 'metadata' get upgraded
+    const request = indexedDB.open('SnapLedgerDB', 2)
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve(request.result)
     request.onupgradeneeded = (event) => {

@@ -251,7 +251,8 @@ export default function Home() {
 // IndexedDB initialization
 function openIndexedDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('SnapLedgerDB', 1)
+    // Version 2: ensure both 'expenses' and 'metadata' stores exist
+    const request = indexedDB.open('SnapLedgerDB', 2)
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve(request.result)
     request.onupgradeneeded = (event) => {
