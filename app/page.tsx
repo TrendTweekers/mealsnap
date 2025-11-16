@@ -132,7 +132,9 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-foreground">SnapLedger</h1>
-              <p className="text-muted-foreground mt-1">AI-powered expense tracking</p>
+              <p className="text-muted-foreground mt-1">
+                Scan receipts & track IRS mileage in 10 s. Export tax-ready CSV/PDF free.
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-right">
