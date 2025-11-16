@@ -17,6 +17,7 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -29,6 +30,7 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       return
     }
 
+    setSelectedFile(file)
     const reader = new FileReader()
     reader.onload = (e) => {
       setPreviewImage(e.target?.result as string)
@@ -39,24 +41,22 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
   }
 
   const handleProcessReceipt = async () => {
-    if (!previewImage) return
+    if (!selectedFile) return
     setIsProcessing(true)
     setError(null)
 
     try {
       console.log('[v0] Starting receipt processing...')
       
-      // Extract base64 from data URL
-      const match = previewImage.match(/base64,(.+)$/)
-      const imageBase64 = match ? match[1] : previewImage
-      
-      const response = await fetch('/api/process-receipt', {
+      const form = new FormData();
+      form.append("file", selectedFile);
+
+      const res = await fetch('/api/process-receipt', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageBase64 })
+        body: form, // multipart/form-data automatically set
       })
       
-      const result = await response.json()
+      const result = await res.json()
       
       if (!result.ok) {
         setError(result.error || 'Failed to process receipt')
@@ -71,6 +71,7 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       const expense = await saveExpenseToIndexedDB(result.data)
       onExpenseAdded(expense)
       setPreviewImage(null)
+      setSelectedFile(null)
       onProcessingComplete?.()
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to process receipt'
@@ -100,7 +101,7 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
         )}
 
         <div className="flex gap-3">
-          <Button onClick={() => setPreviewImage(null)} variant="outline" className="flex-1">
+          <Button onClick={() => { setPreviewImage(null); setSelectedFile(null); }} variant="outline" className="flex-1">
             Retake
           </Button>
           <Button onClick={handleProcessReceipt} disabled={isProcessing} className="flex-1">
