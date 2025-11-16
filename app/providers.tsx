@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-// import posthog from 'posthog-js' // Temporarily disabled for deployment
+import posthog from 'posthog-js'
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -10,16 +10,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.classList.toggle('dark', saved === 'dark')
     document.documentElement.style.colorScheme = saved
 
-    // Initialize PostHog analytics (browser only) - TEMPORARILY DISABLED
-    // const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
-    // const host = process.env.NEXT_PUBLIC_POSTHOG_HOST
-    // if (key && host && !posthog.__loaded) {
-    //   posthog.init(key, {
-    //     api_host: host,
-    //     capture_pageview: true,
-    //     person_profiles: 'identified_only',
-    //   })
-    // }
+    // Initialize PostHog analytics (browser only)
+    if (typeof window !== 'undefined' && !posthog.__loaded) {
+      posthog.init('phc_iK3CHhIXbLvshj9Ebb78QXyCNAou7nLD35cLwU9IaCH', {
+        api_host: 'https://app.posthog.com',
+        capture_pageview: true,
+        person_profiles: 'identified_only',
+      })
+    }
   }, [])
 
   return <>{children}</>

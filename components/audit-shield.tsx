@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { AlertCircle, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react'
-// import posthog from 'posthog-js' // TEMPORARILY DISABLED
+import posthog from 'posthog-js'
 
 interface AuditResult {
   merchant: { status: 'green' | 'amber' | 'red'; message: string }
@@ -26,7 +26,7 @@ export function AuditShield({ expenses, onAuditComplete }: AuditShieldProps) {
 
   const handlePreAuditScan = async () => {
     setIsScanning(true)
-    // posthog.capture('audit_scan_started', { expenseCount: expenses.length }) // TEMPORARILY DISABLED
+    posthog.capture('audit_scan_started', { expenseCount: expenses.length })
 
     try {
       // Analyze current month expenses

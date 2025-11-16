@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Camera, Loader2, AlertCircle, Upload } from 'lucide-react'
 import { saveExpenseToIndexedDB } from '@/lib/db-utils'
 import { applyReceiptRules } from '@/lib/receipt-rules'
-// import posthog from 'posthog-js' // TEMPORARILY DISABLED
+import posthog from 'posthog-js'
 
 interface CameraCaptureProps {
   onExpenseAdded: (expense: any) => void
@@ -64,7 +64,7 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
 
       const form = new FormData();
       form.append("file", file);
-
+      
       const response = await fetch('/api/process-receipt', {
         method: 'POST',
         body: form // multipart/form-data automatically set
@@ -78,12 +78,12 @@ export default function CameraCapture({ onExpenseAdded, onProcessingComplete }: 
       }
       
       console.log('[v0] Receipt processed successfully:', result.data)
-      // posthog.capture('receipt_scanned', { // TEMPORARILY DISABLED
-      //   merchant: result.data.merchant,
-      //   total: result.data.total,
-      //   currency: result.data.currency,
-      //   category: result.data.category,
-      // })
+      posthog.capture('receipt_scanned', {
+        merchant: result.data.merchant,
+        total: result.data.total,
+        currency: result.data.currency,
+        category: result.data.category,
+      })
       
       // Guard: Don't add expense if user clicked Retake during processing
       if (isCancelledRef.current || !previewImage) {
