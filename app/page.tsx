@@ -69,13 +69,20 @@ export default function MealSnap() {
 
   // Load user plan and scan count with weekly reset
   useEffect(() => {
+    // Check for founder mode
+    const isFounder = localStorage.getItem('mealsnap_founder') === 'true'
+    if (isFounder) {
+      setUserPlan('pro')
+      localStorage.setItem('mealsnap_plan', 'pro')
+    }
+    
     const plan = localStorage.getItem('mealsnap_plan') as 'free' | 'pro' | 'family' | null
     const lastReset = localStorage.getItem('mealsnap_last_reset')
     const now = Date.now()
     const weekInMs = 7 * 24 * 60 * 60 * 1000
     
-    // Reset scan count weekly
-    if (!lastReset || (now - parseInt(lastReset, 10)) > weekInMs) {
+    // Reset scan count weekly (unless founder)
+    if (!isFounder && (!lastReset || (now - parseInt(lastReset, 10)) > weekInMs)) {
       localStorage.setItem('mealsnap_scan_count', '0')
       localStorage.setItem('mealsnap_last_reset', now.toString())
       setScanCount(0)
@@ -106,6 +113,10 @@ export default function MealSnap() {
   }, [])
 
   const checkScanLimit = (): boolean => {
+    // Founder bypass - check for founder mode
+    const isFounder = localStorage.getItem('mealsnap_founder') === 'true'
+    if (isFounder) return true
+    
     if (userPlan === 'pro' || userPlan === 'family') return true
     return scanCount < 3
   }
@@ -494,7 +505,7 @@ export default function MealSnap() {
             >
               <div className="transform transition-transform duration-300 group-hover:scale-110">
                 <MealSnapLogo className="w-12 h-12" />
-              </div>
+        </div>
               <span className="text-xl font-extrabold text-gray-900 tracking-tight hidden sm:inline">
                 Meal<span className="text-emerald-600">Snap</span>
               </span>
@@ -506,7 +517,7 @@ export default function MealSnap() {
                   <span className="text-xs font-semibold text-emerald-700">
                     {scansRemaining}/3 scans remaining
                   </span>
-                </div>
+      </div>
               )}
               
               {userPlan === 'free' && (
@@ -578,7 +589,7 @@ export default function MealSnap() {
 
     if (currentView === 'home' || currentView === 'favorites') return null
 
-    return (
+  return (
       <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
         <button
           onClick={() => setCurrentView('home')}
@@ -589,14 +600,14 @@ export default function MealSnap() {
         {currentView !== 'home' && (
           <>
             <ArrowRight className="w-4 h-4" />
-            <button
+                  <button 
               onClick={() => setCurrentView('ingredients')}
               className={`hover:text-emerald-600 transition-colors ${
                 currentView === 'ingredients' ? 'text-emerald-600 font-semibold' : ''
               }`}
             >
               {breadcrumbs.ingredients.label}
-            </button>
+                  </button>
           </>
         )}
         {currentView === 'recipes' && (
@@ -619,7 +630,7 @@ export default function MealSnap() {
           <section className="text-center py-16 px-6">
             <div className="inline-flex items-center justify-center mb-6">
               <MealSnapLogo className="w-16 h-16" />
-            </div>
+              </div>
             
             <h1 className="text-4xl md:text-5xl font-extrabold text-emerald-600">
               Stop wasting food. Start cooking what you have.
@@ -710,7 +721,7 @@ export default function MealSnap() {
               </label>
 
               <div className="text-center pt-4">
-                <button
+              <button
                   onClick={() => {
                     setIngredients([])
                     setCurrentView('ingredients')
@@ -718,10 +729,10 @@ export default function MealSnap() {
                   className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
                 >
                   Or add ingredients manually →
-                </button>
-              </div>
+              </button>
             </div>
           </div>
+        </div>
 
           <div className="grid sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
             <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -1093,11 +1104,26 @@ export default function MealSnap() {
 
       {/* Email Gate Modal (after 3 scans) */}
       {showEmailGate && !emailSubmitted && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative">
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+          onClick={(e) => {
+            // Close modal when clicking backdrop
+            if (e.target === e.currentTarget) {
+              setShowEmailGate(false)
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative z-[71]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              onClick={() => setShowEmailGate(false)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowEmailGate(false)
+              }}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100 z-[72]"
+              type="button"
             >
               <X className="w-5 h-5" />
             </button>
@@ -1108,42 +1134,74 @@ export default function MealSnap() {
               </div>
               <h3 className="text-2xl font-extrabold text-gray-900 mb-2">You've used your free scans!</h3>
               <p className="text-gray-700 mb-1">Enter your email to get <span className="font-bold text-emerald-600">2 more free scans</span></p>
-            </div>
+      </div>
 
             <form
               onSubmit={(e) => {
                 e.preventDefault()
+                e.stopPropagation()
                 handleEmailSubmit(emailInput, 'gate')
               }}
               className="space-y-4"
+              onClick={(e) => e.stopPropagation()}
             >
               <input
                 type="email"
                 value={emailInput}
-                onChange={(e) => setEmailInput(e.target.value)}
+                onChange={(e) => {
+                  e.stopPropagation()
+                  setEmailInput(e.target.value)
+                }}
                 placeholder="your@email.com"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none text-base"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none text-base z-[72] relative"
                 required
+                autoFocus
               />
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 z-[72] relative"
               >
                 Get 2 More Scans
               </button>
               <button
                 type="button"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation()
                   setShowEmailGate(false)
                   setShowPricingModal(true)
                 }}
-                className="w-full text-gray-600 hover:text-gray-700 text-sm font-medium"
+                className="w-full text-gray-600 hover:text-gray-700 text-sm font-medium z-[72] relative"
               >
                 Or upgrade to Pro
               </button>
+              {/* Founder bypass - hidden button that can be triggered */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  // Enable founder mode (unlimited scans)
+                  localStorage.setItem('mealsnap_founder', 'true')
+                  setUserPlan('pro')
+                  localStorage.setItem('mealsnap_plan', 'pro')
+                  setShowEmailGate(false)
+                  alert('Founder mode enabled! Unlimited scans activated.')
+                }}
+                className="w-full text-xs text-gray-400 hover:text-gray-500 mt-2 opacity-0 hover:opacity-100 transition-opacity"
+                title="Founder bypass - double click to enable"
+                onDoubleClick={(e) => {
+                  e.stopPropagation()
+                  localStorage.setItem('mealsnap_founder', 'true')
+                  setUserPlan('pro')
+                  localStorage.setItem('mealsnap_plan', 'pro')
+                  setShowEmailGate(false)
+                  alert('Founder mode enabled! Unlimited scans activated.')
+                }}
+              >
+                Founder? Double-click here
+              </button>
             </form>
           </div>
-      </div>
+        </div>
       )}
 
       {/* Pricing Modal */}
