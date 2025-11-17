@@ -47,27 +47,35 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="MealSnap" />
-        {/* Privacy-friendly analytics by Plausible */}
-        <Script
-          async
-          src="https://plausible.io/js/pa-z7_ASH-zwutJ1BlKFBYt6.js"
-        />
-        <Script
-          id="plausible-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-              plausible.init()
-            `,
-          }}
-        />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
           {children}
         </ThemeProvider>
         <Analytics />
+        {/* Privacy-friendly analytics by Plausible */}
+        <Script
+          strategy="afterInteractive"
+          data-domain="mealsnap-chi.vercel.app"
+        >
+          {`
+            (function() {
+              var script = document.createElement('script');
+              script.async = true;
+              script.defer = true;
+              script.src = 'https://plausible.io/js/pa-z7_ASH-zwutJ1BlKFBYt6.js';
+              document.head.appendChild(script);
+              
+              window.plausible = window.plausible || function() {
+                (plausible.q = plausible.q || []).push(arguments);
+              };
+              plausible.init = plausible.init || function(i) {
+                plausible.o = i || {};
+              };
+              plausible.init();
+            })();
+          `}
+        </Script>
       </body>
     </html>
   )
