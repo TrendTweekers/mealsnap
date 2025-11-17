@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User } from 'lucide-react'
+import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles } from 'lucide-react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
 
 type Recipe = {
@@ -32,6 +32,55 @@ export default function MealSnap() {
   const [newIngredient, setNewIngredient] = useState('')
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([])
   const [error, setError] = useState('')
+  const [userId, setUserId] = useState<string>('')
+  const [showShareCard, setShowShareCard] = useState(false)
+  const [sharedRecipe, setSharedRecipe] = useState<Recipe | null>(null)
+  const [showPricingModal, setShowPricingModal] = useState(false)
+  const [scanCount, setScanCount] = useState(0)
+  const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'family'>('free')
+
+  // Generate or load user ID for referrals
+  useEffect(() => {
+    // Check for referral parameter in URL
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const refId = urlParams.get('ref')
+      
+      if (refId) {
+        // Track referral (you can add analytics here)
+        console.log('Referral detected:', refId)
+        // Store referral for later use (e.g., give both users 5 free scans)
+        localStorage.setItem('mealsnap_referrer', refId)
+      }
+    }
+
+    let id = localStorage.getItem('mealsnap_user_id')
+    if (!id) {
+      id = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('mealsnap_user_id', id)
+    }
+    setUserId(id)
+  }, [])
+
+  // Load user plan and scan count with weekly reset
+  useEffect(() => {
+    const plan = localStorage.getItem('mealsnap_plan') as 'free' | 'pro' | 'family' | null
+    const lastReset = localStorage.getItem('mealsnap_last_reset')
+    const now = Date.now()
+    const weekInMs = 7 * 24 * 60 * 60 * 1000
+    
+    // Reset scan count weekly
+    if (!lastReset || (now - parseInt(lastReset, 10)) > weekInMs) {
+      localStorage.setItem('mealsnap_scan_count', '0')
+      localStorage.setItem('mealsnap_last_reset', now.toString())
+      setScanCount(0)
+    } else {
+      const count = localStorage.getItem('mealsnap_scan_count')
+      if (count) setScanCount(parseInt(count, 10))
+    }
+    
+    if (plan) setUserPlan(plan)
+  }, [])
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -45,18 +94,96 @@ export default function MealSnap() {
     }
   }, [])
 
+  const checkScanLimit = (): boolean => {
+    if (userPlan === 'pro' || userPlan === 'family') return true
+    return scanCount < 3
+  }
+
+  const incrementScanCount = () => {
+    const newCount = scanCount + 1
+    setScanCount(newCount)
+    localStorage.setItem('mealsnap_scan_count', newCount.toString())
+    
+    if (newCount >= 3 && userPlan === 'free') {
+      setShowPricingModal(true)
+    }
+  }
+
   // Save favorites to localStorage
   const saveFavorites = (newFavorites: Recipe[]) => {
     setFavorites(newFavorites)
     localStorage.setItem('mealsnap_favorites', JSON.stringify(newFavorites))
   }
 
-  const toggleFavorite = (recipe: Recipe) => {
+  const toggleFavorite = async (recipe: Recipe) => {
     const isFavorite = favorites.some(f => f.title === recipe.title)
     if (isFavorite) {
       saveFavorites(favorites.filter(f => f.title !== recipe.title))
     } else {
       saveFavorites([...favorites, recipe])
+      
+      // Auto-trigger native share when saving
+      const shareText = `I just made ${recipe.title} from my fridge with MealSnap! Get 5 free scans: https://mealsnap-chi.vercel.app?ref=${userId}`
+      const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://mealsnap-chi.vercel.app'
+
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title: 'MealSnap Recipe',
+            text: shareText,
+            url: `${shareUrl}?ref=${userId}`,
+          })
+          console.log('Recipe shared successfully')
+        } else {
+          // Fallback: show share card for manual sharing
+          setSharedRecipe(recipe)
+          setShowShareCard(true)
+        }
+      } catch (err) {
+        // User cancelled - show share card as fallback
+        if (err instanceof Error && err.name === 'AbortError') {
+          // User cancelled, don't show anything
+        } else {
+          // Error occurred - show share card
+          setSharedRecipe(recipe)
+          setShowShareCard(true)
+        }
+      }
+    }
+  }
+
+  const handleShare = async () => {
+    if (!sharedRecipe || !userId) return
+
+    const shareText = `I just made ${sharedRecipe.title} from my fridge with MealSnap! Get 5 free scans: https://mealsnap-chi.vercel.app?ref=${userId}`
+    const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://mealsnap-chi.vercel.app'
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'MealSnap Recipe',
+          text: shareText,
+          url: `${shareUrl}?ref=${userId}`,
+        })
+        console.log('Recipe shared successfully')
+      } else {
+        // Fallback: copy to clipboard
+        await navigator.clipboard.writeText(shareText)
+        alert('Link copied to clipboard! Share it anywhere.')
+      }
+      setShowShareCard(false)
+    } catch (err) {
+      // User cancelled or error occurred
+      if (err instanceof Error && err.name !== 'AbortError') {
+        console.error('Share error:', err)
+        // Fallback to clipboard
+        try {
+          await navigator.clipboard.writeText(shareText)
+          alert('Link copied to clipboard!')
+        } catch (clipboardErr) {
+          console.error('Clipboard error:', clipboardErr)
+        }
+      }
     }
   }
 
@@ -79,6 +206,12 @@ export default function MealSnap() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Check scan limit
+    if (!checkScanLimit()) {
+      setShowPricingModal(true)
+      return
+    }
 
     setIsLoading(true)
     setError('')
@@ -108,10 +241,12 @@ export default function MealSnap() {
 
       if (data.items && Array.isArray(data.items) && data.items.length > 0) {
         setIngredients(data.items)
+        incrementScanCount()
         setCurrentView('ingredients')
       } else {
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
+        incrementScanCount()
         setCurrentView('ingredients')
       }
     } catch (err: any) {
@@ -198,23 +333,44 @@ export default function MealSnap() {
   }
 
   // Sticky Header Component
-  const StickyHeader = () => (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <button
-            onClick={() => setCurrentView('home')}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
-          >
-            <div className="transform transition-transform duration-300 group-hover:scale-110">
-              <MealSnapLogo className="w-12 h-12" />
-            </div>
-            <span className="text-xl font-extrabold text-gray-900 tracking-tight hidden sm:inline">
-              Meal<span className="text-emerald-600">Snap</span>
-            </span>
-          </button>
+  const StickyHeader = () => {
+    const scansRemaining = userPlan === 'free' ? Math.max(0, 3 - scanCount) : '∞'
+    
+    return (
+      <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <button
+              onClick={() => setCurrentView('home')}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
+            >
+              <div className="transform transition-transform duration-300 group-hover:scale-110">
+                <MealSnapLogo className="w-12 h-12" />
+              </div>
+              <span className="text-xl font-extrabold text-gray-900 tracking-tight hidden sm:inline">
+                Meal<span className="text-emerald-600">Snap</span>
+              </span>
+            </button>
 
-          <nav className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-3">
+              {userPlan === 'free' && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                  <span className="text-xs font-semibold text-emerald-700">
+                    {scansRemaining}/3 scans remaining
+                  </span>
+                </div>
+              )}
+              
+              {userPlan === 'free' && (
+                <button
+                  onClick={() => setShowPricingModal(true)}
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg text-sm font-bold transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Upgrade to Pro
+                </button>
+              )}
+
+              <nav className="flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => setCurrentView('home')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -303,17 +459,38 @@ export default function MealSnap() {
         <StickyHeader />
         
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="text-center mb-12">
+          <section className="text-center py-16 px-6">
             <div className="inline-flex items-center justify-center mb-6">
               <MealSnapLogo className="w-16 h-16" />
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
-              Turn your pantry into<br /><span className="text-emerald-600">delicious meals</span>
+            
+            <h1 className="text-4xl md:text-5xl font-extrabold text-emerald-600">
+              Stop wasting food. Start cooking what you have.
             </h1>
-            <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed">
-              Snap a photo of your fridge, get instant recipe ideas, and never wonder "what's for dinner" again
+            
+            <p className="mt-4 text-lg text-gray-700 max-w-2xl mx-auto">
+              Snap your fridge, get 3 recipes you can make tonight. Missing something? Add to cart in 1 tap.
             </p>
-          </div>
+            
+            <ul className="mt-6 space-y-2 text-left max-w-md mx-auto">
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>No more "what's for dinner?" stress</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>Use ingredients before they expire</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>Save $200/month on food waste</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>One-tap grocery delivery for anything missing</span>
+              </li>
+            </ul>
+          </section>
 
           {error && (
             <div className="max-w-2xl mx-auto mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
@@ -413,7 +590,7 @@ export default function MealSnap() {
               <h3 className="font-extrabold text-gray-900 text-lg mb-2">Save Time</h3>
               <p className="text-sm text-gray-700 leading-relaxed">No more meal planning stress or food waste</p>
             </div>
-          </div>
+        </div>
         </main>
       </div>
     )
@@ -432,8 +609,8 @@ export default function MealSnap() {
               {favorites.length === 0
                 ? "You haven't saved any recipes yet"
                 : `${favorites.length} saved recipe${favorites.length !== 1 ? 's' : ''}`}
-            </p>
-          </div>
+              </p>
+            </div>
 
           {favorites.length === 0 ? (
             <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-12 text-center">
@@ -493,7 +670,7 @@ export default function MealSnap() {
               <button onClick={() => setError('')} className="text-red-400 hover:text-red-600">
                 <X className="w-4 h-4" />
               </button>
-            </div>
+        </div>
           )}
 
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-10">
@@ -524,7 +701,7 @@ export default function MealSnap() {
                       className="w-5 h-5 bg-emerald-200 hover:bg-emerald-300 rounded-full flex items-center justify-center transition-colors"
                     >
                       <X className="w-3 h-3 text-emerald-800" />
-                    </button>
+                </button>
                   </div>
                 ))}
               </div>
@@ -621,8 +798,8 @@ export default function MealSnap() {
                 <h3 className="text-2xl font-extrabold text-gray-900">Shopping List</h3>
                 <p className="text-gray-700">Missing {shoppingList.length} ingredient{shoppingList.length !== 1 ? 's' : ''}</p>
               </div>
-            </div>
-            
+      </div>
+
             <div className="bg-gradient-to-br from-gray-50 to-emerald-50 rounded-2xl p-6 mb-6 border border-gray-100">
               <ul className="space-y-3">
                 {shoppingList.map((item, i) => (
@@ -641,9 +818,14 @@ export default function MealSnap() {
               >
                 Copy List
               </button>
-              <button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
+              <a
+                href={`https://www.instacart.com/store/partner?ingredients=${encodeURIComponent(shoppingList.map(item => item.name).join(','))}&ref=mealsnap`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-center block"
+              >
                 Add to Instacart
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -657,6 +839,133 @@ export default function MealSnap() {
       >
         <Camera className="w-7 h-7" />
       </button>
+
+      {/* Share Card Modal */}
+      {showShareCard && sharedRecipe && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in zoom-in duration-300">
+            <button
+              onClick={() => setShowShareCard(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <Heart className="w-8 h-8 text-emerald-600 fill-current" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Recipe Saved! 🎉</h3>
+              <p className="text-gray-700 mb-1">Share and get <span className="font-bold text-emerald-600">5 free scans</span> for you and your friend!</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 mb-6 border-2 border-emerald-200">
+              <p className="text-sm text-gray-600 mb-2 font-semibold">Share this recipe:</p>
+              <p className="text-base font-bold text-gray-900">{sharedRecipe.title}</p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleShare}
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <span>Share Recipe</span>
+              </button>
+              <button
+                onClick={() => setShowShareCard(false)}
+                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl px-6 py-3 font-semibold transition-colors"
+              >
+                Maybe Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pricing Modal */}
+      {showPricingModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 relative">
+            <button
+              onClick={() => setShowPricingModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <MealSnapLogo className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Upgrade to Pro</h3>
+              <p className="text-gray-700">You've used your 3 free scans this week</p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              {/* Free Plan */}
+              <div className={`border-2 rounded-2xl p-4 ${userPlan === 'free' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="font-extrabold text-gray-900">Free</h4>
+                    <p className="text-sm text-gray-600">3 meal plans/week</p>
+                  </div>
+                  <span className="text-2xl font-extrabold text-gray-900">$0</span>
+                </div>
+                {userPlan === 'free' && (
+                  <span className="text-xs font-semibold text-emerald-600">Current Plan</span>
+                )}
+              </div>
+
+              {/* Pro Plan */}
+              <div className={`border-2 rounded-2xl p-4 ${userPlan === 'pro' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 cursor-pointer'} transition-colors`}
+                onClick={() => {
+                  setUserPlan('pro')
+                  localStorage.setItem('mealsnap_plan', 'pro')
+                  setShowPricingModal(false)
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="font-extrabold text-gray-900">Pro</h4>
+                    <p className="text-sm text-gray-600">Unlimited scans + affiliate links</p>
+                  </div>
+                  <span className="text-2xl font-extrabold text-emerald-600">$3.99<span className="text-sm font-normal text-gray-600">/mo</span></span>
+                </div>
+                {userPlan === 'pro' && (
+                  <span className="text-xs font-semibold text-emerald-600">Current Plan</span>
+                )}
+              </div>
+
+              {/* Family Plan */}
+              <div className={`border-2 rounded-2xl p-4 ${userPlan === 'family' ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200 hover:border-emerald-300 cursor-pointer'} transition-colors`}
+                onClick={() => {
+                  setUserPlan('family')
+                  localStorage.setItem('mealsnap_plan', 'family')
+                  setShowPricingModal(false)
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h4 className="font-extrabold text-gray-900">Family</h4>
+                    <p className="text-sm text-gray-600">5 people + shared lists</p>
+                  </div>
+                  <span className="text-2xl font-extrabold text-emerald-600">$7.99<span className="text-sm font-normal text-gray-600">/mo</span></span>
+                </div>
+                {userPlan === 'family' && (
+                  <span className="text-xs font-semibold text-emerald-600">Current Plan</span>
+                )}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowPricingModal(false)}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl px-6 py-3 font-semibold transition-colors"
+            >
+              Maybe Later
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -671,6 +980,41 @@ function RecipeCard({
   isFavorite: boolean
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [userId, setUserId] = useState<string>('')
+
+  React.useEffect(() => {
+    const id = localStorage.getItem('mealsnap_user_id')
+    if (id) setUserId(id)
+  }, [])
+
+  const handleShareRecipe = async () => {
+    const shareText = `I just made ${recipe.title} from my fridge with MealSnap! Try it free: https://mealsnap-o6mndxvie-peter-hallanders-projects.vercel.app?ref=${userId}`
+    const shareUrl = `https://mealsnap-o6mndxvie-peter-hallanders-projects.vercel.app?ref=${userId}`
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'MealSnap Recipe',
+          text: shareText,
+          url: shareUrl,
+        })
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(shareText)
+        alert('Link copied to clipboard! Share it anywhere.')
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name !== 'AbortError') {
+        // Fallback to clipboard on error
+        try {
+          await navigator.clipboard.writeText(shareText)
+          alert('Link copied to clipboard!')
+        } catch (clipboardErr) {
+          console.error('Clipboard error:', clipboardErr)
+        }
+      }
+    }
+  }
   
   const mealColors: Record<string, string> = {
     breakfast: 'from-orange-400 to-amber-500',
@@ -748,12 +1092,21 @@ function RecipeCard({
           )}
         </div>
 
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-2xl px-6 py-3.5 font-bold text-gray-700 transition-all duration-300 border-2 border-gray-200 hover:border-gray-300 hover:shadow-md"
-        >
-          {isExpanded ? 'Hide' : 'Show'} cooking steps
-        </button>
+        <div className="grid sm:grid-cols-2 gap-3 mb-4">
+          <button
+            onClick={handleShareRecipe}
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl px-6 py-3.5 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <Share2 className="w-4 h-4" />
+            Share Recipe 🔗
+          </button>
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-2xl px-6 py-3.5 font-bold text-gray-700 transition-all duration-300 border-2 border-gray-200 hover:border-gray-300 hover:shadow-md"
+          >
+            {isExpanded ? 'Hide' : 'Show'} cooking steps
+          </button>
+        </div>
 
         {isExpanded && recipe.steps && (
           <div className="mt-6 space-y-4">
