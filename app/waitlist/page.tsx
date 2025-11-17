@@ -16,11 +16,25 @@ export default function WaitlistPage() {
     const id = localStorage.getItem('mealsnap_user_id')
     if (id) setUserId(id)
     
-    // Load waitlist count (in production, fetch from API)
-    const savedCount = localStorage.getItem('mealsnap_waitlist_count')
-    if (savedCount) {
-      setWaitlistCount(parseInt(savedCount, 10))
+    // Fetch real waitlist count from API
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('/api/waitlist-count')
+        const data = await res.json()
+        if (data.count !== undefined) {
+          setWaitlistCount(data.count)
+        }
+      } catch (err) {
+        console.error('Failed to fetch waitlist count:', err)
+        // Keep default count if fetch fails
+      }
     }
+    
+    fetchCount()
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(fetchCount, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,11 +56,16 @@ export default function WaitlistPage() {
       localStorage.setItem('mealsnap_email', email)
       localStorage.setItem('mealsnap_email_submitted', 'true')
       setSubmitted(true)
-      setWaitlistCount(prev => {
-        const newCount = prev + 1
-        localStorage.setItem('mealsnap_waitlist_count', newCount.toString())
-        return newCount
-      })
+      
+      // Refresh the count from the server
+      const res = await fetch('/api/waitlist-count')
+      const data = await res.json()
+      if (data.count !== undefined) {
+        setWaitlistCount(data.count)
+      } else {
+        // Fallback: increment locally
+        setWaitlistCount(prev => prev + 1)
+      }
 
       // Track signup
       if (typeof window !== 'undefined' && (window as any).plausible) {
