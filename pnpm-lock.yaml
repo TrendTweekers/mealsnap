@@ -98,6 +98,9 @@ importers:
       '@vercel/analytics':
         specifier: 1.3.1
         version: 1.3.1(next@16.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@vercel/kv':
+        specifier: ^3.0.0
+        version: 3.0.0
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.20(postcss@8.5.0)
@@ -170,7 +173,7 @@ importers:
     devDependencies:
       '@netlify/plugin-nextjs':
         specifier: ^4.39.0
-        version: 4.41.3
+        version: 4.41.3(@upstash/redis@1.35.6)(@vercel/kv@3.0.0)
       '@tailwindcss/postcss':
         specifier: ^4.1.9
         version: 4.1.9
@@ -1704,6 +1707,9 @@ packages:
   '@types/react@19.0.0':
     resolution: {integrity: sha512-MY3oPudxvMYyesqs/kW1Bh8y9VqSmf+tzqw3ae8a9DZW68pUe3zAdHeI1jc6iAysuRdACnVknHP8AhwD4/dxtg==}
 
+  '@upstash/redis@1.35.6':
+    resolution: {integrity: sha512-aSEIGJgJ7XUfTYvhQcQbq835re7e/BXjs8Janq6Pvr6LlmTZnyqwT97RziZLO/8AVUL037RLXqqiQC6kCt+5pA==}
+
   '@vercel/analytics@1.3.1':
     resolution: {integrity: sha512-xhSlYgAuJ6Q4WQGkzYTLmXwhYl39sWjoMA3nHxfkvG+WdBT25c563a7QhwwKivEOZtPJXifYHR1m2ihoisbWyA==}
     peerDependencies:
@@ -1714,6 +1720,10 @@ packages:
         optional: true
       react:
         optional: true
+
+  '@vercel/kv@3.0.0':
+    resolution: {integrity: sha512-pKT8fRnfyYk2MgvyB6fn6ipJPCdfZwiKDdw7vB+HL50rjboEBHDVBEcnwfkEpVSp2AjNtoaOUH7zG+bVC/rvSg==}
+    engines: {node: '>=14.6'}
 
   '@vercel/node-bridge@2.2.2':
     resolution: {integrity: sha512-haGBC8noyA5BfjCRXRH+VIkHCDVW5iD5UX24P2nOdilwUxI4qWsattS/co8QBGq64XsNLRAMdM5pQUE3zxkF9Q==}
@@ -3348,7 +3358,7 @@ snapshots:
     dependencies:
       '@netlify/serverless-functions-api': 1.26.1
 
-  '@netlify/ipx@1.4.6':
+  '@netlify/ipx@1.4.6(@upstash/redis@1.35.6)(@vercel/kv@3.0.0)':
     dependencies:
       '@netlify/functions': 2.8.2
       etag: 1.8.1
@@ -3359,7 +3369,7 @@ snapshots:
       murmurhash: 2.0.1
       node-fetch: 2.7.0
       ufo: 1.6.1
-      unstorage: 1.9.0
+      unstorage: 1.9.0(@upstash/redis@1.35.6)(@vercel/kv@3.0.0)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -3380,12 +3390,12 @@ snapshots:
 
   '@netlify/node-cookies@0.1.0': {}
 
-  '@netlify/plugin-nextjs@4.41.3':
+  '@netlify/plugin-nextjs@4.41.3(@upstash/redis@1.35.6)(@vercel/kv@3.0.0)':
     dependencies:
       '@netlify/blobs': 2.2.0
       '@netlify/esbuild': 0.14.39
       '@netlify/functions': 1.6.0
-      '@netlify/ipx': 1.4.6
+      '@netlify/ipx': 1.4.6(@upstash/redis@1.35.6)(@vercel/kv@3.0.0)
       '@vercel/node-bridge': 2.2.2
       chalk: 4.1.2
       chokidar: 3.6.0
@@ -4431,12 +4441,20 @@ snapshots:
     dependencies:
       csstype: 3.2.1
 
+  '@upstash/redis@1.35.6':
+    dependencies:
+      uncrypto: 0.1.3
+
   '@vercel/analytics@1.3.1(next@16.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)':
     dependencies:
       server-only: 0.0.1
     optionalDependencies:
       next: 16.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react: 18.3.1
+
+  '@vercel/kv@3.0.0':
+    dependencies:
+      '@upstash/redis': 1.35.6
 
   '@vercel/node-bridge@2.2.2': {}
 
@@ -5624,7 +5642,7 @@ snapshots:
 
   universalify@2.0.1: {}
 
-  unstorage@1.9.0:
+  unstorage@1.9.0(@upstash/redis@1.35.6)(@vercel/kv@3.0.0):
     dependencies:
       anymatch: 3.1.3
       chokidar: 3.6.0
@@ -5637,6 +5655,9 @@ snapshots:
       node-fetch-native: 1.6.7
       ofetch: 1.5.1
       ufo: 1.6.1
+    optionalDependencies:
+      '@upstash/redis': 1.35.6
+      '@vercel/kv': 3.0.0
     transitivePeerDependencies:
       - supports-color
 
