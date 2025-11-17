@@ -478,6 +478,13 @@ export default function MealSnap() {
                 </span>
               )}
             </button>
+            <a
+              href="/waitlist"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+            >
+              <span className="hidden sm:inline">Waitlist</span>
+              <Mail className="w-4 h-4 sm:hidden" />
+            </a>
             <button
               className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
             >
@@ -876,7 +883,7 @@ export default function MealSnap() {
               <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center shadow-md">
                 <ShoppingCart className="w-7 h-7 text-blue-600" />
               </div>
-              <div>
+            <div>
                 <h3 className="text-2xl font-extrabold text-gray-900">Shopping List</h3>
                 <p className="text-gray-700">Missing {shoppingList.length} ingredient{shoppingList.length !== 1 ? 's' : ''}</p>
               </div>
@@ -926,12 +933,12 @@ export default function MealSnap() {
       {showShareCard && sharedRecipe && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in zoom-in duration-300">
-            <button
+                  <button 
               onClick={() => setShowShareCard(false)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
-            >
+                  >
               <X className="w-5 h-5" />
-            </button>
+                  </button>
             
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
@@ -1068,7 +1075,7 @@ export default function MealSnap() {
               </button>
             </form>
           </div>
-        </div>
+      </div>
       )}
 
       {/* Pricing Modal */}
