@@ -1,287 +1,773 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import CameraCapture from '@/components/camera-capture'
-import ExpenseList from '@/components/expense-list'
-import { MileageTracker } from '@/components/mileage-tracker'
-import { AuditShield } from '@/components/audit-shield'
-import { PartnerPerksMarketplace } from '@/components/partner-perks-marketplace'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { Settings } from '@/components/settings'
-import { TaxPacketModal } from '@/components/tax-packet-modal'
-import { Card } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Settings as SettingsIcon } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
+import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User } from 'lucide-react'
+import { MealSnapLogo } from '@/components/mealsnap-logo'
 
-export default function Home() {
-  const [expenses, setExpenses] = useState<any[]>([])
-  const [scanCount, setScanCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('scan')
-  const [showSettings, setShowSettings] = useState(false)
-  const [showTaxPacket, setShowTaxPacket] = useState(false)
+type Recipe = {
+  id?: string
+  title: string
+  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack'
+  timeMinutes: number
+  difficulty: 'easy' | 'medium' | 'hard'
+  servings: number
+  youAlreadyHave: string[]
+  youNeedToBuy: string[]
+  steps: string[]
+}
 
-  // Load data from IndexedDB on mount
+type ShoppingItem = {
+  name: string
+  quantity?: string
+}
+
+type View = 'home' | 'ingredients' | 'recipes' | 'favorites'
+
+export default function MealSnap() {
+  const [currentView, setCurrentView] = useState<View>('home')
+  const [ingredients, setIngredients] = useState<string[]>([])
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [favorites, setFavorites] = useState<Recipe[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [newIngredient, setNewIngredient] = useState('')
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>([])
+  const [error, setError] = useState('')
+
+  // Load favorites from localStorage
   useEffect(() => {
-    const loadData = async () => {
+    const saved = localStorage.getItem('mealsnap_favorites')
+    if (saved) {
       try {
-        const db = await openIndexedDB()
-        const tx = db.transaction('expenses', 'readonly')
-        const store = tx.objectStore('expenses')
-        const allExpenses = await new Promise((resolve, reject) => {
-          const request = store.getAll()
-          request.onsuccess = () => resolve(request.result)
-          request.onerror = () => reject(request.error)
-        })
-        setExpenses(allExpenses)
-
-        // Load scan count
-        const countTx = db.transaction('metadata', 'readonly')
-        const countStore = countTx.objectStore('metadata')
-        const scanData = await new Promise<any>((resolve) => {
-          const request = countStore.get('scanCount')
-          request.onsuccess = () => resolve(request.result)
-        })
-        if (scanData) {
-          setScanCount(scanData.value)
-        }
-      } catch (error) {
-        console.error('Failed to load data:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    loadData()
-
-    // Check if today is Jan 1st and user hasn't seen tax packet offer
-    const today = new Date()
-    if (today.getMonth() === 0 && today.getDate() === 1) {
-      const lastTaxOfferDate = localStorage.getItem('lastTaxOfferDate')
-      if (lastTaxOfferDate !== today.toISOString().split('T')[0]) {
-        setShowTaxPacket(true)
-        localStorage.setItem('lastTaxOfferDate', today.toISOString().split('T')[0])
+        setFavorites(JSON.parse(saved))
+      } catch (e) {
+        console.error('Failed to load favorites:', e)
       }
     }
   }, [])
 
-  const handleExpenseAdded = async (newExpense: any) => {
-    try {
-      const db = await openIndexedDB()
-      
-      // Reload expenses
-      const tx = db.transaction('expenses', 'readonly')
-      const store = tx.objectStore('expenses')
-      const allExpenses = await new Promise<any[]>((resolve, reject) => {
-        const request = store.getAll()
-        request.onsuccess = () => resolve(request.result)
-        request.onerror = () => reject(request.error)
-      })
-      setExpenses(allExpenses)
+  // Save favorites to localStorage
+  const saveFavorites = (newFavorites: Recipe[]) => {
+    setFavorites(newFavorites)
+    localStorage.setItem('mealsnap_favorites', JSON.stringify(newFavorites))
+  }
 
-      // Reload scan count
-      const countTx = db.transaction('metadata', 'readonly')
-      const countStore = countTx.objectStore('metadata')
-      const scanData = await new Promise<any>((resolve) => {
-        const request = countStore.get('scanCount')
-        request.onsuccess = () => resolve(request.result)
-      })
-      setScanCount(scanData?.value || 0)
-    } catch (error) {
-      console.error('Failed to reload data:', error)
+  const toggleFavorite = (recipe: Recipe) => {
+    const isFavorite = favorites.some(f => f.title === recipe.title)
+    if (isFavorite) {
+      saveFavorites(favorites.filter(f => f.title !== recipe.title))
+    } else {
+      saveFavorites([...favorites, recipe])
     }
   }
 
-  const handleExpenseDeleted = (id: string) => {
-    setExpenses(expenses.filter(e => e.id !== id))
+  const isFavorite = (recipe: Recipe) => {
+    return favorites.some(f => f.title === recipe.title)
   }
 
-  const handleExpenseRestored = async (expense: any) => {
-    await handleExpenseAdded(expense)
-  }
-
-  const handleNavigateToScan = () => {
-    setActiveTab('scan')
-  }
-
-  const handleResetScans = async () => {
-    const db = await openIndexedDB()
-    const tx = db.transaction('metadata', 'readwrite')
-    const store = tx.objectStore('metadata')
-    await new Promise<void>((resolve) => {
-      const request = store.put({ key: 'scanCount', value: 0 })
-      request.onsuccess = () => resolve()
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        const result = reader.result as string
+        resolve(result.split(',')[1])
+      }
+      reader.onerror = (error) => reject(error)
     })
-    setScanCount(0)
   }
 
-  const handleProcessingComplete = () => {
-    setActiveTab('expenses')
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsLoading(true)
+    setError('')
+    
+    try {
+      const base64Image = await fileToBase64(file)
+      
+      const response = await fetch('/api/scan-pantry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageBase64: base64Image }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Server error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (!data.ok || data.error) {
+        setError(data.error || 'Failed to scan pantry')
+        return
+      }
+
+      if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        setIngredients(data.items)
+        setCurrentView('ingredients')
+      } else {
+        setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
+        setIngredients([])
+        setCurrentView('ingredients')
+      }
+    } catch (err: any) {
+      console.error('Scan error:', err)
+      setError(err.message || 'Failed to scan image. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading your expenses...</p>
+  const handleGenerateRecipes = async () => {
+    if (ingredients.length === 0) {
+      setError('Please add at least one ingredient first.')
+      return
+    }
+
+    setIsLoading(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/generate-recipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ingredients }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Server error: ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      if (!data.ok || data.error) {
+        setError(data.error || 'Failed to generate recipes')
+        return
+      }
+
+      if (data.recipes && Array.isArray(data.recipes) && data.recipes.length > 0) {
+        setRecipes(data.recipes)
+        
+        const allNeededItems = data.recipes
+          .flatMap((recipe: Recipe) => recipe.youNeedToBuy || [])
+          .filter((item: string) => item && item.trim() !== '')
+        
+        const uniqueItems = Array.from(new Set(allNeededItems)).map((item: string) => ({
+          name: item,
+        }))
+        
+        setShoppingList(uniqueItems)
+        setCurrentView('recipes')
+      } else {
+        setError('No recipes generated. Try adding more ingredients.')
+      }
+    } catch (err: any) {
+      console.error('Recipe generation error:', err)
+      setError(err.message || 'Failed to generate recipes. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const addIngredient = () => {
+    if (newIngredient.trim()) {
+      const cleanIngredient = newIngredient.trim().toLowerCase()
+      if (!ingredients.includes(cleanIngredient)) {
+        setIngredients([...ingredients, cleanIngredient])
+      }
+      setNewIngredient('')
+    }
+  }
+
+  const removeIngredient = (ingredient: string) => {
+    setIngredients(ingredients.filter(i => i !== ingredient))
+  }
+
+  const copyShoppingList = () => {
+    const listText = shoppingList.map((item, i) => `${i + 1}. ${item.name}`).join('\n')
+    navigator.clipboard.writeText(listText).catch((err) => {
+      console.error('Failed to copy:', err)
+    })
+  }
+
+  // Sticky Header Component
+  const StickyHeader = () => (
+    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <button
+            onClick={() => setCurrentView('home')}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
+          >
+            <div className="transform transition-transform duration-300 group-hover:scale-110">
+              <MealSnapLogo className="w-12 h-12" />
+            </div>
+            <span className="text-xl font-extrabold text-gray-900 tracking-tight hidden sm:inline">
+              Meal<span className="text-emerald-600">Snap</span>
+            </span>
+          </button>
+
+          <nav className="flex items-center gap-2 sm:gap-4">
+            <button
+              onClick={() => setCurrentView('home')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                currentView === 'home'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <span className="hidden sm:inline">New Scan</span>
+              <Camera className="w-4 h-4 sm:hidden" />
+            </button>
+            <button
+              onClick={() => setCurrentView('favorites')}
+              className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                currentView === 'favorites'
+                  ? 'bg-emerald-50 text-emerald-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              }`}
+            >
+              <span className="hidden sm:inline">Favorites</span>
+              <Heart className={`w-4 h-4 sm:hidden ${currentView === 'favorites' ? 'fill-current' : ''}`} />
+              {favorites.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {favorites.length}
+                </span>
+              )}
+            </button>
+            <button
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+            >
+              <span className="hidden sm:inline">Profile</span>
+              <User className="w-4 h-4 sm:hidden" />
+            </button>
+          </nav>
         </div>
+      </div>
+    </header>
+  )
+
+  // Breadcrumb Navigation Component
+  const BreadcrumbNav = () => {
+    const breadcrumbs = {
+      home: { label: 'Home', view: 'home' as const },
+      ingredients: { label: 'Ingredients', view: 'ingredients' as const },
+      recipes: { label: 'Recipes', view: 'recipes' as const },
+      favorites: { label: 'Favorites', view: 'favorites' as const },
+    }
+
+    if (currentView === 'home' || currentView === 'favorites') return null
+
+    return (
+      <nav className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+        <button
+          onClick={() => setCurrentView('home')}
+          className="hover:text-emerald-600 transition-colors"
+        >
+          {breadcrumbs.home.label}
+        </button>
+        {currentView !== 'home' && (
+          <>
+            <ArrowRight className="w-4 h-4" />
+            <button
+              onClick={() => setCurrentView('ingredients')}
+              className={`hover:text-emerald-600 transition-colors ${
+                currentView === 'ingredients' ? 'text-emerald-600 font-semibold' : ''
+              }`}
+            >
+              {breadcrumbs.ingredients.label}
+            </button>
+          </>
+        )}
+        {currentView === 'recipes' && (
+          <>
+            <ArrowRight className="w-4 h-4" />
+            <span className="text-emerald-600 font-semibold">{breadcrumbs.recipes.label}</span>
+          </>
+        )}
+      </nav>
+    )
+  }
+
+  // HOME VIEW
+  if (currentView === 'home') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
+        <StickyHeader />
+        
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center mb-6">
+              <MealSnapLogo className="w-16 h-16" />
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-4 tracking-tight leading-tight">
+              Turn your pantry into<br /><span className="text-emerald-600">delicious meals</span>
+            </h1>
+            <p className="text-lg sm:text-xl text-gray-700 max-w-2xl mx-auto leading-relaxed">
+              Snap a photo of your fridge, get instant recipe ideas, and never wonder "what's for dinner" again
+            </p>
+          </div>
+
+          {error && (
+            <div className="max-w-2xl mx-auto mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-900">{error}</p>
+              </div>
+              <button onClick={() => setError('')} className="text-red-400 hover:text-red-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 sm:p-12 mb-12 transform transition-all duration-300 hover:shadow-3xl hover:-translate-y-1">
+            <div className="text-center mb-8">
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-green-100 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-110">
+                <Camera className="w-12 h-12 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">Scan Your Pantry</h2>
+              <p className="text-gray-700">Take a photo or upload an image of your ingredients</p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block">
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={isLoading}
+                />
+                <div className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-8 py-5 font-bold text-lg cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 min-h-[56px]">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      <span>Analyzing ingredients...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="w-6 h-6" />
+                      <span>Take Photo with Camera</span>
+                    </>
+                  )}
+                </div>
+              </label>
+
+              <label className="block">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={isLoading}
+                />
+                <div className="w-full bg-white border-2 border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 text-gray-700 rounded-2xl px-8 py-5 font-semibold text-lg cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] min-h-[56px]">
+                  <Upload className="w-6 h-6" />
+                  <span>Choose from Gallery</span>
+                </div>
+              </label>
+
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => {
+                    setIngredients([])
+                    setCurrentView('ingredients')
+                  }}
+                  className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
+                >
+                  Or add ingredients manually →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center mb-4 transform transition-transform duration-300 hover:scale-110">
+                <ShoppingCart className="w-7 h-7 text-emerald-600" />
+              </div>
+              <h3 className="font-extrabold text-gray-900 text-lg mb-2">Smart Recipes</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">Get personalized recipes based on what you have</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mb-4 transform transition-transform duration-300 hover:scale-110">
+                <ShoppingCart className="w-7 h-7 text-blue-600" />
+              </div>
+              <h3 className="font-extrabold text-gray-900 text-lg mb-2">Auto Shopping List</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">Missing ingredients? We'll create your list instantly</p>
+            </div>
+            
+            <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl flex items-center justify-center mb-4 transform transition-transform duration-300 hover:scale-110">
+                <Clock className="w-7 h-7 text-purple-600" />
+              </div>
+              <h3 className="font-extrabold text-gray-900 text-lg mb-2">Save Time</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">No more meal planning stress or food waste</p>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
 
-  const isFreemiumLimited = scanCount >= 10
-
-  const scansRemaining = Math.max(0, 10 - scanCount)
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10 p-4 sm:p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground">SnapLedger</h1>
-              <p className="text-muted-foreground mt-1">
-                Scan receipts & track IRS mileage in 10 s. Export tax-ready CSV/PDF free.
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <a
-                href="/about"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                About
-              </a>
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-right">
-                <p className="text-xs text-muted-foreground">Free scans remaining</p>
-                <p className="text-2xl font-bold text-primary">{scansRemaining}</p>
-                {scanCount > 0 && (
-                  <button 
-                    onClick={handleResetScans}
-                    className="text-xs text-primary hover:underline mt-2"
-                  >
-                    Reset (test)
-                  </button>
-                )}
-              </div>
-              <button
-                onClick={() => setShowSettings(true)}
-                className="p-2 hover:bg-secondary rounded-lg transition-colors"
-                title="Settings"
-              >
-                <SettingsIcon className="h-5 w-5" />
-              </button>
-              <ThemeToggle />
-            </div>
+  // FAVORITES VIEW
+  if (currentView === 'favorites') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
+        <StickyHeader />
+        
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">My Favorites</h1>
+            <p className="text-gray-700">
+              {favorites.length === 0
+                ? "You haven't saved any recipes yet"
+                : `${favorites.length} saved recipe${favorites.length !== 1 ? 's' : ''}`}
+            </p>
           </div>
+
+          {favorites.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-xl p-12 text-center">
+              <div className="inline-flex items-center justify-center mb-6">
+                <MealSnapLogo className="w-20 h-20 opacity-50" />
+              </div>
+              <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-2">No favorites yet</h3>
+              <p className="text-gray-700 mb-6 text-lg">Save recipes you love!</p>
+              <button
+                onClick={() => setCurrentView('home')}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                <Camera className="w-5 h-5" />
+                Start Scanning
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {favorites.map((recipe, index) => (
+                <RecipeCard key={index} recipe={recipe} onToggleFavorite={toggleFavorite} isFavorite={true} />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+    )
+  }
+
+  // INGREDIENTS VIEW
+  if (currentView === 'ingredients') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
+        <StickyHeader />
+        
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <BreadcrumbNav />
+          
+          <div className="mb-6">
+            <button
+              onClick={() => setCurrentView('home')}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-gray-700 rounded-xl font-medium transition-all duration-300 border border-gray-200 mb-4 hover:shadow-md"
+            >
+              <Home className="w-4 h-4" />
+              Back to Home
+            </button>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">Your Ingredients</h1>
+            <p className="text-gray-700">Review and edit detected items</p>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-900">{error}</p>
+              </div>
+              <button onClick={() => setError('')} className="text-red-400 hover:text-red-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-10">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-14 h-14 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center shadow-md">
+                <ShoppingCart className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-gray-900 text-xl">
+                  {ingredients.length > 0 ? `Detected ${ingredients.length} ingredients` : 'No ingredients yet'}
+                </h3>
+                <p className="text-sm text-gray-700">
+                  {ingredients.length > 0 ? 'Tap × to remove or add more below' : 'Add ingredients to get started'}
+                </p>
+              </div>
+            </div>
+
+            {ingredients.length > 0 && (
+              <div className="flex flex-wrap gap-3 mb-8">
+                {ingredients.map((ingredient) => (
+                  <div
+                    key={ingredient}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full"
+                  >
+                    <span className="text-sm font-medium text-emerald-900 capitalize">{ingredient}</span>
+                    <button
+                      onClick={() => removeIngredient(ingredient)}
+                      className="w-5 h-5 bg-emerald-200 hover:bg-emerald-300 rounded-full flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-3 h-3 text-emerald-800" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-3 mb-8">
+              <input
+                type="text"
+                value={newIngredient}
+                onChange={(e) => setNewIngredient(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && addIngredient()}
+                placeholder='Add ingredient manually (e.g., "garlic", "pasta")'
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none text-base"
+              />
+              <button
+                onClick={addIngredient}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 min-w-[100px] justify-center"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="hidden sm:inline">Add</span>
+              </button>
+            </div>
+
+            <button
+              onClick={handleGenerateRecipes}
+              disabled={isLoading || ingredients.length === 0}
+              className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] min-h-[56px]"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                  <span>Generating recipes...</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="w-6 h-6" />
+                  <span>Generate Recipes ({ingredients.length} ingredient{ingredients.length !== 1 ? 's' : ''})</span>
+                </>
+              )}
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
+  // RECIPES VIEW
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 pb-20">
+      <StickyHeader />
+      
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <BreadcrumbNav />
+        
+        <div className="flex items-center gap-3 mb-6">
+          <button
+            onClick={() => setCurrentView('home')}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+          >
+            <Camera className="w-4 h-4" />
+            <span className="hidden sm:inline">New Scan</span>
+          </button>
+          <button
+            onClick={() => setCurrentView('ingredients')}
+            className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold hover:underline transition-colors"
+          >
+            ← Edit ingredients
+          </button>
+        </div>
+        
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">Your Recipes</h1>
+          <p className="text-gray-700 text-lg">Found {recipes.length} delicious recipe{recipes.length !== 1 ? 's' : ''} you can make</p>
         </div>
 
-        {/* Freemium Notice */}
-        {isFreemiumLimited && (
-          <Card className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 p-4">
-            <p className="text-sm text-amber-900 dark:text-amber-100">
-              You've reached your monthly free limit. Upgrade to unlimited scanning for $4.99/month.
-            </p>
-          </Card>
+        <div className="space-y-6">
+          {recipes.map((recipe, index) => (
+            <RecipeCard
+              key={index}
+              recipe={recipe}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={isFavorite(recipe)}
+            />
+          ))}
+        </div>
+
+        {shoppingList.length > 0 && (
+          <div className="mt-8 bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center shadow-md">
+                <ShoppingCart className="w-7 h-7 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-extrabold text-gray-900">Shopping List</h3>
+                <p className="text-gray-700">Missing {shoppingList.length} ingredient{shoppingList.length !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            
+            <div className="bg-gradient-to-br from-gray-50 to-emerald-50 rounded-2xl p-6 mb-6 border border-gray-100">
+              <ul className="space-y-3">
+                {shoppingList.map((item, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 bg-emerald-600 rounded-full shadow-sm"></div>
+                    <span className="font-semibold text-gray-900 capitalize text-base">{item.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3">
+              <button 
+                onClick={copyShoppingList}
+                className="w-full bg-white hover:bg-gray-50 text-gray-900 rounded-2xl px-6 py-4 font-bold transition-all duration-300 border-2 border-gray-200 hover:border-gray-300 hover:shadow-md"
+              >
+                Copy List
+              </button>
+              <button className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
+                Add to Instacart
+              </button>
+            </div>
+          </div>
         )}
+      </main>
 
-        {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6 h-auto">
-            <TabsTrigger value="scan" className="text-xs sm:text-sm">Scan</TabsTrigger>
-            <TabsTrigger value="mileage" className="text-xs sm:text-sm">Mileage</TabsTrigger>
-            <TabsTrigger value="audit" className="text-xs sm:text-sm">Audit</TabsTrigger>
-            <TabsTrigger value="deals" className="text-xs sm:text-sm">Deals</TabsTrigger>
-            <TabsTrigger value="expenses" className="text-xs sm:text-sm">Expenses ({expenses.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="scan" className="space-y-4">
-            {isFreemiumLimited ? (
-              <Card className="p-8 text-center">
-                <p className="text-lg font-semibold text-foreground mb-4">
-                  Monthly limit reached
-                </p>
-                <p className="text-muted-foreground mb-6">
-                  You have 10 free scans per month. Upgrade to continue scanning.
-                </p>
-                <button className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-                  Upgrade to Pro ($4.99/month)
-                </button>
-              </Card>
-            ) : (
-              <CameraCapture 
-                onExpenseAdded={handleExpenseAdded}
-                onProcessingComplete={handleProcessingComplete}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="mileage" className="space-y-4">
-            <MileageTracker
-              onExpenseCreated={handleExpenseAdded}
-            />
-          </TabsContent>
-
-          <TabsContent value="audit" className="space-y-4">
-            <AuditShield
-              expenses={expenses}
-              onAuditComplete={(result) => {
-                console.log('Audit complete:', result)
-              }}
-            />
-          </TabsContent>
-
-          <TabsContent value="deals" className="space-y-4">
-            <PartnerPerksMarketplace />
-          </TabsContent>
-
-          <TabsContent value="expenses" className="space-y-4">
-            <ExpenseList
-              expenses={expenses}
-              onExpenseDeleted={handleExpenseDeleted}
-              onExpenseRestored={handleExpenseRestored}
-              onNavigateToScan={handleNavigateToScan}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      {showSettings && (
-        <Settings
-          expenses={expenses}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
-
-      {showTaxPacket && (
-        <TaxPacketModal
-          expenses={expenses}
-          onClose={() => setShowTaxPacket(false)}
-          onPurchase={async () => {
-            // Redirect to Stripe checkout
-            window.location.href = 'https://buy.stripe.com/test_00g4h96qA5g5ecE5kk'
-          }}
-        />
-      )}
+      {/* Floating Action Button */}
+      <button
+        onClick={() => setCurrentView('home')}
+        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 z-50"
+        aria-label="New Scan"
+      >
+        <Camera className="w-7 h-7" />
+      </button>
     </div>
   )
 }
 
-// IndexedDB initialization
-function openIndexedDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    // Version 2: ensure both 'expenses' and 'metadata' stores exist
-    const request = indexedDB.open('SnapLedgerDB', 2)
-    request.onerror = () => reject(request.error)
-    request.onsuccess = () => resolve(request.result)
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result
-      if (!db.objectStoreNames.contains('expenses')) {
-        db.createObjectStore('expenses', { keyPath: 'id' })
-      }
-      if (!db.objectStoreNames.contains('metadata')) {
-        db.createObjectStore('metadata', { keyPath: 'key' })
-      }
-    }
-  })
+function RecipeCard({ 
+  recipe, 
+  onToggleFavorite, 
+  isFavorite 
+}: { 
+  recipe: Recipe
+  onToggleFavorite: (recipe: Recipe) => void
+  isFavorite: boolean
+}) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
+  const mealColors: Record<string, string> = {
+    breakfast: 'from-orange-400 to-amber-500',
+    lunch: 'from-emerald-400 to-green-500',
+    dinner: 'from-purple-500 to-indigo-600',
+    snack: 'from-pink-400 to-rose-500'
+  }
+
+  const needToBuy = recipe.youNeedToBuy || []
+  const hasMissingItems = needToBuy.length > 0
+
+  return (
+    <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+      <div className={`bg-gradient-to-r ${mealColors[recipe.mealType] || mealColors.lunch} p-6 sm:p-8 text-white relative`}>
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+          backgroundSize: '24px 24px'
+        }}></div>
+        
+        <button
+          onClick={() => onToggleFavorite(recipe)}
+          className="absolute top-4 right-4 w-11 h-11 bg-white/25 hover:bg-white/35 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 z-10"
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''} transition-all duration-300`} />
+        </button>
+        
+        <div className="mb-4 relative z-10">
+          <span className="inline-block px-4 py-1.5 bg-white/30 backdrop-blur-sm rounded-full text-xs font-extrabold uppercase tracking-wide mb-4 border border-white/40 shadow-sm">
+            {recipe.mealType}
+          </span>
+          <h3 className="text-2xl sm:text-3xl font-extrabold leading-tight">{recipe.title}</h3>
+        </div>
+        
+        <div className="flex items-center gap-4 flex-wrap relative z-10">
+          <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/30 shadow-sm">
+            <Clock className="w-4 h-4" />
+            <span className="text-sm font-bold">{recipe.timeMinutes} min</span>
+          </div>
+          <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/30 shadow-sm">
+            <TrendingUp className="w-4 h-4" />
+            <span className="text-sm font-bold capitalize">{recipe.difficulty}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 sm:p-8">
+        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-5 border-2 border-emerald-200 shadow-sm">
+            <h4 className="font-extrabold text-emerald-900 mb-2 flex items-center gap-2 text-base">
+              <Check className="w-5 h-5 text-emerald-600" />
+              You have ({recipe.youAlreadyHave?.length || 0})
+            </h4>
+            <p className="text-sm text-emerald-800 capitalize leading-relaxed font-medium">
+              {recipe.youAlreadyHave?.join(', ') || 'None'}
+            </p>
+          </div>
+          
+          {hasMissingItems ? (
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 border-2 border-orange-200 shadow-sm">
+              <h4 className="font-extrabold text-orange-900 mb-2 flex items-center gap-2 text-base">
+                <ShoppingCart className="w-5 h-5 text-orange-600" />
+                You need ({needToBuy.length})
+              </h4>
+              <p className="text-sm text-orange-800 capitalize leading-relaxed font-medium">{needToBuy.join(', ')}</p>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border-2 border-green-200 flex items-center justify-center shadow-sm">
+              <p className="text-green-700 font-extrabold flex items-center gap-2 text-base">
+                <Check className="w-5 h-5" />
+                Everything ready!
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 rounded-2xl px-6 py-3.5 font-bold text-gray-700 transition-all duration-300 border-2 border-gray-200 hover:border-gray-300 hover:shadow-md"
+        >
+          {isExpanded ? 'Hide' : 'Show'} cooking steps
+        </button>
+
+        {isExpanded && recipe.steps && (
+          <div className="mt-6 space-y-4">
+            {recipe.steps.map((step, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="flex-shrink-0 w-11 h-11 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center border-2 border-emerald-200 shadow-sm">
+                  <span className="text-base font-extrabold text-emerald-700">{i + 1}</span>
+                </div>
+                <p className="text-gray-700 pt-2 leading-relaxed font-medium">{step}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }

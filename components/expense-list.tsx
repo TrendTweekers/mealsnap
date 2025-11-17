@@ -119,7 +119,7 @@ export default function ExpenseList({ expenses, onExpenseDeleted, onExpenseResto
           <div className="text-6xl">📋</div>
           <h3 className="text-lg font-semibold text-foreground">No expenses yet</h3>
           <p className="text-sm text-muted-foreground">
-            Scan a receipt or try the sample to see your first expense here.
+            Track mileage or add expenses manually to see them here.
           </p>
           {onNavigateToScan && (
             <Button onClick={onNavigateToScan} className="mt-4">
@@ -148,7 +148,7 @@ export default function ExpenseList({ expenses, onExpenseDeleted, onExpenseResto
           <p className="text-2xl font-bold text-accent">{validExpenses.length}</p>
         </Card>
         <Card className="p-4 bg-secondary/10 border-secondary/20">
-          <p className="text-sm text-muted-foreground">Avg. Per Receipt</p>
+          <p className="text-sm text-muted-foreground">Avg. Per Transaction</p>
           <p className="text-2xl font-bold text-foreground">${validExpenses.length > 0 ? (totalAmount / validExpenses.length).toFixed(2) : '0.00'}</p>
         </Card>
       </div>

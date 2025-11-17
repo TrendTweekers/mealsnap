@@ -1,273 +1,80 @@
-[00:00:00.676] Server  WARN     ⚠ Minimum recommended TypeScript version is v5.1.0, older versions can potentially be incompatible with Next.js. Detected: 5.0.2
-[00:00:00.798] Server  LOG      ✓ Ready in 530ms
-[00:00:16.938] Server  LOG      ○ Compiling / ...
-[00:00:20.497] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:36.014] Server  LOG      ✓ Compiled in 232ms
-[00:00:36.681] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:00:37.119] Server  LOG      ✓ Compiled in 325ms
-[00:00:37.665] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:00:38.686] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:06.628] Server  LOG      ✓ Compiled in 116ms
-[00:01:06.776] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:20.677] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:20.677] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:20.677] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:30.459] Server  LOG      ✓ Compiled in 44ms
-[00:01:30.675] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:34.675] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:37.061] Server  LOG      ✓ Compiled in 203ms
-[00:01:37.662] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
-[00:01:40.663] Browser ERROR   ./lib/export-utils.tsx:43:15
-Parsing ecmascript source code failed
-  41 |   
-  42 |   const html = `
-> 43 |     <!DOCTYPE html>
-     |               ^^^^
-  44 |     <html>
-  45 |     <head>
-  46 |       <title>Expense Report</title>
-
-Expected ',', got 'html'
-
-Import traces:
-  Client Component Browser:
-    ./lib/export-utils.tsx [Client Component Browser]
-    ./components/expense-list.tsx [Client Component Browser]
-    ./app/page.tsx [Client Component Browser]
-    ./app/page.tsx [Server Component]
-
-  Client Component SSR:
-    ./lib/export-utils.tsx [Client Component SSR]
-    ./components/expense-list.tsx [Client Component SSR]
-    ./app/page.tsx [Client Component SSR]
-    ./app/page.tsx [Server Component]
+[00:00:00.700] Server  LOG      ✓ Ready in 456ms
+[00:00:04.255] Server  WARN     ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+[00:00:04.933] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:05.359] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:05.360] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763369174487}
+[00:00:08.518] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:08.845] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:00:08.845] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763369177734}
+[00:00:32.556] Server  LOG     [generate-recipes] Raw model response: "{\n  \"recipes\": [\n    {\n      \"title\": \"Yogurt Scrambled Eggs\",\n      \"mealType\": \"breakfast\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"butter\", \"yogurt\", \"eggs\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"Crack the eggs into a bowl and add a spoonful of yogurt. Season with salt and pepper.\",\n        \"Whisk the mixture until smooth.\",\n        \"Melt butter in a pan over medium heat.\",\n        \"Pour the egg mixture into the pan.\",\n        \"Stir continuously until the eggs are cooked to your preferred consistency.\",\n        \"Serve immediately.\"\n      ]\n    },\n    {\n      \"title\": \"Onion and Mustard Lettuce Wraps\",\n      \"mealType\": \"lunch\",\n      \"timeMinutes\": 15,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"mustard\", \"lettuce\", \"onion\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"Peel and thinly slice the onion.\",\n        \"Heat a small amount of oil in a pan over medium heat.\",\n        \"Add the onions to the pan, season with salt and pepper, and cook until caramelized.\",\n        \"Remove the onions from the heat and let them cool slightly.\",\n        \"Take a lettuce leaf, spread a thin layer of mustard on it.\",\n        \"Place a portion of the cooled onions onto the mustard.\",\n        \"Roll the lettuce leaf around the onion filling and serve.\"\n      ]\n    },\n    {\n      \"title\": \"Yogurt Mustard Dressing Over Lettuce\",\n      \"mealType\": \"dinner\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"yogurt\", \"mustard\", \"lettuce\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"In a small bowl, mix yogurt and mustard to create a dressing.\",\n        \"Season the dressing with salt and pepper to taste.\",\n        \"Wash and dry the lettuce leaves.\",\n        \"Chop the lettuce into bite-sized pieces.\",\n        \"Pour the yogurt mustard dressing over the chopped lettuce.\",\n        \"Toss to combine and serve immediately.\"\n      ]\n    }\n  ],\n  \"shoppingList\": []\n}"
+[00:04:30.887] Browser LOG     {"errors":["OAuth error: The access token is invalid"]}
+[00:06:32.640] Server  LOG      ✓ Compiled in 118ms
+[00:08:18.096] Server  WARN     ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+[00:08:19.060] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:08:19.307] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:08:19.307] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763369630278}
+[00:08:22.564] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:08:22.895] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:08:22.895] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763369633578}
+[00:08:44.183] Server  LOG     [generate-recipes] Raw model response: "{\n  \"recipes\": [\n    {\n      \"title\": \"Spicy Tomato Sauce\",\n      \"mealType\": \"dinner\",\n      \"timeMinutes\": 20,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"sauce\", \"oil\", \"jalapeño\", \"tomato\", \"water\"],\n      \"youNeedToBuy\": [\"salt\", \"pepper\"],\n      \"steps\": [\n        \"Chop the tomato and jalapeño finely.\",\n        \"Heat oil in a pan over medium heat.\",\n        \"Add chopped tomato and jalapeño to the pan.\",\n        \"Cook for 5 minutes until softened.\",\n        \"Add the sauce and mix well.\",\n        \"Season with salt and pepper.\",\n        \"Simmer for another 5 minutes before serving.\"\n      ]\n    },\n    {\n      \"title\": \"Tomato Jalapeño Salad\",\n      \"mealType\": \"lunch\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"tomato\", \"jalapeño\"],\n      \"youNeedToBuy\": [\"salt\", \"oil\"],\n      \"steps\": [\n        \"Slice the tomato and jalapeño thinly.\",\n        \"Arrange them on a plate.\",\n        \"Drizzle oil over the salad.\",\n        \"Sprinkle a pinch of salt.\",\n        \"Toss gently and serve immediately.\"\n      ]\n    },\n    {\n      \"title\": \"Jalapeño Infused Oil\",\n      \"mealType\": \"snack\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"oil\", \"jalapeño\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"Slice the jalapeño into thin rings.\",\n        \"Pour oil into a small saucepan.\",\n        \"Add jalapeño slices to the oil.\",\n        \"Heat on low for 5 minutes, do not boil.\",\n        \"Remove from heat and let it cool.\",\n        \"Strain the oil to remove jalapeño pieces.\",\n        \"Use the infused oil for salads or dips.\"\n      ]\n    }\n  ],\n  \"shoppingList\": [\n    \"salt\",\n    \"pepper\",\n    \"oil\"\n  ]\n}"
+[00:10:56.218] Server  LOG      ✓ Compiled in 82ms
+[00:11:03.910] Server  LOG      ✓ Compiled in 168ms
+[00:11:18.084] Server  LOG      ✓ Compiled in 102ms
+[00:12:02.685] Server  WARN     ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+[00:12:03.032] Server  LOG     [generate-recipes] Raw model response: "{\n  \"recipes\": [\n    {\n      \"title\": \"Spicy Tomato Sauce\",\n      \"mealType\": \"lunch\",\n      \"timeMinutes\": 20,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"sauce\", \"oil\", \"jalapeño\", \"tomato\", \"water\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"Heat oil in a pan over medium heat.\",\n        \"Chop the jalapeño and tomato.\",\n        \"Add diced jalapeño to the pan and sauté for 2-3 minutes.\",\n        \"Add chopped tomato and cook until softened.\",\n        \"Pour in the sauce and add a splash of water if too thick.\",\n        \"Season with salt and pepper to taste.\",\n        \"Simmer for 10 minutes and serve.\"\n      ]\n    },\n    {\n      \"title\": \"Jalapeño Tomato Salad\",\n      \"mealType\": \"snack\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"jalapeño\", \"tomato\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"Chop the jalapeño and tomato into small pieces.\",\n        \"Combine chopped jalapeño and tomato in a bowl.\",\n        \"Season with salt and pepper to taste.\",\n        \"Mix well and let it sit for a few minutes.\",\n        \"Serve immediately or chilled.\"\n      ]\n    },\n    {\n      \"title\": \"Simple Tomato Soup\",\n      \"mealType\": \"dinner\",\n      \"timeMinutes\": 25,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"sauce\", \"water\", \"tomato\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [\"dried basil\"],\n      \"steps\": [\n        \"Chop the tomato into small pieces.\",\n        \"In a pot, combine sauce, chopped tomato, and water.\",\n        \"Bring to a boil, then reduce heat and simmer for 15 minutes.\",\n        \"Add salt, pepper, and dried basil to taste.\",\n        \"Blend until smooth for a creamy texture.\",\n        \"Simmer for an additional 5 minutes and serve hot.\"\n      ]\n    }\n  ],\n  \"shoppingList\": [\n    \"dried basil\"\n  ]\n}"
+[00:12:03.583] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:12:03.894] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:12:03.894] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763369837307}
+[00:12:30.779] Server  LOG     [generate-recipes] Raw model response: "{\n  \"recipes\": [\n    {\n      \"title\": \"Scrambled Eggs with Lettuce\",\n      \"mealType\": \"breakfast\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"butter\", \"eggs\", \"lettuce\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. Heat a pan over medium heat and melt a small amount of butter in it.\",\n        \"2. In a bowl, crack the eggs, add a pinch of salt and pepper, and whisk well.\",\n        \"3. Pour the eggs into the pan and cook, stirring gently until scrambled.\",\n        \"4. Serve the scrambled eggs on a plate with fresh lettuce on the side.\"\n      ]\n    },\n    {\n      \"title\": \"Mustard Chicken with Rice\",\n      \"mealType\": \"lunch\",\n      \"timeMinutes\": 30,\n      \"difficulty\": \"medium\",\n      \"youAlreadyHave\": [\"chicken\", \"mustard\", \"rice\", \"salt\", \"pepper\", \"oil\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. Cook rice according to package instructions.\",\n        \"2. While rice is cooking, heat oil in a pan over medium heat.\",\n        \"3. Season chicken with salt and pepper, then add to the pan.\",\n        \"4. Cook chicken until browned on both sides and fully cooked through.\",\n        \"5. Add mustard to the pan, stir to coat the chicken, and cook for another 2 minutes.\",\n        \"6. Serve the mustard chicken with cooked rice.\"\n      ]\n    },\n    {\n      \"title\": \"Sour Cream and Jam Toast\",\n      \"mealType\": \"snack\",\n      \"timeMinutes\": 5,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"sour cream\", \"jam\", \"butter\"],\n      \"youNeedToBuy\": [\"bread\"],\n      \"steps\": [\n        \"1. Toast slices of bread until golden brown.\",\n        \"2. Spread a thin layer of butter on the warm toast.\",\n        \"3. Add a layer of sour cream on top of the butter.\",\n        \"4. Finish with a spoonful of jam spread evenly.\"\n      ]\n    }\n  ],\n  \"shoppingList\": [\n    \"bread\"\n  ]\n}"
+[00:14:20.658] Server  LOG      ✓ Compiled in 37ms
+[00:14:39.993] Server  LOG      ✓ Compiled in 161ms
+[00:15:01.290] Server  LOG      ✓ Compiled in 54ms
+[00:15:39.661] Server  WARN     ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+[00:15:40.254] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:15:40.668] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:15:40.668] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763370037132}
+[00:16:03.422] Server  LOG     [generate-recipes] Raw model response: "{\n  \"recipes\": [\n    {\n      \"title\": \"Scrambled Eggs with Yogurt\",\n      \"mealType\": \"breakfast\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"eggs\", \"margarine\", \"yogurt\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. Break the eggs into a bowl and whisk them.\",\n        \"2. Add a tablespoon of yogurt to the eggs and mix well.\",\n        \"3. Melt margarine in a pan over medium heat.\",\n        \"4. Pour the egg mixture into the pan.\",\n        \"5. Stir gently until the eggs are cooked to your liking.\",\n        \"6. Season with salt and pepper before serving.\"\n      ]\n    },\n    {\n      \"title\": \"Chicken Stir-Fry with Rice\",\n      \"mealType\": \"lunch\",\n      \"timeMinutes\": 20,\n      \"difficulty\": \"medium\",\n      \"youAlreadyHave\": [\"chicken\", \"rice\", \"oil\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. Cook the rice according to package instructions.\",\n        \"2. Cut the chicken into bite-sized pieces.\",\n        \"3. Heat oil in a pan over medium-high heat.\",\n        \"4. Add the chicken to the pan and cook until browned.\",\n        \"5. Season with salt and pepper.\",\n        \"6. Serve the chicken over the cooked rice.\"\n      ]\n    },\n    {\n      \"title\": \"Lettuce and Chicken Salad\",\n      \"mealType\": \"dinner\",\n      \"timeMinutes\": 15,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"chicken\", \"lettuce\", \"mustard\", \"sour cream\", \"salt\", \"pepper\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. Cook the chicken and let it cool.\",\n        \"2. Chop the lettuce and place it in a bowl.\",\n        \"3. Slice the cooled chicken and add it to the lettuce.\",\n        \"4. In a small bowl, mix sour cream and mustard to make a dressing.\",\n        \"5. Drizzle the dressing over the salad.\",\n        \"6. Toss the salad and season with salt and pepper before serving.\"\n      ]\n    }\n  ],\n  \"shoppingList\": []\n}"
+[00:18:59.536] Server  LOG      ✓ Compiled in 132ms
+[00:19:10.468] Server  LOG      ✓ Compiled in 49ms
+[00:19:32.471] Server  LOG      ✓ Compiled in 109ms
+[00:19:52.219] Server  LOG      ✓ Compiled in 45ms
+[00:20:16.409] Server  LOG      ✓ Compiled in 51ms
+[00:20:19.363] Server  LOG      ✓ Compiled in 60ms
+[00:20:25.268] Server  LOG      ✓ Compiled in 51ms
+[00:20:44.499] Server  LOG      ✓ Compiled in 39ms
+[00:27:30.442] Server  LOG      ✓ Compiled in 202ms
+[00:27:52.979] Server  LOG      ✓ Compiled in 104ms
+[00:27:52.990] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:27:54.270] Browser ERROR   uncaughtError: Error: Internal Next.js error: Router action dispatched before initialization.
+[00:27:54.270] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:27:54.270] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763370712855}
+[00:27:56.339] Server  LOG      ✓ Compiled in 149ms
+[00:28:23.548] Server  LOG      ✓ Compiled in 107ms
+[00:28:41.323] Server  LOG      ✓ Compiled in 27ms
+[00:28:41.533] Server  LOG      ✓ Compiled in 190ms
+[00:28:51.213] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:28:51.395] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:28:51.395] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763370766325}
+[00:29:17.719] Server  LOG     [generate-recipes] Raw model response: "{\n  \"recipes\": [\n    {\n      \"title\": \"Creamy Egg Salad\",\n      \"mealType\": \"lunch\",\n      \"timeMinutes\": 20,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"egg\", \"butter\", \"yogurt\", \"lettuce\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. Boil eggs for 10 minutes and let them cool.\",\n        \"2. Peel and chop the boiled eggs.\",\n        \"3. In a bowl, mix yogurt and a little melted butter to make it creamy.\",\n        \"4. Add the chopped eggs to the mixture.\",\n        \"5. Season with salt and pepper.\",\n        \"6. Serve over a bed of lettuce.\"\n      ]\n    },\n    {\n      \"title\": \"Mustard Cream Sauce on Lettuce\",\n      \"mealType\": \"dinner\",\n      \"timeMinutes\": 15,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"cream\", \"mustard\", \"lettuce\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. In a small pan, add cream and a spoonful of mustard.\",\n        \"2. Heat the mixture on low, stirring constantly.\",\n        \"3. Once warm, season with salt, pepper, and dried herbs.\",\n        \"4. Wash and dry lettuce leaves.\",\n        \"5. Drizzle the mustard cream sauce over the lettuce.\",\n        \"6. Serve immediately.\"\n      ]\n    },\n    {\n      \"title\": \"Sweet Yogurt & Jam Parfait\",\n      \"mealType\": \"snack\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"yogurt\", \"jam\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. In a glass, add a layer of yogurt.\",\n        \"2. Add a layer of jam on top of the yogurt.\",\n        \"3. Add another layer of yogurt.\",\n        \"4. Continue layering until the glass is full.\",\n        \"5. Chill for a few minutes or serve immediately.\"\n      ]\n    },\n    {\n      \"title\": \"Ketchup and Egg Breakfast Wrap\",\n      \"mealType\": \"breakfast\",\n      \"timeMinutes\": 10,\n      \"difficulty\": \"easy\",\n      \"youAlreadyHave\": [\"egg\", \"butter\", \"ketchup\", \"lettuce\"],\n      \"youNeedToBuy\": [],\n      \"steps\": [\n        \"1. In a small pan, melt a little butter.\",\n        \"2. Scramble the egg in the pan.\",\n        \"3. Lay a large lettuce leaf flat.\",\n        \"4. Spoon the scrambled egg onto the lettuce leaf.\",\n        \"5. Drizzle ketchup over the egg.\",\n        \"6. Roll the lettuce leaf to form a wrap.\",\n        \"7. Serve immediately.\"\n      ]\n    }\n  ],\n  \"shoppingList\": []\n}"
+[00:31:53.185] Server  LOG      ✓ Compiled in 94ms
+[00:31:56.697] Server  LOG      ✓ Compiled in 85ms
+[00:31:59.579] Server  LOG      ✓ Compiled in 96ms
+[00:32:02.204] Server  LOG      ✓ Compiled in 42ms
+[00:32:09.899] Server  LOG      ✓ Compiled in 126ms
+[00:32:20.032] Server  LOG      ✓ Compiled in 89ms
+[00:32:25.906] Server  LOG      ✓ Compiled in 53ms
+[00:32:31.444] Server  LOG      ✓ Compiled in 83ms
+[00:32:36.092] Server  LOG      ✓ Compiled in 138ms
+[00:32:46.893] Server  LOG      ✓ Compiled in 103ms
+[00:32:52.271] Server  LOG      ✓ Compiled in 75ms
+[00:33:00.552] Server  LOG      ✓ Compiled in 98ms
+[00:33:03.432] Server  LOG      ✓ Compiled in 58ms
+[00:33:08.006] Server  LOG      ✓ Compiled in 85ms
+[00:33:21.539] Server  LOG      ✓ Compiled in 85ms
+[00:33:42.131] Server  LOG      ✓ Compiled in 89ms
+[00:33:59.886] Server  LOG      ✓ Compiled in 193ms
+[00:35:01.052] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:35:01.304] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[00:35:01.304] Browser LOG     %c[Vercel Web Analytics]%c [pageview] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"o":"http://localhost:3000/","sdkn":"@vercel/analytics/react","sdkv":"1.3.1","sv":"0.1.3","ts":1763371107018}
+[00:38:16.434] Server  LOG      ✓ Compiled in 68ms
+[00:38:36.267] Server  LOG      ✓ Compiled in 57ms

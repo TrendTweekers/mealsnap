@@ -1,3 +1,5 @@
 {
+  "/api/generate-recipes/route": "app/api/generate-recipes/route.js",
+  "/api/scan-pantry/route": "app/api/scan-pantry/route.js",
   "/page": "app/page.js"
 }
