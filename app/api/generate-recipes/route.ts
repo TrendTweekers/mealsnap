@@ -51,9 +51,10 @@ INGREDIENTS:
 ${ingredients.join(", ")}
 
 TASK:
-1. Create 3–4 very simple, realistic recipes using ONLY these ingredients plus very basic pantry staples:
+1. Create 6–8 very simple, realistic recipes using ONLY these ingredients plus very basic pantry staples:
    - Allowed extra staples: salt, pepper, oil, water, sugar, basic dried herbs.
    - DO NOT invent ingredients that are clearly not available (no "Silesian dumplings" etc.).
+   - Aim for variety: include breakfast, lunch, dinner, and snack options when possible.
 
 2. Each recipe should:
    - Have: title, mealType ("breakfast" | "lunch" | "dinner" | "snack"),
@@ -107,7 +108,7 @@ RULES:
             content: prompt,
           },
         ],
-        max_tokens: 2000,
+        max_tokens: 4000,
         response_format: { type: "json_object" },
       }),
     });
