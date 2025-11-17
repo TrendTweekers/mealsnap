@@ -544,87 +544,42 @@ export default function MealSnap() {
   // HOME VIEW
   if (currentView === 'home') {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50">
         <StickyHeader />
         
-        {/* Hero Section with Coral/Orange Gradient */}
-        <section className="bg-gradient-to-r from-orange-500 to-pink-500 text-white relative overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
-        <div className="text-center">
-              {/* Logo */}
-              <div className="mb-8">
-                <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
-                  Meal<span className="opacity-90">Snap</span>
-                </h2>
-              </div>
-              
-              {/* Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
-                Stop wasting food. Start cooking what you have.
-              </h1>
-              
-              {/* Subhead */}
-              <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto mb-10 leading-relaxed">
-                Snap your fridge, get 3 recipes you can make tonight. Missing something? Add to cart in 1 tap.
-              </p>
-              
-              {/* 3-Step Visual Flow */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-12">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
-                    <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm sm:text-base font-semibold text-white">Snap Your Pantry</p>
-                  </div>
-                </div>
-                
-                <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 text-white/70 rotate-90 sm:rotate-0" />
-                
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
-                    <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm sm:text-base font-semibold text-white">AI Detection</p>
-                  </div>
-                </div>
-                
-                <ArrowRight className="w-6 h-6 sm:w-8 sm:h-8 text-white/70 rotate-90 sm:rotate-0" />
-                
-                <div className="flex items-center gap-3 sm:gap-4">
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border-2 border-white/30">
-                    <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm sm:text-base font-semibold text-white">Get Recipes</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <button
-                  onClick={() => {
-                    // Scroll to camera section or trigger camera
-                    document.getElementById('camera-section')?.scrollIntoView({ behavior: 'smooth' })
-                  }}
-                  className="w-full sm:w-auto px-8 py-4 bg-white text-orange-600 rounded-xl font-bold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 hover:bg-orange-50 min-h-[56px] flex items-center justify-center"
-                >
-                  Start Free Trial
-                </button>
-                <a
-                  href="#how-it-works"
-                  className="w-full sm:w-auto px-8 py-4 text-white font-semibold text-lg hover:underline min-h-[56px] flex items-center justify-center"
-                >
-                  Learn More
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-        
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <section className="text-center py-16 px-6">
+            <div className="inline-flex items-center justify-center mb-6">
+              <MealSnapLogo className="w-16 h-16" />
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl font-extrabold text-emerald-600">
+              Stop wasting food. Start cooking what you have.
+            </h1>
+            
+            <p className="mt-4 text-lg text-gray-700 max-w-2xl mx-auto">
+              Snap your fridge, get 3 recipes you can make tonight. Missing something? Add to cart in 1 tap.
+            </p>
+            
+            <ul className="mt-6 space-y-2 text-left max-w-md mx-auto">
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>No more "what's for dinner?" stress</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>Use ingredients before they expire</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>Save $200/month on food waste</span>
+              </li>
+              <li className="flex items-start">
+                <span className="text-emerald-500 mr-2">✅</span>
+                <span>One-tap grocery delivery for anything missing</span>
+              </li>
+            </ul>
+          </section>
 
           {error && (
             <div className="max-w-2xl mx-auto mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
@@ -638,7 +593,7 @@ export default function MealSnap() {
             </div>
           )}
 
-          <div id="camera-section" className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 sm:p-12 mb-12 transform transition-all duration-300 hover:shadow-3xl hover:-translate-y-1">
+          <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 p-8 sm:p-12 mb-12 transform transition-all duration-300 hover:shadow-3xl hover:-translate-y-1">
             <div className="text-center mb-8">
               <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-green-100 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-110">
                 <Camera className="w-12 h-12 text-emerald-600" />
