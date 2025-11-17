@@ -56,26 +56,21 @@ export default function RootLayout({
         {/* Privacy-friendly analytics by Plausible */}
         <Script
           strategy="afterInteractive"
+          async
+          defer
           data-domain="mealsnap-chi.vercel.app"
-        >
-          {`
-            (function() {
-              var script = document.createElement('script');
-              script.async = true;
-              script.defer = true;
-              script.src = 'https://plausible.io/js/pa-z7_ASH-zwutJ1BlKFBYt6.js';
-              document.head.appendChild(script);
-              
-              window.plausible = window.plausible || function() {
-                (plausible.q = plausible.q || []).push(arguments);
-              };
-              plausible.init = plausible.init || function(i) {
-                plausible.o = i || {};
-              };
-              plausible.init();
-            })();
-          `}
-        </Script>
+          src="https://plausible.io/js/pa-z7_ASH-zwutJ1BlKFBYt6.js"
+        />
+        <Script
+          id="plausible-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+              plausible.init()
+            `,
+          }}
+        />
       </body>
     </html>
   )
