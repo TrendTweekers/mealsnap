@@ -707,60 +707,70 @@ export default function MealSnap() {
   // HOME VIEW
   if (currentView === 'home') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-400 via-green-400 to-teal-500">
+      <div className="min-h-screen bg-white">
         <StickyHeader />
         
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          {/* Hero Section - Bold & Vibrant */}
-          <section className="text-center py-20 px-6 relative overflow-hidden">
-            {/* Decorative background elements */}
-            <div className="absolute inset-0 opacity-10">
-              <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
-              <div className="absolute bottom-20 right-10 w-96 h-96 bg-emerald-200 rounded-full blur-3xl"></div>
-              </div>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Hero Section - Modern Gradient Hero (Stripe/Vercel Style) */}
+          <section className="relative overflow-hidden pt-20 pb-32 px-6">
+            {/* Animated gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-green-50"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-to-r from-emerald-400/20 via-green-400/20 to-teal-400/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-l from-emerald-300/30 to-green-300/30 rounded-full blur-3xl"></div>
             
-            <div className="relative z-10">
-              <div className="inline-flex items-center justify-center mb-8 transform hover:scale-110 transition-transform duration-300">
-                <div className="bg-white/20 backdrop-blur-lg rounded-3xl p-4 shadow-2xl">
-                  <MealSnapLogo className="w-20 h-20 drop-shadow-xl" />
-                </div>
+            <div className="relative z-10 max-w-5xl mx-auto">
+              <div className="text-center mb-12">
+                <div className="inline-flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-300">
+                  <div className="bg-white rounded-2xl p-4 shadow-xl border border-gray-100">
+                    <MealSnapLogo className="w-16 h-16" />
               </div>
+                </div>
             
-              <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight drop-shadow-2xl">
-                Stop wasting food.
-                <br />
-                <span className="bg-gradient-to-r from-yellow-200 via-white to-emerald-100 bg-clip-text text-transparent">
-                  Start cooking what you have.
-                </span>
-              </h1>
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-gray-900 mb-6 leading-[1.1] tracking-tight">
+                  Stop wasting food.
+                  <br />
+                  <span className="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 bg-clip-text text-transparent">
+                    Start cooking what you have.
+                  </span>
+                </h1>
               
-              <p className="mt-6 text-xl md:text-2xl text-white/95 max-w-3xl mx-auto font-semibold drop-shadow-lg leading-relaxed">
-                Snap your fridge, get 6-8 recipes you can make tonight. Missing something? Add to cart in 1 tap.
-              </p>
+                <p className="mt-8 text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto font-medium leading-relaxed">
+                  Snap your fridge, get <span className="font-bold text-emerald-600">6-8 recipes</span> you can make tonight. Missing something? Add to cart in <span className="font-bold text-emerald-600">1 tap</span>.
+                </p>
+              </div>
               
-              <div className="mt-10 grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✅</span>
-                    <span className="text-white font-semibold text-left">No more "what's for dinner?" stress</span>
+              {/* Benefits Grid */}
+              <div className="mt-16 grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">✅</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-lg pt-1">No more "what's for dinner?" stress</span>
                   </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✅</span>
-                    <span className="text-white font-semibold text-left">Use ingredients before they expire</span>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">✅</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-lg pt-1">Use ingredients before they expire</span>
                   </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✅</span>
-                    <span className="text-white font-semibold text-left">Save $200/month on food waste</span>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">✅</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-lg pt-1">Save $200/month on food waste</span>
                   </div>
                 </div>
-                <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 shadow-xl">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✅</span>
-                    <span className="text-white font-semibold text-left">One-tap grocery delivery for anything missing</span>
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <span className="text-2xl">✅</span>
+                    </div>
+                    <span className="text-gray-900 font-semibold text-lg pt-1">One-tap grocery delivery for anything missing</span>
                   </div>
                 </div>
               </div>
@@ -779,17 +789,17 @@ export default function MealSnap() {
             </div>
           )}
 
-          {/* Scan Card - Bold & Elevated */}
-          <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border-4 border-white/50 p-10 sm:p-14 mb-16 transform transition-all duration-300 hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] hover:-translate-y-2 backdrop-blur-sm">
+          {/* Scan Card - Clean & Modern */}
+          <div className="relative max-w-2xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-200 p-10 sm:p-14 mb-20 transform transition-all duration-300 hover:shadow-3xl hover:-translate-y-2">
             <div className="text-center mb-10">
-              <div className="w-32 h-32 bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500 rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-2xl transform transition-transform duration-300 hover:scale-110 hover:rotate-3">
-                <Camera className="w-16 h-16 text-white drop-shadow-lg" />
+              <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-green-500 rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-110">
+                <Camera className="w-12 h-12 text-white" />
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-gray-900 mb-3 tracking-tight">Scan Your Pantry</h2>
               <p className="text-lg text-gray-600 font-medium">Take a photo or upload an image of your ingredients</p>
             </div>
 
-            <div className="space-y-5">
+            <div className="space-y-4">
               <label className="block">
                 <input
                   type="file"
@@ -799,15 +809,15 @@ export default function MealSnap() {
                   className="hidden"
                   disabled={isLoading}
                 />
-                <div className="w-full bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white rounded-2xl px-8 py-6 font-black text-xl cursor-pointer transition-all duration-300 flex items-center justify-center gap-4 shadow-2xl hover:shadow-[0_20px_40px_-12px_rgba(16,185,129,0.5)] hover:scale-[1.03] active:scale-[0.98] disabled:opacity-50 min-h-[64px] border-2 border-white/20">
+                <div className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-8 py-5 font-bold text-lg cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 min-h-[56px]">
                   {isLoading ? (
                     <>
-                      <Loader2 className="w-7 h-7 animate-spin" />
+                      <Loader2 className="w-6 h-6 animate-spin" />
                       <span>Analyzing ingredients...</span>
                     </>
                   ) : (
                     <>
-                      <Camera className="w-7 h-7" />
+                      <Camera className="w-6 h-6" />
                       <span>Take Photo with Camera</span>
                     </>
                   )}
@@ -822,19 +832,19 @@ export default function MealSnap() {
                   className="hidden"
                   disabled={isLoading}
                 />
-                <div className="w-full bg-white border-4 border-emerald-200 hover:border-emerald-400 hover:bg-gradient-to-br hover:from-emerald-50 hover:to-green-50 text-gray-800 rounded-2xl px-8 py-6 font-bold text-xl cursor-pointer transition-all duration-300 flex items-center justify-center gap-4 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] min-h-[64px]">
-                  <Upload className="w-7 h-7 text-emerald-600" />
+                <div className="w-full bg-white border-2 border-gray-200 hover:border-emerald-400 hover:bg-emerald-50 text-gray-800 rounded-2xl px-8 py-5 font-semibold text-lg cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] min-h-[56px]">
+                  <Upload className="w-6 h-6 text-emerald-600" />
                   <span>Choose from Gallery</span>
                 </div>
               </label>
 
-              <div className="text-center pt-6">
+              <div className="text-center pt-4">
               <button
                   onClick={() => {
                     setIngredients([])
                     setCurrentView('ingredients')
                   }}
-                  className="text-base text-emerald-600 hover:text-emerald-700 font-bold hover:underline transition-colors"
+                  className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold hover:underline transition-colors"
                 >
                   Or add ingredients manually →
               </button>
@@ -842,132 +852,141 @@ export default function MealSnap() {
           </div>
         </div>
 
-          {/* Three Steps Section - White Cards on Gradient */}
-          <section className="py-20 px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-black text-white mb-4 drop-shadow-lg">
-                Three Steps to Your Perfect Meal
-              </h2>
-              <p className="text-xl text-white/90 font-semibold">
-                It's as simple as snap, detect, and cook
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {/* Step 01: Snap Your Pantry */}
-              <div className="bg-white rounded-3xl p-10 border-4 border-white/80 shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-3 transform">
-                <div className="text-7xl font-black bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent mb-6">01</div>
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500 rounded-3xl flex items-center justify-center mb-8 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-xl">
-                  <Camera className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Snap Your Pantry</h3>
-                <p className="text-gray-600 leading-relaxed font-medium text-lg">
-                  Take a quick photo of your fridge or pantry shelves with your phone camera
+          {/* Three Steps Section - Modern Gradient Hero Style */}
+          <section className="relative py-24 px-6 overflow-hidden">
+            {/* Subtle gradient background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-50 to-emerald-50/50"></div>
+            
+            <div className="relative z-10 max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4 tracking-tight">
+                  Three Steps to Your Perfect Meal
+                </h2>
+                <p className="text-xl text-gray-600 font-medium max-w-2xl mx-auto">
+                  It's as simple as snap, detect, and cook
                 </p>
               </div>
 
-              {/* Step 02: AI Detection */}
-              <div className="bg-white rounded-3xl p-10 border-4 border-white/80 shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-3 transform">
-                <div className="text-7xl font-black bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent mb-6">02</div>
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500 rounded-3xl flex items-center justify-center mb-8 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-xl">
-                  <Sparkles className="w-10 h-10 text-white" />
+              <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                {/* Step 01: Snap Your Pantry */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group">
+                  <div className="text-6xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-4">01</div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <Camera className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Snap Your Pantry</h3>
+                  <p className="text-gray-600 leading-relaxed font-medium">
+                    Take a quick photo of your fridge or pantry shelves with your phone camera
+                  </p>
                 </div>
-                <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">AI Detection</h3>
-                <p className="text-gray-600 leading-relaxed font-medium text-lg">
-                  Our AI analyzes your photo and automatically identifies all available ingredients
-                </p>
-              </div>
 
-              {/* Step 03: Get Recipes */}
-              <div className="bg-white rounded-3xl p-10 border-4 border-white/80 shadow-2xl hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.3)] transition-all duration-300 hover:-translate-y-3 transform">
-                <div className="text-7xl font-black bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent mb-6">03</div>
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 via-green-500 to-teal-500 rounded-3xl flex items-center justify-center mb-8 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-xl">
-                  <MealSnapLogo className="w-10 h-10" />
+                {/* Step 02: AI Detection */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group">
+                  <div className="text-6xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-4">02</div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <Sparkles className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">AI Detection</h3>
+                  <p className="text-gray-600 leading-relaxed font-medium">
+                    Our AI analyzes your photo and automatically identifies all available ingredients
+                  </p>
                 </div>
-                <h3 className="text-3xl font-black text-gray-900 mb-4 tracking-tight">Get Recipes</h3>
-                <p className="text-gray-600 leading-relaxed font-medium text-lg">
-                  Receive 6-8 personalized recipes you can make right now with what you have
-                </p>
+
+                {/* Step 03: Get Recipes */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group">
+                  <div className="text-6xl font-black bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent mb-4">03</div>
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <MealSnapLogo className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tight">Get Recipes</h3>
+                  <p className="text-gray-600 leading-relaxed font-medium">
+                    Receive 6-8 personalized recipes you can make right now with what you have
+                  </p>
+                </div>
               </div>
             </div>
           </section>
 
-          {/* Features Section - White Background */}
-          <section className="py-20 px-6 bg-white/95 backdrop-blur-lg rounded-3xl mb-12 shadow-2xl border-4 border-white/50">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight">
-                Everything You Need to Cook Smarter
-              </h2>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto font-semibold">
-                MealSnap combines cutting-edge AI with beautiful design to revolutionize your cooking experience
-              </p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {/* Smart Pantry Scanning */}
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-8 border-4 border-emerald-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 transform">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-3xl flex items-center justify-center mb-6 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-lg">
-                  <Camera className="w-9 h-9 text-white" />
-                </div>
-                <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Smart Pantry Scanning</h3>
-                <p className="text-base text-gray-700 leading-relaxed font-medium">
-                  Take a photo or upload an image of your ingredients. Our AI instantly detects what you have.
+          {/* Features Section - Clean Grid */}
+          <section className="relative py-24 px-6 mb-16">
+            <div className="absolute inset-0 bg-gradient-to-b from-white to-gray-50"></div>
+            
+            <div className="relative z-10 max-w-7xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4 tracking-tight">
+                  Everything You Need to Cook Smarter
+                </h2>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto font-medium">
+                  MealSnap combines cutting-edge AI with beautiful design to revolutionize your cooking experience
                 </p>
               </div>
 
-              {/* AI Recipe Generation */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 border-4 border-purple-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 transform">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-3xl flex items-center justify-center mb-6 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-lg">
-                  <Sparkles className="w-9 h-9 text-white" />
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                {/* Smart Pantry Scanning */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <Camera className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Smart Pantry Scanning</h3>
+                  <p className="text-base text-gray-600 leading-relaxed font-medium">
+                    Take a photo or upload an image of your ingredients. Our AI instantly detects what you have.
+                  </p>
                 </div>
-                <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">AI Recipe Generation</h3>
-                <p className="text-base text-gray-700 leading-relaxed font-medium">
-                  Get 6-8 personalized recipes based on your available ingredients in seconds.
-                </p>
-              </div>
 
-              {/* Save Your Favorites */}
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-8 border-4 border-emerald-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 transform">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-3xl flex items-center justify-center mb-6 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-lg">
-                  <Heart className="w-9 h-9 text-white fill-white" />
+                {/* AI Recipe Generation */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <Sparkles className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">AI Recipe Generation</h3>
+                  <p className="text-base text-gray-600 leading-relaxed font-medium">
+                    Get 6-8 personalized recipes based on your available ingredients in seconds.
+                  </p>
                 </div>
-                <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Save Your Favorites</h3>
-                <p className="text-base text-gray-700 leading-relaxed font-medium">
-                  Love a recipe? Save it to your favorites and access it anytime you want.
-                </p>
-              </div>
 
-              {/* Smart Shopping Lists */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 border-4 border-purple-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 transform">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-3xl flex items-center justify-center mb-6 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-lg">
-                  <ShoppingCart className="w-9 h-9 text-white" />
+                {/* Save Your Favorites */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <Heart className="w-7 h-7 text-white fill-white" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Save Your Favorites</h3>
+                  <p className="text-base text-gray-600 leading-relaxed font-medium">
+                    Love a recipe? Save it to your favorites and access it anytime you want.
+                  </p>
                 </div>
-                <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Smart Shopping Lists</h3>
-                <p className="text-base text-gray-700 leading-relaxed font-medium">
-                  Missing ingredients? We automatically generate a shopping list for you.
-                </p>
-              </div>
 
-              {/* Quick & Easy */}
-              <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-3xl p-8 border-4 border-emerald-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 transform">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-3xl flex items-center justify-center mb-6 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-lg">
-                  <Clock className="w-9 h-9 text-white" />
+                {/* Smart Shopping Lists */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <ShoppingCart className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Smart Shopping Lists</h3>
+                  <p className="text-base text-gray-600 leading-relaxed font-medium">
+                    Missing ingredients? We automatically generate a shopping list for you.
+                  </p>
                 </div>
-                <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Quick & Easy</h3>
-                <p className="text-base text-gray-700 leading-relaxed font-medium">
-                  From photo to recipe in under 10 seconds. Cooking has never been this fast.
-                </p>
-              </div>
 
-              {/* Community Recipes */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-3xl p-8 border-4 border-purple-100 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 transform">
-                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-3xl flex items-center justify-center mb-6 transform transition-transform duration-300 hover:scale-110 hover:rotate-3 shadow-lg">
-                  <User className="w-9 h-9 text-white" />
+                {/* Quick & Easy */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <Clock className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Quick & Easy</h3>
+                  <p className="text-base text-gray-600 leading-relaxed font-medium">
+                    From photo to recipe in under 10 seconds. Cooking has never been this fast.
+                  </p>
                 </div>
-                <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Community Recipes</h3>
-                <p className="text-base text-gray-700 leading-relaxed font-medium">
-                  Share your creations and discover recipes from our growing community.
-                </p>
+
+                {/* Community Recipes */}
+                <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
+                    <User className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="font-black text-gray-900 text-xl mb-3 tracking-tight">Community Recipes</h3>
+                  <p className="text-base text-gray-600 leading-relaxed font-medium">
+                    Share your creations and discover recipes from our growing community.
+                  </p>
+                </div>
               </div>
             </div>
           </section>
