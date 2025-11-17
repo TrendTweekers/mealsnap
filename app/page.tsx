@@ -1175,7 +1175,7 @@ export default function MealSnap() {
                 Copy List
               </button>
               <a
-                href={`https://www.instacart.com/store/partner?ingredients=${encodeURIComponent(shoppingList.map(item => item.name).join(','))}&ref=mealsnap`}
+                href={`https://www.instacart.com/store?search=${encodeURIComponent(shoppingList.map(item => item.name).join(' '))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-center block"
