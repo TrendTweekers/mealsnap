@@ -277,10 +277,23 @@ export default function MealSnap() {
     return favorites.some(f => f.title === recipe.title)
   }
 
-  // Compress and resize image before upload
-  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<string> => {
+  // Detect mobile device
+  const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+
+  // Compress and resize image before upload - more aggressive on mobile
+  const compressImage = (file: File, maxWidth?: number, maxHeight?: number, quality?: number): Promise<string> => {
     return new Promise((resolve, reject) => {
-      console.log('[MealSnap] compressImage called:', file.name, file.size, 'bytes')
+      // Mobile devices need more aggressive compression
+      const defaultMaxWidth = isMobile ? 1280 : 1920
+      const defaultMaxHeight = isMobile ? 1280 : 1920
+      const defaultQuality = isMobile ? 0.7 : 0.8
+      const maxSizeLimit = isMobile ? 3 * 1024 * 1024 : 4.5 * 1024 * 1024 // 3MB for mobile, 4.5MB for desktop
+      
+      const finalMaxWidth = maxWidth ?? defaultMaxWidth
+      const finalMaxHeight = maxHeight ?? defaultMaxHeight
+      const finalQuality = quality ?? defaultQuality
+      
+      console.log('[MealSnap] compressImage called:', file.name, file.size, 'bytes', isMobile ? '(mobile)' : '(desktop)')
       
       // Check file size first (10MB limit)
       const maxSize = 10 * 1024 * 1024 // 10MB
@@ -303,18 +316,18 @@ export default function MealSnap() {
 
           // Calculate new dimensions
           if (width > height) {
-            if (width > maxWidth) {
-              height = (height * maxWidth) / width
-              width = maxWidth
+            if (width > finalMaxWidth) {
+              height = (height * finalMaxWidth) / width
+              width = finalMaxWidth
             }
           } else {
-            if (height > maxHeight) {
-              width = (width * maxHeight) / height
-              height = maxHeight
+            if (height > finalMaxHeight) {
+              width = (width * finalMaxHeight) / height
+              height = finalMaxHeight
             }
           }
 
-          console.log('[MealSnap] Resizing to:', width, 'x', height)
+          console.log('[MealSnap] Resizing to:', width, 'x', height, 'quality:', finalQuality)
 
           canvas.width = width
           canvas.height = height
@@ -326,24 +339,31 @@ export default function MealSnap() {
             return
           }
 
+          // Better image quality settings for compression
+          ctx.imageSmoothingEnabled = true
+          ctx.imageSmoothingQuality = 'high'
           ctx.drawImage(img, 0, 0, width, height)
           
           // Convert to base64 with compression
-          const base64 = canvas.toDataURL('image/jpeg', quality)
+          const base64 = canvas.toDataURL('image/jpeg', finalQuality)
           const base64Data = base64.split(',')[1]
           
-          // Check if compressed size is still too large (4.5MB limit for base64)
+          // Check if compressed size is still too large
           const sizeInBytes = (base64Data.length * 3) / 4
-          console.log('[MealSnap] Compressed size:', sizeInBytes, 'bytes (', (sizeInBytes / 1024 / 1024).toFixed(2), 'MB)')
+          console.log('[MealSnap] Compressed size:', sizeInBytes, 'bytes (', (sizeInBytes / 1024 / 1024).toFixed(2), 'MB)', 'limit:', (maxSizeLimit / 1024 / 1024).toFixed(2), 'MB')
           
-          if (sizeInBytes > 4.5 * 1024 * 1024) {
-            // Try again with lower quality
-            if (quality > 0.5) {
-              console.log('[MealSnap] Still too large, retrying with quality:', quality - 0.1)
-              resolve(compressImage(file, maxWidth, maxHeight, quality - 0.1))
+          if (sizeInBytes > maxSizeLimit) {
+            // Try again with lower quality or smaller dimensions
+            if (finalQuality > 0.5) {
+              console.log('[MealSnap] Still too large, retrying with lower quality:', finalQuality - 0.1)
+              resolve(compressImage(file, finalMaxWidth, finalMaxHeight, finalQuality - 0.1))
+            } else if (finalMaxWidth > 800) {
+              // If quality is already low, try smaller dimensions
+              console.log('[MealSnap] Still too large, retrying with smaller dimensions')
+              resolve(compressImage(file, finalMaxWidth * 0.8, finalMaxHeight * 0.8, 0.6))
             } else {
               console.error('[MealSnap] Image too large even after compression')
-              reject(new Error('Image is too large even after compression. Please use a smaller image.'))
+              reject(new Error('Image is too large even after compression. Please use a smaller image or take a new photo.'))
             }
           } else {
             console.log('[MealSnap] Compression successful')
@@ -408,16 +428,31 @@ export default function MealSnap() {
       console.log('[MealSnap] Response status:', response.status, response.ok)
 
       if (!response.ok) {
-        // Handle 413 specifically
+        // Handle 413 specifically with better mobile messaging
         if (response.status === 413) {
-          setError('Image is too large. Please try a smaller image or take a new photo.')
+          const errorMsg = isMobile 
+            ? 'Image is too large for mobile upload. Try taking a new photo or use a smaller image from your gallery.'
+            : 'Image is too large. Please try a smaller image or take a new photo.'
+          setError(errorMsg)
           setIsLoading(false)
+          
+          // Track 413 errors
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Upload Error 413', { props: { device: isMobile ? 'mobile' : 'desktop', fileSize: file.size } })
+          }
           return
         }
         
         const errorData = await response.json().catch(() => ({}))
         console.error('[MealSnap] API error:', errorData)
-        throw new Error(errorData.error || `Server error: ${response.status}`)
+        
+        // Better error messages for mobile
+        let errorMessage = errorData.error || `Server error: ${response.status}`
+        if (isMobile && response.status >= 500) {
+          errorMessage = 'Network error on mobile. Please check your connection and try again.'
+        }
+        
+        throw new Error(errorMessage)
       }
 
       const data = await response.json()
