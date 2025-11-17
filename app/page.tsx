@@ -255,13 +255,68 @@ export default function MealSnap() {
     return favorites.some(f => f.title === recipe.title)
   }
 
-  const fileToBase64 = (file: File): Promise<string> => {
+  // Compress and resize image before upload
+  const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<string> => {
     return new Promise((resolve, reject) => {
+      // Check file size first (10MB limit)
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (file.size > maxSize) {
+        reject(new Error('Image is too large. Please use an image under 10MB.'))
+        return
+      }
+
       const reader = new FileReader()
       reader.readAsDataURL(file)
-      reader.onload = () => {
-        const result = reader.result as string
-        resolve(result.split(',')[1])
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width
+              width = maxWidth
+            }
+          } else {
+            if (height > maxHeight) {
+              width = (width * maxHeight) / height
+              height = maxHeight
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Could not get canvas context'))
+            return
+          }
+
+          ctx.drawImage(img, 0, 0, width, height)
+          
+          // Convert to base64 with compression
+          const base64 = canvas.toDataURL('image/jpeg', quality)
+          const base64Data = base64.split(',')[1]
+          
+          // Check if compressed size is still too large (4.5MB limit for base64)
+          const sizeInBytes = (base64Data.length * 3) / 4
+          if (sizeInBytes > 4.5 * 1024 * 1024) {
+            // Try again with lower quality
+            if (quality > 0.5) {
+              resolve(compressImage(file, maxWidth, maxHeight, quality - 0.1))
+            } else {
+              reject(new Error('Image is too large even after compression. Please use a smaller image.'))
+            }
+          } else {
+            resolve(base64Data)
+          }
+        }
+        img.onerror = () => reject(new Error('Failed to load image'))
+        img.src = e.target?.result as string
       }
       reader.onerror = (error) => reject(error)
     })
@@ -270,6 +325,9 @@ export default function MealSnap() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Reset file input
+    e.target.value = ''
 
     // Check scan limit
     if (!checkScanLimit()) {
@@ -281,7 +339,8 @@ export default function MealSnap() {
     setError('')
     
     try {
-      const base64Image = await fileToBase64(file)
+      // Compress image before sending
+      const base64Image = await compressImage(file)
       
       const response = await fetch('/api/scan-pantry', {
         method: 'POST',
@@ -292,6 +351,13 @@ export default function MealSnap() {
       })
 
       if (!response.ok) {
+        // Handle 413 specifically
+        if (response.status === 413) {
+          setError('Image is too large. Please try a smaller image or take a new photo.')
+          setIsLoading(false)
+          return
+        }
+        
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || `Server error: ${response.status}`)
       }
@@ -321,6 +387,8 @@ export default function MealSnap() {
     } catch (err: any) {
       console.error('Scan error:', err)
       setError(err.message || 'Failed to scan image. Please try again.')
+      // Make sure loading state is cleared
+      setIsLoading(false)
     } finally {
       setIsLoading(false)
     }
