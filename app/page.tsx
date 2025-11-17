@@ -269,9 +269,12 @@ export default function MealSnap() {
   // Compress and resize image before upload
   const compressImage = (file: File, maxWidth: number = 1920, maxHeight: number = 1920, quality: number = 0.8): Promise<string> => {
     return new Promise((resolve, reject) => {
+      console.log('[MealSnap] compressImage called:', file.name, file.size, 'bytes')
+      
       // Check file size first (10MB limit)
       const maxSize = 10 * 1024 * 1024 // 10MB
       if (file.size > maxSize) {
+        console.error('[MealSnap] File too large:', file.size)
         reject(new Error('Image is too large. Please use an image under 10MB.'))
         return
       }
@@ -279,8 +282,10 @@ export default function MealSnap() {
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = (e) => {
+        console.log('[MealSnap] FileReader loaded, creating image...')
         const img = new Image()
         img.onload = () => {
+          console.log('[MealSnap] Image loaded, dimensions:', img.width, 'x', img.height)
           const canvas = document.createElement('canvas')
           let width = img.width
           let height = img.height
@@ -298,11 +303,14 @@ export default function MealSnap() {
             }
           }
 
+          console.log('[MealSnap] Resizing to:', width, 'x', height)
+
           canvas.width = width
           canvas.height = height
 
           const ctx = canvas.getContext('2d')
           if (!ctx) {
+            console.error('[MealSnap] Could not get canvas context')
             reject(new Error('Could not get canvas context'))
             return
           }
@@ -315,33 +323,55 @@ export default function MealSnap() {
           
           // Check if compressed size is still too large (4.5MB limit for base64)
           const sizeInBytes = (base64Data.length * 3) / 4
+          console.log('[MealSnap] Compressed size:', sizeInBytes, 'bytes (', (sizeInBytes / 1024 / 1024).toFixed(2), 'MB)')
+          
           if (sizeInBytes > 4.5 * 1024 * 1024) {
             // Try again with lower quality
             if (quality > 0.5) {
+              console.log('[MealSnap] Still too large, retrying with quality:', quality - 0.1)
               resolve(compressImage(file, maxWidth, maxHeight, quality - 0.1))
             } else {
+              console.error('[MealSnap] Image too large even after compression')
               reject(new Error('Image is too large even after compression. Please use a smaller image.'))
             }
           } else {
+            console.log('[MealSnap] Compression successful')
             resolve(base64Data)
           }
         }
-        img.onerror = () => reject(new Error('Failed to load image'))
+        img.onerror = (error) => {
+          console.error('[MealSnap] Image load error:', error)
+          reject(new Error('Failed to load image'))
+        }
         img.src = e.target?.result as string
       }
-      reader.onerror = (error) => reject(error)
+      reader.onerror = (error) => {
+        console.error('[MealSnap] FileReader error:', error)
+        reject(error)
+      }
     })
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('[MealSnap] handleImageUpload called', e.target.files)
+    
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      console.log('[MealSnap] No file selected')
+      return
+    }
+
+    console.log('[MealSnap] File selected:', file.name, file.size, 'bytes')
 
     // Reset file input
     e.target.value = ''
 
     // Check scan limit
-    if (!checkScanLimit()) {
+    const canScan = checkScanLimit()
+    console.log('[MealSnap] Scan limit check:', canScan, 'scanCount:', scanCount, 'userPlan:', userPlan)
+    
+    if (!canScan) {
+      console.log('[MealSnap] Scan limit reached, showing pricing modal')
       setShowPricingModal(true)
       return
     }
@@ -350,9 +380,12 @@ export default function MealSnap() {
     setError('')
     
     try {
+      console.log('[MealSnap] Starting image compression...')
       // Compress image before sending
       const base64Image = await compressImage(file)
+      console.log('[MealSnap] Image compressed, size:', base64Image.length, 'chars')
       
+      console.log('[MealSnap] Sending to /api/scan-pantry...')
       const response = await fetch('/api/scan-pantry', {
         method: 'POST',
         headers: {
@@ -360,6 +393,8 @@ export default function MealSnap() {
         },
         body: JSON.stringify({ imageBase64: base64Image }),
       })
+
+      console.log('[MealSnap] Response status:', response.status, response.ok)
 
       if (!response.ok) {
         // Handle 413 specifically
@@ -370,17 +405,21 @@ export default function MealSnap() {
         }
         
         const errorData = await response.json().catch(() => ({}))
+        console.error('[MealSnap] API error:', errorData)
         throw new Error(errorData.error || `Server error: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('[MealSnap] API response:', data)
       
       if (!data.ok || data.error) {
         setError(data.error || 'Failed to scan pantry')
+        setIsLoading(false)
         return
       }
 
       if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+        console.log('[MealSnap] Ingredients detected:', data.items.length)
         setIngredients(data.items)
         incrementScanCount()
         setCurrentView('ingredients')
@@ -390,16 +429,15 @@ export default function MealSnap() {
           (window as any).plausible('Pantry Scanned', { props: { ingredientCount: data.items.length } })
         }
       } else {
+        console.log('[MealSnap] No ingredients detected')
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
         incrementScanCount()
         setCurrentView('ingredients')
       }
     } catch (err: any) {
-      console.error('Scan error:', err)
+      console.error('[MealSnap] Scan error:', err)
       setError(err.message || 'Failed to scan image. Please try again.')
-      // Make sure loading state is cleared
-      setIsLoading(false)
     } finally {
       setIsLoading(false)
     }
