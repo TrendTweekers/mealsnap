@@ -485,10 +485,12 @@ export default function MealSnap() {
               <User className="w-4 h-4 sm:hidden" />
             </button>
           </nav>
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
-  )
+      </header>
+    )
+  }
 
   // Breadcrumb Navigation Component
   const BreadcrumbNav = () => {
