@@ -49,9 +49,18 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="MealSnap" />
         {/* Privacy-friendly analytics by Plausible */}
         <Script
-          defer
-          data-domain="mealsnap-chi.vercel.app"
-          src="https://plausible.io/js/script.js"
+          async
+          src="https://plausible.io/js/pa-z7_ASH-zwutJ1BlKFBYt6.js"
+        />
+        <Script
+          id="plausible-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+              plausible.init()
+            `,
+          }}
         />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
