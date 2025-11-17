@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles } from 'lucide-react'
+import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail } from 'lucide-react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
 
 type Recipe = {
@@ -38,6 +38,11 @@ export default function MealSnap() {
   const [showPricingModal, setShowPricingModal] = useState(false)
   const [scanCount, setScanCount] = useState(0)
   const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'family'>('free')
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailInput, setEmailInput] = useState('')
+  const [emailSubmitted, setEmailSubmitted] = useState(false)
+  const [showEmailGate, setShowEmailGate] = useState(false)
+  const [waitlistCount, setWaitlistCount] = useState(247)
 
   // Generate or load user ID for referrals
   useEffect(() => {
@@ -82,7 +87,7 @@ export default function MealSnap() {
     if (plan) setUserPlan(plan)
   }, [])
 
-  // Load favorites from localStorage
+  // Load favorites and email status from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('mealsnap_favorites')
     if (saved) {
@@ -91,6 +96,12 @@ export default function MealSnap() {
       } catch (e) {
         console.error('Failed to load favorites:', e)
       }
+    }
+    
+    // Check if email already submitted
+    const emailSubmitted = localStorage.getItem('mealsnap_email_submitted')
+    if (emailSubmitted) {
+      setEmailSubmitted(true)
     }
   }, [])
 
@@ -104,8 +115,61 @@ export default function MealSnap() {
     setScanCount(newCount)
     localStorage.setItem('mealsnap_scan_count', newCount.toString())
     
+    // Track scan
+    if (typeof window !== 'undefined' && (window as any).plausible) {
+      (window as any).plausible('Scan Completed', { props: { scanNumber: newCount } })
+    }
+    
     if (newCount >= 3 && userPlan === 'free') {
-      setShowPricingModal(true)
+      // Check if email submitted - if not, show email gate first
+      const hasSubmittedEmail = localStorage.getItem('mealsnap_email_submitted')
+      if (!hasSubmittedEmail) {
+        setShowEmailGate(true)
+      } else {
+        setShowPricingModal(true)
+      }
+    }
+  }
+
+  const handleEmailSubmit = async (email: string, source: 'modal' | 'gate' | 'waitlist') => {
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    try {
+      // Store in localStorage
+      localStorage.setItem('mealsnap_email', email)
+      localStorage.setItem('mealsnap_email_submitted', 'true')
+      setEmailSubmitted(true)
+      
+      // Send to API (we'll create this endpoint)
+      await fetch('/api/save-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, source, userId }),
+      })
+      
+      // Track email capture
+      if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible('Email Captured', { props: { source } })
+      }
+      
+      // Close modals
+      setShowEmailModal(false)
+      setShowEmailGate(false)
+      
+      // If at scan limit, give 2 more scans
+      if (source === 'gate' && scanCount >= 3) {
+        setScanCount(scanCount - 2) // Give 2 more scans
+        localStorage.setItem('mealsnap_scan_count', (scanCount - 2).toString())
+      }
+    } catch (err) {
+      console.error('Failed to save email:', err)
+      // Still mark as submitted locally
+      setEmailSubmitted(true)
+      setShowEmailModal(false)
+      setShowEmailGate(false)
     }
   }
 
@@ -243,6 +307,11 @@ export default function MealSnap() {
         setIngredients(data.items)
         incrementScanCount()
         setCurrentView('ingredients')
+        
+        // Track pantry scan
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Pantry Scanned', { props: { ingredientCount: data.items.length } })
+        }
       } else {
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
@@ -300,6 +369,17 @@ export default function MealSnap() {
         
         setShoppingList(uniqueItems)
         setCurrentView('recipes')
+        
+        // Track recipe generation
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Recipes Generated', { props: { count: data.recipes.length } })
+        }
+        
+        // Show email capture modal after first recipe generation (if email not submitted)
+        const hasSubmittedEmail = localStorage.getItem('mealsnap_email_submitted')
+        if (!hasSubmittedEmail) {
+          setShowEmailModal(true)
+        }
       } else {
         setError('No recipes generated. Try adding more ingredients.')
       }
@@ -878,6 +958,113 @@ export default function MealSnap() {
                 Maybe Later
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Capture Modal (after first recipe) */}
+      {showEmailModal && !emailSubmitted && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative">
+            <button
+              onClick={() => setShowEmailModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Love it? Get your recipes emailed to you</h3>
+              <p className="text-gray-700">We'll send you a copy of these recipes plus new ones weekly</p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleEmailSubmit(emailInput, 'modal')
+              }}
+              className="space-y-4"
+            >
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none text-base"
+                required
+              />
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                Get Recipes Emailed
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                className="w-full text-gray-600 hover:text-gray-700 text-sm font-medium"
+              >
+                Maybe Later
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Email Gate Modal (after 3 scans) */}
+      {showEmailGate && !emailSubmitted && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 relative">
+            <button
+              onClick={() => setShowEmailGate(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-full hover:bg-gray-100"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                <Mail className="w-8 h-8 text-emerald-600" />
+              </div>
+              <h3 className="text-2xl font-extrabold text-gray-900 mb-2">You've used your free scans!</h3>
+              <p className="text-gray-700 mb-1">Enter your email to get <span className="font-bold text-emerald-600">2 more free scans</span></p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleEmailSubmit(emailInput, 'gate')
+              }}
+              className="space-y-4"
+            >
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="your@email.com"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none text-base"
+                required
+              />
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+              >
+                Get 2 More Scans
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEmailGate(false)
+                  setShowPricingModal(true)
+                }}
+                className="w-full text-gray-600 hover:text-gray-700 text-sm font-medium"
+              >
+                Or upgrade to Pro
+              </button>
+            </form>
           </div>
         </div>
       )}

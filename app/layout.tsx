@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import './globals.css'
 import { ThemeProvider } from './providers'
 import { Analytics } from '@vercel/analytics/react'
@@ -46,6 +47,22 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="MealSnap" />
+        {/* Privacy-friendly analytics by Plausible */}
+        <Script
+          strategy="afterInteractive"
+          src="https://plausible.io/js/pa-hbFlnDGOuevGYKH5ZEWB7.js"
+        />
+        <Script
+          id="plausible-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.plausible = window.plausible || function() { (plausible.q = plausible.q || []).push(arguments) };
+              plausible.init = plausible.init || function(i) { plausible.o = i || {} };
+              plausible.init();
+            `,
+          }}
+        />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>
