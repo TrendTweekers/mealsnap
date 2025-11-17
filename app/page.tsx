@@ -50,6 +50,17 @@ export default function MealSnap() {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const refId = urlParams.get('ref')
+      const founderMode = urlParams.get('founder')
+      
+      // Admin bypass: ?founder=true enables unlimited scans
+      if (founderMode === 'true') {
+        localStorage.setItem('mealsnap_founder', 'true')
+        localStorage.setItem('mealsnap_plan', 'pro')
+        setUserPlan('pro')
+        console.log('✅ Founder mode enabled via URL parameter')
+        // Remove the parameter from URL for cleaner sharing
+        window.history.replaceState({}, '', window.location.pathname)
+      }
       
       if (refId) {
         // Track referral (you can add analytics here)
