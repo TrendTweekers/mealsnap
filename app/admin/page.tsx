@@ -780,7 +780,7 @@ ${healthCheck.checks.map((check: any) =>
                                 <div className="text-sm text-slate-400 mt-1">{suggestion.description}</div>
                               </div>
                               {suggestion.savings > 0 && (
-                                <span className="font-bold text-emerald-400">{`Save $${suggestion.savings.toFixed(2)}`}</span>
+                                <span className="font-bold text-emerald-400">Save ${suggestion.savings.toFixed(2)}</span>
                               )}
                             </div>
                           </div>
@@ -1418,25 +1418,16 @@ ${healthCheck.checks.map((check: any) =>
             </div>
 
             {/* Quick Links */}
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border-2 border-emerald-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Links</h2>
+            <div className="bg-emerald-900/20 rounded-lg p-6 border border-emerald-800">
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
               <div className="space-y-2">
-                <a
-                  href="/"
-                  className="block text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
-                >
-                  ← Back to Home
+                <a href="/" className="block text-emerald-400 hover:text-emerald-300">
+                  Back to Home
                 </a>
-                <a
-                  href="/?founder=true"
-                  className="block text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
-                >
+                <a href="/?founder=true" className="block text-emerald-400 hover:text-emerald-300">
                   Enable Founder Mode via URL (?founder=true)
                 </a>
-                <a
-                  href="/admin/waitlist"
-                  className="block text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
-                >
+                <a href="/waitlist" className="block text-emerald-400 hover:text-emerald-300">
                   View Waitlist
                 </a>
               </div>
