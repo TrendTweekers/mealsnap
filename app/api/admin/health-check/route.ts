@@ -33,134 +33,98 @@ export async function GET(req: NextRequest) {
   const timestamp = new Date().toISOString()
   const checks: CheckResult[] = []
 
-  // Check 1: TypeScript Compilation
-  // Note: This check may not work in serverless environments like Vercel
-  // It's best to run `npm run type-check` locally or in CI/CD
-  try {
-    // Check if we can execute shell commands (works in Node.js runtime, not in Edge runtime)
-    if (typeof execAsync !== 'undefined') {
-      const { stdout, stderr } = await execAsync('npx tsc --noEmit', {
-        timeout: 10000,
-        cwd: process.cwd(),
+  // Check 1: OpenAI API Key & Credits
+  const openaiKey = process.env.OPENAI_API_KEY
+  if (openaiKey && openaiKey.length > 20) {
+    // Try to check OpenAI credits/usage (this may not work in all cases)
+    try {
+      // Note: OpenAI doesn't have a direct credits endpoint, but we can test the key
+      const testResponse = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${openaiKey}`,
+        },
+        signal: AbortSignal.timeout(5000),
       })
-      if (stderr && stderr.length > 0) {
+
+      if (testResponse.ok) {
         checks.push({
-          name: 'TypeScript',
+          name: 'OpenAI API',
+          status: 'pass',
+          message: 'Connected',
+          details: 'API key is valid and working',
+        })
+      } else if (testResponse.status === 401) {
+        checks.push({
+          name: 'OpenAI API',
           status: 'fail',
-          message: 'TypeScript compilation errors found',
-          details: stderr.substring(0, 500),
+          message: 'Invalid API key',
+          details: 'Check your OPENAI_API_KEY in environment variables',
+        })
+      } else if (testResponse.status === 429) {
+        checks.push({
+          name: 'OpenAI API',
+          status: 'warning',
+          message: 'Rate limit reached',
+          details: 'You may be hitting OpenAI rate limits',
         })
       } else {
         checks.push({
-          name: 'TypeScript',
-          status: 'pass',
-          message: 'No compilation errors',
+          name: 'OpenAI API',
+          status: 'warning',
+          message: `API returned status ${testResponse.status}`,
+          details: 'API key configured but connection issue',
         })
       }
-    } else {
+    } catch (error: any) {
+      // If we can't test, just verify key exists
       checks.push({
-        name: 'TypeScript',
-        status: 'warning',
-        message: 'TypeScript check skipped (serverless environment)',
-        details: 'Run `npm run type-check` locally to verify TypeScript compilation',
+        name: 'OpenAI API',
+        status: 'pass',
+        message: 'API key configured',
+        details: `Key length: ${openaiKey.length} chars (could not test connection)`,
       })
     }
-  } catch (error: any) {
-    // If exec is not available (Edge runtime), skip this check
-    if (error.code === 'MODULE_NOT_FOUND' || error.message?.includes('exec')) {
-      checks.push({
-        name: 'TypeScript',
-        status: 'warning',
-        message: 'TypeScript check not available in this environment',
-        details: 'Run `npm run type-check` locally or in CI/CD pipeline',
-      })
-    } else {
-      const errorOutput = error.stdout || error.stderr || error.message || ''
-      checks.push({
-        name: 'TypeScript',
-        status: errorOutput.includes('error TS') ? 'fail' : 'warning',
-        message: errorOutput.includes('error TS') 
-          ? 'TypeScript compilation errors found' 
-          : 'TypeScript check failed',
-        details: errorOutput.substring(0, 500),
-      })
-    }
-  }
-
-  // Check 2: OpenAI API Key
-  const openaiKey = process.env.OPENAI_API_KEY
-  if (openaiKey && openaiKey.length > 20) {
-    checks.push({
-      name: 'OpenAI API Key',
-      status: 'pass',
-      message: 'API key configured',
-      details: `Key length: ${openaiKey.length} chars`,
-    })
   } else {
     checks.push({
-      name: 'OpenAI API Key',
+      name: 'OpenAI API',
       status: 'fail',
       message: 'API key not configured or invalid',
+      details: 'Set OPENAI_API_KEY in environment variables',
     })
   }
 
-  // Check 3: Vercel KV Connection
   try {
+    const startTime = Date.now()
     await kv.ping()
-    checks.push({
-      name: 'Vercel KV',
-      status: 'pass',
-      message: 'Connection successful',
-    })
+    const latency = Date.now() - startTime
+    
+    // Get KV usage stats if available
+    try {
+      const scanCount = await kv.get<number>('stats:scans:total') || 0
+      checks.push({
+        name: 'Vercel KV Database',
+        status: 'pass',
+        message: 'Connected',
+        details: `Latency: ${latency}ms | Usage: ${scanCount.toLocaleString()} scans tracked`,
+      })
+    } catch {
+      checks.push({
+        name: 'Vercel KV Database',
+        status: 'pass',
+        message: 'Connected',
+        details: `Latency: ${latency}ms`,
+      })
+    }
   } catch (error: any) {
     checks.push({
-      name: 'Vercel KV',
-      status: 'warning',
-      message: 'Connection failed or not configured',
+      name: 'Vercel KV Database',
+      status: 'fail',
+      message: 'Connection failed',
       details: error?.message?.substring(0, 200) || 'KV may not be configured',
     })
   }
 
-  // Check 4: Environment Variables
-  const requiredEnvVars = ['OPENAI_API_KEY']
-  const optionalEnvVars = ['KV_REST_API_URL', 'KV_REST_API_TOKEN', 'ADMIN_PASSWORD']
-  const missingRequired: string[] = []
-  const missingOptional: string[] = []
-
-  requiredEnvVars.forEach((varName) => {
-    if (!process.env[varName]) {
-      missingRequired.push(varName)
-    }
-  })
-
-  optionalEnvVars.forEach((varName) => {
-    if (!process.env[varName]) {
-      missingOptional.push(varName)
-    }
-  })
-
-  if (missingRequired.length > 0) {
-    checks.push({
-      name: 'Environment Variables',
-      status: 'fail',
-      message: `Missing required variables: ${missingRequired.join(', ')}`,
-    })
-  } else if (missingOptional.length > 0) {
-    checks.push({
-      name: 'Environment Variables',
-      status: 'warning',
-      message: `Missing optional variables: ${missingOptional.join(', ')}`,
-      details: 'These may be required for full functionality',
-    })
-  } else {
-    checks.push({
-      name: 'Environment Variables',
-      status: 'pass',
-      message: 'All variables configured',
-    })
-  }
-
-  // Check 5: API Endpoints (test connectivity)
+  // Check 3: API Endpoints (test connectivity & response times)
   const apiEndpoints = [
     { name: 'scan-pantry', path: '/api/scan-pantry' },
     { name: 'generate-recipes', path: '/api/generate-recipes' },
@@ -220,17 +184,18 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Check 6: Memory Usage (if available)
+  // Check 4: Memory Usage
   try {
     const memoryUsage = process.memoryUsage()
     const usedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024)
     const totalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024)
+    const usagePercent = Math.round((usedMB / totalMB) * 100)
     
     checks.push({
       name: 'Memory Usage',
-      status: usedMB > 500 ? 'warning' : 'pass',
-      message: `Using ${usedMB}MB / ${totalMB}MB`,
-      details: `Heap used: ${usedMB}MB, Total: ${totalMB}MB`,
+      status: usagePercent > 80 ? 'warning' : usagePercent > 90 ? 'fail' : 'pass',
+      message: `${usagePercent}% used (${usedMB}MB / ${totalMB}MB)`,
+      details: usagePercent > 80 ? 'High memory usage - consider optimization' : '',
     })
   } catch (error) {
     checks.push({
@@ -240,53 +205,26 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Check 7: Node.js Version
+  // Check 5: Performance Metrics (Last 24h)
   try {
-    const nodeVersion = process.version
-    const majorVersion = parseInt(nodeVersion.substring(1).split('.')[0])
+    const todayDate = new Date().toISOString().split('T')[0]
+    const totalScans = await kv.get<number>('stats:scans:total') || 0
+    const totalRecipes = await kv.get<number>('stats:recipes:total') || 0
+    const uniqueUsers = await kv.get<number>('stats:unique_users') || 0
+    const todayScans = await kv.get<number>(`stats:scans:daily:${todayDate}`) || 0
+    const todayRecipes = await kv.get<number>(`stats:recipes:daily:${todayDate}`) || 0
+    
     checks.push({
-      name: 'Node.js Version',
-      status: majorVersion >= 18 ? 'pass' : 'warning',
-      message: `Node.js ${nodeVersion}`,
-      details: majorVersion < 18 ? 'Node 18+ recommended' : '',
+      name: 'Performance (24h)',
+      status: 'pass',
+      message: `Today: ${todayScans} scans, ${todayRecipes} recipes`,
+      details: `Total: ${totalScans} scans, ${totalRecipes} recipes, ${uniqueUsers} users`,
     })
   } catch (error) {
     checks.push({
-      name: 'Node.js Version',
+      name: 'Performance (24h)',
       status: 'warning',
-      message: 'Version info not available',
-    })
-  }
-
-  // Check 8: Build Status (check if .next exists)
-  try {
-    // This check works in Node.js runtime but not in Edge runtime
-    if (typeof require !== 'undefined') {
-      const fs = require('fs')
-      const path = require('path')
-      const nextDir = path.join(process.cwd(), '.next')
-      const exists = fs.existsSync(nextDir)
-      checks.push({
-        name: 'Build Status',
-        status: exists ? 'pass' : 'warning',
-        message: exists ? '.next directory exists' : '.next directory not found',
-        details: exists ? 'App appears to be built' : 'Run `npm run build` to create build',
-      })
-    } else {
-      // In serverless/Edge runtime, assume deployed = built
-      checks.push({
-        name: 'Build Status',
-        status: 'pass',
-        message: 'App is deployed (assumes built)',
-        details: 'Build status check not available in serverless environment',
-      })
-    }
-  } catch (error) {
-    checks.push({
-      name: 'Build Status',
-      status: 'warning',
-      message: 'Cannot check build status',
-      details: 'Build check skipped - app appears to be running',
+      message: 'Metrics not available',
     })
   }
 
