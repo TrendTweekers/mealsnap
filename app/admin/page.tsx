@@ -761,7 +761,7 @@ ${healthCheck.checks.map((check: any) =>
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-400">
-                      Break-even: {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ $9.99/mo
+                      Break-even: {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ {`$9.99/mo`}
                     </div>
                   </div>
 
