@@ -4,40 +4,40 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Updated color scheme to teal/emerald for professional finance app */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.4 0.15 175);
-  --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.95 0.02 200);
-  --secondary-foreground: oklch(0.25 0 0);
-  --muted: oklch(0.92 0 0);
-  --muted-foreground: oklch(0.55 0 0);
-  --accent: oklch(0.45 0.17 150);
-  --accent-foreground: oklch(0.98 0 0);
+  /* Dark theme colors for MealSnap */
+  --background: oklch(0.043 0.014 242); /* #0B0E1E dark navy */
+  --foreground: oklch(0.9 0.02 180); /* #E6FFFF light cyan */
+  --card: oklch(0.082 0.01 240); /* #151828 dark card */
+  --card-foreground: oklch(0.9 0.02 180);
+  --popover: oklch(0.082 0.01 240);
+  --popover-foreground: oklch(0.9 0.02 180);
+  --primary: oklch(0.55 0.18 175); /* Cyan/teal primary */
+  --primary-foreground: oklch(0.043 0.014 242);
+  --secondary: oklch(0.12 0.01 240);
+  --secondary-foreground: oklch(0.9 0.02 180);
+  --muted: oklch(0.12 0.01 240);
+  --muted-foreground: oklch(0.72 0.02 180); /* #B8D4D4 muted cyan */
+  --accent: oklch(0.6 0.16 150); /* Emerald accent */
+  --accent-foreground: oklch(0.043 0.014 242);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.01 200);
-  --input: oklch(0.95 0 0);
-  --ring: oklch(0.45 0.15 175);
-  --chart-1: oklch(0.45 0.17 150);
-  --chart-2: oklch(0.55 0.12 200);
-  --chart-3: oklch(0.65 0.08 180);
-  --chart-4: oklch(0.75 0.06 160);
-  --chart-5: oklch(0.85 0.04 170);
+  --border: oklch(0.12 0.01 240); /* #1F2332 */
+  --input: oklch(0.12 0.01 240);
+  --ring: oklch(0.55 0.18 175);
+  --chart-1: oklch(0.55 0.18 175);
+  --chart-2: oklch(0.65 0.15 200);
+  --chart-3: oklch(0.75 0.12 180);
+  --chart-4: oklch(0.85 0.08 160);
+  --chart-5: oklch(0.65 0.1 170);
   --radius: 0.625rem;
-  --sidebar: oklch(0.98 0 0);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.4 0.15 175);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.95 0.02 200);
-  --sidebar-accent-foreground: oklch(0.25 0 0);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.45 0.15 175);
+  --sidebar: oklch(0.082 0.01 240);
+  --sidebar-foreground: oklch(0.9 0.02 180);
+  --sidebar-primary: oklch(0.55 0.18 175);
+  --sidebar-primary-foreground: oklch(0.9 0.02 180);
+  --sidebar-accent: oklch(0.12 0.01 240);
+  --sidebar-accent-foreground: oklch(0.9 0.02 180);
+  --sidebar-border: oklch(0.12 0.01 240);
+  --sidebar-ring: oklch(0.55 0.18 175);
 }
 
 .dark {
@@ -122,5 +122,54 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-card/40 backdrop-blur-sm border border-border/50;
+  }
+  
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent;
+  }
+  
+  /* Glow effect */
+  .glow {
+    filter: drop-shadow(0 0 20px rgba(14, 165, 233, 0.3));
+  }
+  
+  /* Animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out forwards;
+    opacity: 0;
+  }
+  
+  @keyframes glow-pulse {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 20px rgba(14, 165, 233, 0.3);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 30px rgba(14, 165, 233, 0.5);
+    }
+  }
+  
+  .animate-glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
   }
 }

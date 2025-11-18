@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail } from 'lucide-react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
+import { Button } from '@/components/ui/button'
 
 type Recipe = {
   id?: string
@@ -580,7 +581,7 @@ export default function MealSnap() {
     const scansRemaining = userPlan === 'free' ? Math.max(0, 3 - scanCount) : '∞'
     
     return (
-      <header className="bg-[#0B0E1E]/95 backdrop-blur-sm border-b border-[#1F2332] sticky top-0 z-50 shadow-sm">
+      <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <button
@@ -590,18 +591,18 @@ export default function MealSnap() {
               <div className="transform transition-transform duration-300 group-hover:scale-110">
                 <MealSnapLogo className="w-12 h-12" />
         </div>
-              <span className="text-xl font-bold text-[#E6FFFF] tracking-tight hidden sm:inline">
-                Meal<span className="text-emerald-400">Snap</span>
+              <span className="text-xl font-bold text-foreground tracking-tight hidden sm:inline">
+                Meal<span className="text-primary">Snap</span>
               </span>
             </button>
 
             <div className="flex items-center gap-2 sm:gap-3">
               {userPlan === 'free' && (
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
-                  <span className="text-xs font-semibold text-emerald-300">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-lg">
+                  <span className="text-xs font-semibold text-primary">
                     {scansRemaining}/3 scans remaining
                   </span>
-      </div>
+                </div>
               )}
               
               {userPlan === 'free' && (
@@ -624,8 +625,8 @@ export default function MealSnap() {
               onClick={() => setCurrentView('home')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 currentView === 'home'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                  : 'text-[#B8D4D4] hover:text-[#E6FFFF] hover:bg-[#151828]/40'
+                  ? 'bg-primary/20 text-primary border border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/40'
               }`}
             >
               <span className="hidden sm:inline">New Scan</span>
@@ -635,8 +636,8 @@ export default function MealSnap() {
               onClick={() => setCurrentView('favorites')}
               className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 currentView === 'favorites'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                  : 'text-[#B8D4D4] hover:text-[#E6FFFF] hover:bg-[#151828]/40'
+                  ? 'bg-primary/20 text-primary border border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/40'
               }`}
             >
               <span className="hidden sm:inline">Favorites</span>
@@ -649,13 +650,13 @@ export default function MealSnap() {
             </button>
             <a
               href="/waitlist"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-[#B8D4D4] hover:text-[#E6FFFF] hover:bg-[#151828]/40 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/40 transition-colors"
             >
               <span className="hidden sm:inline">Waitlist</span>
               <Mail className="w-4 h-4 sm:hidden" />
             </a>
             <button
-              className="px-4 py-2 rounded-lg text-sm font-medium text-[#B8D4D4] hover:text-[#E6FFFF] hover:bg-[#151828]/40 transition-colors"
+              className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/40 transition-colors"
             >
               <span className="hidden sm:inline">Profile</span>
               <User className="w-4 h-4 sm:hidden" />
@@ -713,110 +714,102 @@ export default function MealSnap() {
   // HOME VIEW
   if (currentView === 'home') {
     return (
-      <div className="min-h-screen bg-[#0B0E1E]">
+      <div className="min-h-screen bg-background">
         <StickyHeader />
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Hero Section - Dark Theme with Image */}
-          <section className="relative overflow-hidden pt-20 pb-32 px-6">
-            <div className="relative z-10 max-w-7xl mx-auto">
-              <div className="grid lg:grid-cols-2 gap-12 items-center">
-                {/* Left Column - Text Content */}
-                <div className="space-y-8">
-                  {/* Powered by AI Badge */}
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#151828]/40 backdrop-blur-sm rounded-full border border-[#1F2332]">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    <span className="text-sm font-semibold text-[#E6FFFF]">Powered by AI</span>
-                  </div>
+          {/* Hero Section - Matching Lovable Design */}
+          <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+            {/* Background gradient glow */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+            <div 
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-96 opacity-30"
+              style={{ 
+                background: 'radial-gradient(circle at 50% 0%, hsl(185 100% 50% / 0.2), transparent 70%)' 
+              }}
+            />
             
-                  <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-[#E6FFFF] leading-tight">
-                    Stop wasting food. <span className="bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">Start cooking</span> what you have.
+            <div className="container mx-auto px-4 py-32 relative z-10">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Left content */}
+                <div className="space-y-8 animate-fade-in">
+                  <div className="inline-block glass px-4 py-2 rounded-full text-sm text-primary animate-glow-pulse">
+                    ✨ Powered by AI
+                  </div>
+                  
+                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
+                    Stop wasting food.{" "}
+                    <span className="text-gradient">Start cooking</span>{" "}
+                    what you have.
                   </h1>
-              
-                  <p className="text-lg text-[#B8D4D4] max-w-xl font-medium leading-relaxed">
-                    Snap your fridge, get <span className="font-bold text-emerald-400">6-8 recipes</span> you can make tonight. Missing something? Add to cart in <span className="font-bold text-emerald-400">1 tap</span>.
+                  
+                  <p className="text-lg text-muted-foreground max-w-xl">
+                    Snap your fridge, get <span className="text-primary font-semibold">6-8 recipes</span> you can make tonight. 
+                    Missing something? Add to cart in <span className="text-accent font-semibold">1 tap</span>.
                   </p>
                   
-                  {/* Benefits Grid */}
                   <div className="grid sm:grid-cols-2 gap-4">
-                <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-6 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
-                      <span className="text-2xl">✅</span>
-                    </div>
-                    <span className="text-[#E6FFFF] font-semibold text-lg pt-1">No more "what's for dinner?" stress</span>
-                  </div>
-                </div>
-                <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-6 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
-                      <span className="text-2xl">✅</span>
-                    </div>
-                    <span className="text-[#E6FFFF] font-semibold text-lg pt-1">Use ingredients before they expire</span>
-                  </div>
-                </div>
-                <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-6 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
-                      <span className="text-2xl">✅</span>
-                    </div>
-                    <span className="text-[#E6FFFF] font-semibold text-lg pt-1">Save $200/month on food waste</span>
-                  </div>
-                </div>
-                <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-6 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
-                      <span className="text-2xl">✅</span>
-                    </div>
-                    <span className="text-[#E6FFFF] font-semibold text-lg pt-1">One-tap grocery delivery for anything missing</span>
-                  </div>
-                </div>
+                    {[
+                      "No more \"what's for dinner?\" stress",
+                      "Use ingredients before they expire",
+                      "Save $200/month on food waste",
+                      "One-tap grocery delivery for anything missing"
+                    ].map((benefit, i) => (
+                      <div key={i} className="flex items-start gap-3">
+                        <div className="w-6 h-6 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-4 h-4 text-primary" />
+            </div>
+                        <span className="text-sm text-foreground/90">{benefit}</span>
+                      </div>
+                    ))}
                   </div>
                   
-                  {/* CTA Buttons */}
-                  <div className="flex flex-wrap gap-4 pt-4">
-                    <button
+                  <div className="flex flex-wrap gap-4">
+                    <Button 
+                      variant="hero" 
+                      size="lg" 
+                      className="group"
                       onClick={() => {
                         const scanCard = document.querySelector('[data-scan-card]');
                         scanCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       }}
-                      className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold h-12 rounded-lg px-8 text-base transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group"
                     >
                       Get Started
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="lg"
                       onClick={() => {
                         const stepsSection = document.querySelector('[data-steps-section]');
                         stepsSection?.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="inline-flex items-center justify-center gap-2 border-2 border-emerald-500/50 bg-transparent text-[#E6FFFF] hover:bg-emerald-500/10 font-medium h-12 rounded-lg px-8 text-base transition-all duration-300 hover:scale-105"
                     >
                       See How It Works
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 
-                {/* Right Column - Image */}
-                <div className="relative">
-                  <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                {/* Right image */}
+                <div className="relative animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                  <div className="relative rounded-3xl overflow-hidden shadow-2xl glow">
                     <img 
                       src="https://futuro-meal-muse.lovable.app/assets/hero-image-BzJPPt3O.jpg" 
-                      alt="Fresh colorful ingredients in space" 
+                      alt="Fresh colorful ingredients in space"
                       className="w-full h-auto"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E1E]/50 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
                   </div>
                   
-                  {/* "10s Photo to Recipe" Overlay Card */}
-                  <div className="absolute -bottom-6 -left-6 bg-[#151828]/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs border border-[#1F2332]">
+                  {/* Floating stats card */}
+                  <div className="absolute -bottom-6 -left-6 glass p-6 rounded-2xl shadow-xl max-w-xs">
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
-                        <Camera className="w-5 h-5 text-emerald-400" />
+                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                        <Camera className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">10s</div>
-                        <div className="text-sm text-[#B8D4D4]">Photo to Recipe</div>
+                        <div className="text-2xl font-bold text-gradient">10s</div>
+                        <div className="text-sm text-muted-foreground">Photo to Recipe</div>
                       </div>
                     </div>
                   </div>
@@ -833,7 +826,7 @@ export default function MealSnap() {
               </div>
               <button onClick={() => setError('')} className="text-red-400 hover:text-red-300">
                 <X className="w-4 h-4" />
-              </button>
+                  </button>
             </div>
           )}
 
