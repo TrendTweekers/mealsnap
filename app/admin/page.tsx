@@ -58,45 +58,17 @@ export default function AdminPage() {
   const [profitPeriod, setProfitPeriod] = useState<'today' | 'week' | 'month' | 'alltime'>('today')
 
   useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
-    try {
-      setAuthLoading(true)
-      
-      // First check localStorage (faster, works immediately)
-      if (typeof window !== 'undefined') {
-        const localStorageAuth = localStorage.getItem('admin_authenticated') === 'true'
-        if (localStorageAuth) {
-          setIsAuthenticated(true)
-          loadAdminData()
-          setAuthLoading(false)
-          return
-        }
-      }
-      
-      // Fallback to cookie check (for server-side auth)
-      const res = await fetch('/api/admin/auth')
-      const data = await res.json()
-      
-      if (data.ok && data.authenticated) {
-        // Also set localStorage for future checks
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('admin_authenticated', 'true')
-        }
-        setIsAuthenticated(true)
+    // Only check localStorage on mount - no API call to avoid race condition
+    setAuthLoading(true)
+    if (typeof window !== 'undefined') {
+      const authed = localStorage.getItem('admin_authenticated') === 'true'
+      setIsAuthenticated(authed)
+      if (authed) {
         loadAdminData()
-      } else {
-        setIsAuthenticated(false)
       }
-    } catch (err) {
-      console.error('Failed to check auth:', err)
-      setIsAuthenticated(false)
-    } finally {
-      setAuthLoading(false)
     }
-  }
+    setAuthLoading(false)
+  }, [])
 
   const loadAdminData = () => {
     if (typeof window !== 'undefined') {
@@ -153,8 +125,8 @@ export default function AdminPage() {
       
       const data = await res.json()
       
-      if (data.ok) {
-        // Store in localStorage for persistence
+      if (res.ok && data.ok) {
+        // Store in localStorage ONLY - simple and reliable
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin_authenticated', 'true')
         }
@@ -170,28 +142,21 @@ export default function AdminPage() {
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      // Remove from localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('admin_authenticated')
-      }
-      
-      // Also clear server-side cookie
-      await fetch('/api/admin/auth', { method: 'DELETE' })
-      
-      setIsAuthenticated(false)
-      setPassword('')
-      setMessage('Logged out successfully')
-      setTimeout(() => setMessage(''), 3000)
-    } catch (err) {
-      console.error('Logout error:', err)
-      // Even if API call fails, still logout locally
-      setIsAuthenticated(false)
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('admin_authenticated')
-      }
+  const handleLogout = () => {
+    // Remove from localStorage - simple and reliable
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_authenticated')
     }
+    
+    // Also clear server-side cookie (non-blocking)
+    fetch('/api/admin/auth', { method: 'DELETE' }).catch(() => {
+      // Ignore errors - logout should work even if API fails
+    })
+    
+    setIsAuthenticated(false)
+    setPassword('')
+    setMessage('Logged out successfully')
+    setTimeout(() => setMessage(''), 3000)
   }
 
   const fetchIngredientStats = async () => {
