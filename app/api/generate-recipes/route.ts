@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { kv } from '@vercel/kv';
+import { createHash } from 'crypto';
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -61,7 +63,53 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // --- 2. Build very explicit JSON-only prompt --------------------------
+    // --- 2. Check cache first (intelligent caching) ----------------------
+    // Create cache key from sorted ingredients (same combo = same hash)
+    const sortedIngredients = [...ingredients].sort().map(i => i.toLowerCase().trim()).filter(i => i.length > 0)
+    const ingredientsString = sortedIngredients.join(',')
+    const cacheKey = createHash('sha256').update(ingredientsString).digest('hex')
+    const cacheRedisKey = `recipes:${cacheKey}`
+
+    try {
+      // Check if we have cached recipes for these ingredients
+      const cached = await kv.get(cacheRedisKey)
+      
+      if (cached) {
+        console.log(`[generate-recipes] Cache HIT for key: ${cacheKey.substring(0, 8)}...`)
+        
+        // Track cache hit (non-blocking)
+        try {
+          fetch(`${req.nextUrl.origin}/api/track-recipe-generation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: userId || 'anonymous',
+              recipeCount: cached.recipes?.length || 0,
+              ingredientCount: ingredients.length,
+              success: true,
+              cached: true,
+            }),
+          }).catch(() => {}) // Silent fail
+        } catch {}
+        
+        return NextResponse.json(
+          {
+            ok: true,
+            recipes: cached.recipes || [],
+            shoppingList: cached.shoppingList || [],
+            cached: true, // Indicate this was from cache
+          },
+          { status: 200 }
+        )
+      }
+      
+      console.log(`[generate-recipes] Cache MISS for key: ${cacheKey.substring(0, 8)}...`)
+    } catch (cacheError) {
+      // If cache check fails, continue with OpenAI call (graceful degradation)
+      console.warn('[generate-recipes] Cache check failed, continuing with OpenAI:', cacheError)
+    }
+
+    // --- 3. Build very explicit JSON-only prompt --------------------------
     const prompt = `
 You are a cooking assistant.
 
@@ -113,7 +161,7 @@ RULES:
 - Do NOT include any additional text before or after the JSON.
 `;
 
-    // --- 3. Call OpenAI ---------------------------------------------------
+    // --- 4. Call OpenAI ---------------------------------------------------
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -158,7 +206,7 @@ RULES:
 
     console.log("[generate-recipes] Raw model response:", rawText);
 
-    // --- 4. Clean & parse JSON safely -------------------------------------
+    // --- 5. Clean & parse JSON safely -------------------------------------
     let cleaned = rawText.trim();
 
     // just in case the model still uses ```json ... ```
@@ -223,6 +271,49 @@ RULES:
       );
     }
 
+    // Track OpenAI costs (non-blocking) - only if not cached
+    if (!cached) {
+      try {
+        const usage = data.usage || {}
+        const promptTokens = usage.prompt_tokens || 2000 // Estimate if not provided
+        const completionTokens = usage.completion_tokens || 2000
+        const totalTokens = usage.total_tokens || (promptTokens + completionTokens)
+        
+        // GPT-4o pricing: $0.005 per 1K input tokens, $0.015 per 1K output tokens
+        // For recipe generation, use higher estimate
+        const inputCost = (promptTokens * 0.005 / 1000)
+        const outputCost = (completionTokens * 0.015 / 1000)
+        const totalCost = inputCost + outputCost
+        
+        const timestamp = new Date().toISOString()
+        const dateKey = timestamp.split('T')[0] // YYYY-MM-DD
+        const monthKey = timestamp.substring(0, 7) // YYYY-MM
+        
+        // Track daily costs
+        await kv.hincrbyfloat(`costs:daily:${dateKey}`, 'openai_recipes', totalCost)
+        await kv.hincrbyfloat(`costs:monthly:${monthKey}`, 'openai_recipes', totalCost)
+        await kv.hincrbyfloat('costs:alltime', 'openai_recipes', totalCost)
+        
+        // Store detailed record for analytics (now that we have parsed data)
+        const recordKey = `cost:recipe:${Date.now()}:${userId || 'anonymous'}`
+        await kv.set(recordKey, {
+          userId: userId || 'anonymous',
+          tokens: totalTokens,
+          cost: totalCost,
+          recipeCount: parsed.recipes?.length || 0,
+          cached: false,
+          date: dateKey,
+          timestamp,
+          createdAt: Date.now(),
+        }, { ex: 60 * 60 * 24 * 90 }) // Expire after 90 days
+        
+        console.log('[Cost Tracking] Recipe gen cost:', totalCost.toFixed(4), 'tokens:', totalTokens, 'recipes:', parsed.recipes?.length || 0)
+      } catch (costError) {
+        // Silent fail - cost tracking shouldn't block response
+        console.warn('[Cost Tracking] Failed to track recipe cost:', costError)
+      }
+    }
+
     // Track recipe generation statistics (non-blocking)
     try {
       fetch(`${req.nextUrl.origin}/api/track-recipe-generation`, {
@@ -233,6 +324,7 @@ RULES:
           recipeCount: parsed.recipes?.length || 0,
           ingredientCount: ingredients.length,
           success: true,
+          cached: cached || false,
         }),
       }).catch(err => {
         // Silent fail - tracking shouldn't block response
@@ -242,12 +334,28 @@ RULES:
       // Silent fail
     }
 
-    // --- 5. Return normalized payload -------------------------------------
+    // --- 6. Cache the results for 7 days ----------------------------------
+    try {
+      await kv.set(cacheRedisKey, {
+        recipes: parsed.recipes,
+        shoppingList: parsed.shoppingList,
+        ingredients: sortedIngredients,
+        createdAt: new Date().toISOString(),
+      }, { ex: 604800 }) // Expire after 7 days (604800 seconds)
+      
+      console.log(`[generate-recipes] Cached recipes for key: ${cacheKey.substring(0, 8)}...`)
+    } catch (cacheError) {
+      // If caching fails, still return results (graceful degradation)
+      console.warn('[generate-recipes] Failed to cache results:', cacheError)
+    }
+
+    // --- 7. Return normalized payload -------------------------------------
     return NextResponse.json(
       {
         ok: true,
         recipes: parsed.recipes,
         shoppingList: parsed.shoppingList,
+        cached: false, // Indicate this was freshly generated
       },
       { status: 200 }
     );

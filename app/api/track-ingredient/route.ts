@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { ingredient, userId } = await req.json()
+    const { ingredient, userId, wasVisible, scanId, reason } = await req.json()
 
     if (!ingredient || typeof ingredient !== 'string') {
       return NextResponse.json(
@@ -56,10 +56,31 @@ export async function POST(req: NextRequest) {
 
     const timestamp = new Date().toISOString()
     const ingredientKey = `manual_ingredient:${cleanIngredient}`
+    const missedIngredientKey = `missed_ingredient:${cleanIngredient}` // For AI training
 
     try {
       // Increment count for this ingredient
       await kv.incr(ingredientKey)
+      
+      // If ingredient was visible but AI missed it, track as "missed"
+      if (wasVisible === true) {
+        await kv.incr(missedIngredientKey)
+        
+        // Track missed ingredient with metadata
+        const missedRecordKey = `missed_ingredient:record:${Date.now()}:${cleanIngredient}`
+        await kv.set(missedRecordKey, {
+          ingredient: cleanIngredient,
+          userId: userId || 'unknown',
+          scanId: scanId || null,
+          wasVisible: true,
+          reason: reason || null, // e.g., "packaging", "in_container", "partially_visible"
+          timestamp,
+          createdAt: Date.now(),
+        }, { ex: 60 * 60 * 24 * 90 }) // Expire after 90 days
+        
+        // Add to set of missed ingredients
+        await kv.sadd('missed_ingredients:all', cleanIngredient)
+      }
       
       // Add to set of all manually added ingredients (for easy querying)
       await kv.sadd('manual_ingredients:all', cleanIngredient)
@@ -69,11 +90,20 @@ export async function POST(req: NextRequest) {
       await kv.set(recordKey, {
         ingredient: cleanIngredient,
         userId: userId || 'unknown',
+        scanId: scanId || null,
+        wasVisible: wasVisible !== undefined ? wasVisible : null,
+        reason: reason || null,
         timestamp,
         createdAt: Date.now(),
       }, { ex: 60 * 60 * 24 * 90 }) // Expire after 90 days
       
-      console.log('[Ingredient Tracking]', { ingredient: cleanIngredient, userId, timestamp })
+      console.log('[Ingredient Tracking]', { 
+        ingredient: cleanIngredient, 
+        userId, 
+        wasVisible,
+        scanId,
+        timestamp 
+      })
     } catch (kvError) {
       // If KV is not configured, just log (graceful degradation)
       console.warn('[Ingredient Tracking] Vercel KV not configured, logging only:', kvError)

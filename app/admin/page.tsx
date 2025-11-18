@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
-import { Check, X, RefreshCw, TrendingUp, Loader2, BarChart3, Users, Camera, ChefHat, ArrowUpRight, Activity, AlertCircle, Copy, CheckCircle2 } from 'lucide-react'
+import { Check, X, RefreshCw, TrendingUp, Loader2, BarChart3, Users, Camera, ChefHat, ArrowUpRight, Activity, AlertCircle, Copy, CheckCircle2, Brain, FileText, Download, Sparkles, DollarSign, TrendingDown, Zap, Target } from 'lucide-react'
 
 type IngredientStat = {
   ingredient: string
@@ -49,6 +49,13 @@ export default function AdminPage() {
   const [healthCheck, setHealthCheck] = useState<any>(null)
   const [healthCheckLoading, setHealthCheckLoading] = useState(false)
   const [healthCheckError, setHealthCheckError] = useState<string>('')
+  const [trainingData, setTrainingData] = useState<any>(null)
+  const [trainingDataLoading, setTrainingDataLoading] = useState(false)
+  const [improvedPrompt, setImprovedPrompt] = useState<any>(null)
+  const [promptLoading, setPromptLoading] = useState(false)
+  const [profitData, setProfitData] = useState<any>(null)
+  const [profitLoading, setProfitLoading] = useState(false)
+  const [profitPeriod, setProfitPeriod] = useState<'today' | 'week' | 'month' | 'alltime'>('today')
 
   useEffect(() => {
     checkAuth()
@@ -85,9 +92,10 @@ export default function AdminPage() {
       setUserPlan(plan || 'free')
     }
     
-    // Load ingredient stats and general stats
+    // Load ingredient stats, general stats, and profit data
     fetchIngredientStats()
     fetchStats()
+    fetchProfitData('today')
   }
 
   const fetchStats = async () => {
@@ -255,6 +263,162 @@ ${healthCheck.checks.map((check: any) =>
     })
   }
 
+  const fetchTrainingData = async () => {
+    try {
+      setTrainingDataLoading(true)
+      const res = await fetch('/api/admin/training-data')
+      
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Training data fetch failed: ${res.status}`)
+      }
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setTrainingData(data)
+      }
+    } catch (err: any) {
+      console.error('Training data error:', err)
+      setMessage('Failed to load training data')
+      setTimeout(() => setMessage(''), 3000)
+    } finally {
+      setTrainingDataLoading(false)
+    }
+  }
+
+  const generateImprovedPrompt = async () => {
+    try {
+      setPromptLoading(true)
+      const res = await fetch('/api/admin/generate-prompt')
+      
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Prompt generation failed: ${res.status}`)
+      }
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setImprovedPrompt(data)
+      }
+    } catch (err: any) {
+      console.error('Prompt generation error:', err)
+      setMessage('Failed to generate improved prompt')
+      setTimeout(() => setMessage(''), 3000)
+    } finally {
+      setPromptLoading(false)
+    }
+  }
+
+  const exportTrainingDataCSV = () => {
+    if (!trainingData || !trainingData.missedIngredients) return
+    
+    const csv = [
+      ['Ingredient', 'Missed Count', 'Miss Rate (%)', 'Common Issues'].join(','),
+      ...trainingData.missedIngredients.map((item: any) => 
+        [
+          item.ingredient,
+          item.count,
+          item.missRate,
+          item.commonIssues.join('; ')
+        ].join(',')
+      ),
+    ].join('\n')
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `mealsnap-training-data-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    setMessage('Training data exported!')
+    setTimeout(() => setMessage(''), 3000)
+  }
+
+  const copyImprovedPrompt = () => {
+    if (!improvedPrompt) return
+    
+    navigator.clipboard.writeText(improvedPrompt.improvedPrompt).then(() => {
+      setMessage('Improved prompt copied to clipboard!')
+      setTimeout(() => setMessage(''), 3000)
+    }).catch(() => {
+      setMessage('Failed to copy prompt')
+      setTimeout(() => setMessage(''), 3000)
+    })
+  }
+
+  const fetchProfitData = async (period: 'today' | 'week' | 'month' | 'alltime') => {
+    try {
+      setProfitLoading(true)
+      const res = await fetch(`/api/admin/profit-calculator?period=${period}`)
+      
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Profit calculator failed: ${res.status}`)
+      }
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setProfitData(data)
+      }
+    } catch (err: any) {
+      console.error('Profit calculator error:', err)
+      setMessage('Failed to load profit data')
+      setTimeout(() => setMessage(''), 3000)
+    } finally {
+      setProfitLoading(false)
+    }
+  }
+
+  const handleProfitPeriodChange = (period: 'today' | 'week' | 'month' | 'alltime') => {
+    setProfitPeriod(period)
+    fetchProfitData(period)
+  }
+
+  const exportProfitCSV = () => {
+    if (!profitData) return
+    
+    const csv = [
+      ['Date', 'Period', 'Revenue', 'Costs', 'Profit', 'Users', 'Conversion Rate (%)'].join(','),
+      [
+        new Date().toISOString().split('T')[0],
+        profitPeriod,
+        profitData.revenue?.total || 0,
+        profitData.costs?.total || 0,
+        profitData.profit?.net || 0,
+        profitData.metrics?.totalUsers || 0,
+        profitData.metrics?.conversionRate || 0,
+      ].join(','),
+    ].join('\n')
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `mealsnap-profit-${profitPeriod}-${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    
+    setMessage('Profit report exported!')
+    setTimeout(() => setMessage(''), 3000)
+  }
+
   // Password protection screen
   if (authLoading) {
     return (
@@ -373,6 +537,330 @@ ${healthCheck.checks.map((check: any) =>
                   <span className="font-bold text-gray-900">{scanCount}/3</span>
                 </div>
               </div>
+            </div>
+
+            {/* Revenue & Costs Dashboard */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <DollarSign className="w-6 h-6 text-blue-600" />
+                  Revenue & Costs Dashboard
+                </h2>
+                <button
+                  onClick={() => fetchProfitData(profitPeriod)}
+                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                  title="Refresh profit data"
+                >
+                  <RefreshCw className={`w-5 h-5 text-blue-600 ${profitLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {/* Period Selector */}
+              <div className="flex gap-2 mb-6 flex-wrap">
+                {(['today', 'week', 'month', 'alltime'] as const).map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => handleProfitPeriodChange(period)}
+                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                      profitPeriod === period
+                        ? 'bg-blue-600 text-white shadow-lg'
+                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {period === 'today' ? 'Today' : period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : 'All Time'}
+                  </button>
+                ))}
+              </div>
+
+              {profitLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              ) : profitData ? (
+                <div className="space-y-6">
+                  {/* Revenue Section */}
+                  <div className="bg-white rounded-xl p-5 border border-blue-100">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      Revenue
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Subscriptions:</span>
+                        <span className="font-bold text-gray-900">${profitData.revenue?.subscriptions?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Free users:</span>
+                          <span>{profitData.revenue?.breakdown?.free || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Pro users:</span>
+                          <span>{profitData.revenue?.breakdown?.pro || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Family users:</span>
+                          <span>{profitData.revenue?.breakdown?.family || 0}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <span className="text-gray-700">Affiliate Revenue:</span>
+                        <span className="font-bold text-gray-900">${profitData.revenue?.affiliate?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Instacart clicks:</span>
+                          <span>{profitData.metrics?.instacartClicks || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Est. conversions (5%):</span>
+                          <span>{profitData.metrics?.estimatedConversions || 0}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t-2 border-emerald-200">
+                        <span className="font-bold text-gray-900">Total Revenue:</span>
+                        <span className="font-extrabold text-emerald-600 text-xl">${profitData.revenue?.total?.toFixed(2) || '0.00'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Costs Section */}
+                  <div className="bg-white rounded-xl p-5 border border-red-100">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <TrendingDown className="w-5 h-5 text-red-600" />
+                      Costs
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">OpenAI API:</span>
+                        <span className="font-bold text-gray-900">${profitData.costs?.openai?.total?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Scans (Vision):</span>
+                          <span>${profitData.costs?.openai?.scan?.toFixed(4) || '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Recipes (GPT-4o):</span>
+                          <span>${profitData.costs?.openai?.recipes?.toFixed(4) || '0.00'}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <span className="text-gray-700">Infrastructure:</span>
+                        <span className="font-bold text-gray-900">${profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00'}/day</span>
+                      </div>
+                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Vercel hosting:</span>
+                          <span>${profitData.costs?.infrastructure?.vercel_hosting?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Vercel KV:</span>
+                          <span>${profitData.costs?.infrastructure?.vercel_kv?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Plausible Analytics:</span>
+                          <span>${profitData.costs?.infrastructure?.plausible_analytics?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Domain:</span>
+                          <span>${profitData.costs?.infrastructure?.domain?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Monitoring:</span>
+                          <span>${profitData.costs?.infrastructure?.monitoring?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Email service:</span>
+                          <span>${profitData.costs?.infrastructure?.email_service?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Backups:</span>
+                          <span>${profitData.costs?.infrastructure?.backups?.toFixed(2) || '0.00'}/day</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t-2 border-red-200">
+                        <span className="font-bold text-gray-900">Total Costs:</span>
+                        <span className="font-extrabold text-red-600 text-xl">${profitData.costs?.total?.toFixed(2) || '0.00'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Profit/Loss Section */}
+                  <div className={`bg-white rounded-xl p-5 border-2 ${
+                    profitData.profit?.net >= 0 
+                      ? 'border-emerald-300 bg-emerald-50' 
+                      : 'border-red-300 bg-red-50'
+                  }`}>
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      {profitData.profit?.net >= 0 ? (
+                        <TrendingUp className="w-5 h-5 text-emerald-600" />
+                      ) : (
+                        <TrendingDown className="w-5 h-5 text-red-600" />
+                      )}
+                      Profit/Loss
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700 font-medium">Net Profit ({profitPeriod === 'today' ? 'Today' : profitPeriod === 'week' ? 'This Week' : profitPeriod === 'month' ? 'MTD' : 'All Time'}):</span>
+                        <span className={`font-extrabold text-2xl ${
+                          profitData.profit?.net >= 0 ? 'text-emerald-600' : 'text-red-600'
+                        }`}>
+                          ${profitData.profit?.net?.toFixed(2) || '0.00'} 
+                          {profitData.profit?.net < 0 ? ' 🔴' : ' 🟢'}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-gray-200 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Break-even Point:</span>
+                          <span className="font-semibold">{profitData.metrics?.breakEvenUsers || 0} paid users</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Current Conversion:</span>
+                          <span className="font-semibold">{profitData.metrics?.conversionRate?.toFixed(1) || '0.0'}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Target Conversion:</span>
+                          <span className="font-semibold">3%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Per-User Metrics */}
+                  <div className="bg-white rounded-xl p-5 border border-gray-200">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5 text-purple-600" />
+                      Per-User Metrics
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-700">Avg Cost per User:</span>
+                        <span className="font-bold text-gray-900">${profitData.metrics?.avgCostPerUser?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                        <div className="flex justify-between">
+                          <span>Scan cost:</span>
+                          <span>~$0.15</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Recipe gen cost:</span>
+                          <span>~$0.20</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <span className="text-gray-700">Avg Revenue per User:</span>
+                        <span className="font-bold text-gray-900">${profitData.metrics?.avgRevenuePerUser?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t-2 border-gray-300">
+                        <span className="font-bold text-gray-900">Unit Economics:</span>
+                        <span className={`font-extrabold text-xl ${
+                          profitData.metrics?.unitEconomics >= 0 ? 'text-emerald-600' : 'text-red-600'
+                        }`}>
+                          ${profitData.metrics?.unitEconomics?.toFixed(2) || '0.00'}
+                          {profitData.metrics?.unitEconomics < 0 ? ' 🔴' : ' 🟢'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                        <span className="text-gray-600 text-sm">LTV:CAC Ratio:</span>
+                        <span className="font-semibold text-sm">
+                          {profitData.metrics?.ltvCacRatio > 0 ? profitData.metrics.ltvCacRatio.toFixed(1) : '0'}:1
+                          {profitData.metrics?.ltvCacRatio >= 3 ? ' 🟢' : profitData.metrics?.ltvCacRatio > 0 ? ' 🟡' : ' 🔴'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Projections */}
+                  <div className="bg-white rounded-xl p-5 border border-yellow-200 bg-yellow-50">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Target className="w-5 h-5 text-yellow-600" />
+                      Projections (Next 30 Days)
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="text-gray-700 mb-3">If growth continues:</div>
+                      <div className="space-y-2 pl-4">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Expected users:</span>
+                          <span className="font-semibold">{profitData.metrics?.totalUsers || 0}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Expected costs:</span>
+                          <span className="font-semibold">${profitData.projections?.next30Days?.expectedCost?.toFixed(2) || '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Expected revenue:</span>
+                          <span className="font-semibold">${profitData.projections?.next30Days?.expectedRevenue?.toFixed(2) || '0.00'}</span>
+                        </div>
+                        <div className="flex justify-between pt-2 border-t border-yellow-200">
+                          <span className="font-bold text-gray-900">Expected profit:</span>
+                          <span className={`font-extrabold ${
+                            profitData.projections?.next30Days?.expectedProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
+                          }`}>
+                            ${profitData.projections?.next30Days?.expectedProfit?.toFixed(2) || '0.00'}
+                            {profitData.projections?.next30Days?.expectedProfit < 0 ? ' 🔴' : ' 🟢'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="pt-3 border-t border-yellow-200">
+                        <div className="text-gray-700 font-medium mb-2">To break even, you need:</div>
+                        <div className="pl-4 space-y-1 text-gray-600">
+                          <div>• {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ $9.99/mo</div>
+                          <div>• OR 5% conversion rate</div>
+                          <div>• OR reduce costs by 70%</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optimization Suggestions */}
+                  {profitData.suggestions && profitData.suggestions.length > 0 && (
+                    <div className="bg-white rounded-xl p-5 border-2 border-orange-200 bg-orange-50">
+                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-orange-600" />
+                        Cost Optimization Suggestions
+                      </h3>
+                      <div className="space-y-3">
+                        {profitData.suggestions.map((suggestion: any, index: number) => (
+                          <div
+                            key={index}
+                            className={`p-3 rounded-lg border ${
+                              suggestion.type === 'critical' 
+                                ? 'bg-red-50 border-red-200' 
+                                : 'bg-yellow-50 border-yellow-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <div className="font-semibold text-gray-900">{suggestion.title}</div>
+                                <div className="text-sm text-gray-600 mt-1">{suggestion.description}</div>
+                              </div>
+                              {suggestion.savings > 0 && (
+                                <span className="font-bold text-emerald-600">Save ${suggestion.savings.toFixed(2)}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={exportProfitCSV}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl px-4 py-3 font-semibold transition-colors flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export Report
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No profit data available yet. Start using the app to see metrics!
+                </div>
+              )}
             </div>
 
             {/* Statistics Dashboard */}
@@ -829,6 +1317,194 @@ ${healthCheck.checks.map((check: any) =>
                     Refresh Results
                   </button>
                 </div>
+              )}
+            </div>
+
+            {/* AI Training Insights */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Brain className="w-6 h-6 text-purple-600" />
+                  AI Training Insights
+                </h2>
+                <button
+                  onClick={fetchTrainingData}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Refresh training data"
+                >
+                  <RefreshCw className={`w-5 h-5 text-purple-600 ${trainingDataLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Analyze which ingredients the AI misses most often and get suggestions to improve detection accuracy.
+              </p>
+              
+              {trainingDataLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-purple-600" />
+                  <span className="ml-2 text-gray-600">Loading training data...</span>
+                </div>
+              ) : trainingData ? (
+                <div className="space-y-6">
+                  {/* Accuracy Score */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    trainingData.accuracyScore >= 85 
+                      ? 'bg-emerald-50 border-emerald-200' 
+                      : trainingData.accuracyScore >= 70
+                      ? 'bg-yellow-50 border-yellow-200'
+                      : 'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-700 mb-1">Current Accuracy</div>
+                        <div className={`text-3xl font-extrabold ${
+                          trainingData.accuracyScore >= 85 
+                            ? 'text-emerald-600' 
+                            : trainingData.accuracyScore >= 70
+                            ? 'text-yellow-600'
+                            : 'text-red-600'
+                        }`}>
+                          {trainingData.accuracyScore}%
+                        </div>
+                      </div>
+                      <TrendingUp className="w-8 h-8 text-emerald-600" />
+                    </div>
+                    <div className="mt-2 text-xs text-gray-600">
+                      Based on {trainingData.summary.totalMissed} missed ingredients out of {trainingData.summary.totalManual} manual additions
+                    </div>
+                  </div>
+
+                  {/* Top Missed Ingredients */}
+                  {trainingData.missedIngredients && trainingData.missedIngredients.length > 0 ? (
+                    <div>
+                      <div className="text-sm font-semibold text-gray-700 mb-3">Top Missed Ingredients (Last 7 Days)</div>
+                      <div className="space-y-2">
+                        {trainingData.missedIngredients.slice(0, 10).map((item: any, index: number) => (
+                          <div
+                            key={item.ingredient}
+                            className={`p-4 rounded-xl border-2 ${
+                              item.missRate > 50
+                                ? 'bg-red-50 border-red-200'
+                                : item.missRate > 30
+                                ? 'bg-yellow-50 border-yellow-200'
+                                : 'bg-gray-50 border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                  index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                                  index === 1 ? 'bg-gray-300 text-gray-700' :
+                                  index === 2 ? 'bg-orange-300 text-orange-900' :
+                                  'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {index + 1}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-gray-900 capitalize">{item.ingredient}</div>
+                                  <div className="text-xs text-gray-600">
+                                    Missed {item.count}x ({item.missRate}% miss rate)
+                                  </div>
+                                </div>
+                              </div>
+                              {item.missRate > 30 && (
+                                <AlertCircle className={`w-5 h-5 ${
+                                  item.missRate > 50 ? 'text-red-600' : 'text-yellow-600'
+                                }`} />
+                              )}
+                            </div>
+                            {item.commonIssues && item.commonIssues.length > 0 && (
+                              <div className="text-xs text-gray-600 mt-2">
+                                Common issues: {item.commonIssues.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No missed ingredients tracked yet. Start scanning to collect training data!
+                    </div>
+                  )}
+
+                  {/* Improvement Suggestions */}
+                  {trainingData.improvementSuggestions && trainingData.improvementSuggestions.length > 0 && (
+                    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-4">
+                      <div className="text-sm font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Improvement Suggestions
+                      </div>
+                      <ul className="space-y-1">
+                        {trainingData.improvementSuggestions.map((suggestion: string, index: number) => (
+                          <li key={index} className="text-sm text-purple-800 flex items-start gap-2">
+                            <span className="text-purple-600 mt-1">•</span>
+                            <span>{suggestion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={exportTrainingDataCSV}
+                      disabled={!trainingData || trainingData.missedIngredients.length === 0}
+                      className="flex-1 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-xl px-4 py-3 font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
+                    >
+                      <Download className="w-4 h-4" />
+                      Export CSV
+                    </button>
+                    <button
+                      onClick={generateImprovedPrompt}
+                      disabled={promptLoading || !trainingData || trainingData.missedIngredients.length === 0}
+                      className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-4 py-3 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
+                    >
+                      {promptLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Generate Improved Prompt
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Improved Prompt Display */}
+                  {improvedPrompt && (
+                    <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="text-sm font-semibold text-gray-900">Improved Detection Prompt</div>
+                        <button
+                          onClick={copyImprovedPrompt}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                          title="Copy prompt"
+                        >
+                          <Copy className="w-4 h-4 text-gray-600" />
+                        </button>
+                      </div>
+                      <pre className="text-xs text-gray-700 bg-white rounded p-3 overflow-x-auto max-h-64 overflow-y-auto border border-gray-200 font-mono whitespace-pre-wrap">
+                        {improvedPrompt.improvedPrompt}
+                      </pre>
+                      <div className="mt-2 text-xs text-gray-600">
+                        💡 Copy this prompt and update <code className="bg-gray-200 px-1 rounded">app/api/scan-pantry/route.ts</code>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={fetchTrainingData}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                >
+                  <Brain className="w-5 h-5" />
+                  Load Training Data
+                </button>
               )}
             </div>
 

@@ -12,34 +12,43 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { userId, recipeCount, ingredientCount, success } = await req.json()
+    const { userId, recipeCount, ingredientCount, success, cached } = await req.json()
 
     const timestamp = new Date().toISOString()
     const dateKey = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
     try {
-      // Increment total recipe generation count
-      await kv.incr('stats:recipes:total')
+      // Only increment total count if not cached (to avoid double counting)
+      if (!cached) {
+        await kv.incr('stats:recipes:total')
+      }
       
-      // Increment daily recipe generation count
+      // Increment daily recipe generation count (always, even if cached - it's still a request)
       await kv.incr(`stats:recipes:daily:${dateKey}`)
 
       // Track successful recipe generations
       if (success) {
-        await kv.incr('stats:recipes:success')
+        // Only count as new generation if not cached
+        if (!cached) {
+          await kv.incr('stats:recipes:success')
+        }
+        // Track cache hits separately
+        if (cached) {
+          await kv.incr('stats:recipes:cached')
+        }
       } else {
         await kv.incr('stats:recipes:failed')
       }
 
-      // Track recipe count distribution
-      if (typeof recipeCount === 'number' && recipeCount > 0) {
+      // Track recipe count distribution (only for non-cached, to avoid double counting)
+      if (!cached && typeof recipeCount === 'number' && recipeCount > 0) {
         const countKey = recipeCount <= 3 ? '1-3' :
                         recipeCount <= 6 ? '4-6' :
                         recipeCount <= 9 ? '7-9' :
                         '10+'
         await kv.incr(`stats:recipes:count:${countKey}`)
         
-        // Add to total recipes generated
+        // Add to total recipes generated (only for new generations)
         await kv.incrby('stats:recipes:total_generated', recipeCount)
       }
 

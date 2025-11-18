@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List } from 'lucide-react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
 import { Button } from '@/components/ui/button'
+import imageCompression from 'browser-image-compression'
 
 type Recipe = {
   id?: string
@@ -46,6 +47,8 @@ export default function MealSnap() {
   const [waitlistCount, setWaitlistCount] = useState(247)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
+  const [showVisibilityModal, setShowVisibilityModal] = useState(false)
+  const [pendingIngredient, setPendingIngredient] = useState<{ name: string, scanId?: string } | null>(null)
 
   // Generate or load user ID for referrals
   useEffect(() => {
@@ -298,107 +301,55 @@ export default function MealSnap() {
   // Detect mobile device
   const isMobile = typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
-  // Compress and resize image before upload - more aggressive on mobile
-  const compressImage = (file: File, maxWidth?: number, maxHeight?: number, quality?: number): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      // Mobile devices need more aggressive compression
-      const defaultMaxWidth = isMobile ? 1280 : 1920
-      const defaultMaxHeight = isMobile ? 1280 : 1920
-      const defaultQuality = isMobile ? 0.7 : 0.8
-      const maxSizeLimit = isMobile ? 3 * 1024 * 1024 : 4.5 * 1024 * 1024 // 3MB for mobile, 4.5MB for desktop
-      
-      const finalMaxWidth = maxWidth ?? defaultMaxWidth
-      const finalMaxHeight = maxHeight ?? defaultMaxHeight
-      const finalQuality = quality ?? defaultQuality
-      
-      console.log('[MealSnap] compressImage called:', file.name, file.size, 'bytes', isMobile ? '(mobile)' : '(desktop)')
-      
-      // Check file size first (10MB limit)
-      const maxSize = 10 * 1024 * 1024 // 10MB
-      if (file.size > maxSize) {
-        console.error('[MealSnap] File too large:', file.size)
-        reject(new Error('Image is too large. Please use an image under 10MB.'))
-        return
+  // Compress image using browser-image-compression (faster, better quality)
+  const compressImage = async (file: File): Promise<string> => {
+    console.log('[MealSnap] compressImage called:', file.name, file.size, 'bytes', isMobile ? '(mobile)' : '(desktop)')
+    
+    // Check file size first (10MB limit before compression)
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      console.error('[MealSnap] File too large:', file.size)
+      throw new Error('Image is too large. Please use an image under 10MB.')
+    }
+
+    try {
+      // Use browser-image-compression for efficient compression
+      const options = {
+        maxSizeMB: isMobile ? 0.8 : 1, // Max 1MB (smaller for mobile)
+        maxWidthOrHeight: isMobile ? 1200 : 1400, // Max dimension (smaller for mobile)
+        useWebWorker: true, // Use web worker for better performance
+        fileType: 'image/jpeg', // Force JPEG for smaller size
       }
 
-      const reader = new FileReader()
-      reader.readAsDataURL(file)
-      reader.onload = (e) => {
-        console.log('[MealSnap] FileReader loaded, creating image...')
-        const img = new Image()
-        img.onload = () => {
-          console.log('[MealSnap] Image loaded, dimensions:', img.width, 'x', img.height)
-          const canvas = document.createElement('canvas')
-          let width = img.width
-          let height = img.height
+      console.log('[MealSnap] Compressing with options:', options)
+      const compressedFile = await imageCompression(file, options)
+      
+      console.log('[MealSnap] Compression complete:', {
+        original: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`,
+        reduction: `${Math.round((1 - compressedFile.size / file.size) * 100)}%`,
+      })
 
-          // Calculate new dimensions
-          if (width > height) {
-            if (width > finalMaxWidth) {
-              height = (height * finalMaxWidth) / width
-              width = finalMaxWidth
-            }
-          } else {
-            if (height > finalMaxHeight) {
-              width = (width * finalMaxHeight) / height
-              height = finalMaxHeight
-            }
-          }
-
-          console.log('[MealSnap] Resizing to:', width, 'x', height, 'quality:', finalQuality)
-
-          canvas.width = width
-          canvas.height = height
-
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            console.error('[MealSnap] Could not get canvas context')
-            reject(new Error('Could not get canvas context'))
-            return
-          }
-
-          // Better image quality settings for compression
-          ctx.imageSmoothingEnabled = true
-          ctx.imageSmoothingQuality = 'high'
-          ctx.drawImage(img, 0, 0, width, height)
-          
-          // Convert to base64 with compression
-          const base64 = canvas.toDataURL('image/jpeg', finalQuality)
-          const base64Data = base64.split(',')[1]
-          
-          // Check if compressed size is still too large
-          const sizeInBytes = (base64Data.length * 3) / 4
-          console.log('[MealSnap] Compressed size:', sizeInBytes, 'bytes (', (sizeInBytes / 1024 / 1024).toFixed(2), 'MB)', 'limit:', (maxSizeLimit / 1024 / 1024).toFixed(2), 'MB')
-          
-          if (sizeInBytes > maxSizeLimit) {
-            // Try again with lower quality or smaller dimensions
-            if (finalQuality > 0.5) {
-              console.log('[MealSnap] Still too large, retrying with lower quality:', finalQuality - 0.1)
-              resolve(compressImage(file, finalMaxWidth, finalMaxHeight, finalQuality - 0.1))
-            } else if (finalMaxWidth > 800) {
-              // If quality is already low, try smaller dimensions
-              console.log('[MealSnap] Still too large, retrying with smaller dimensions')
-              resolve(compressImage(file, finalMaxWidth * 0.8, finalMaxHeight * 0.8, 0.6))
-            } else {
-              console.error('[MealSnap] Image too large even after compression')
-              reject(new Error('Image is too large even after compression. Please use a smaller image or take a new photo.'))
-            }
-          } else {
-            console.log('[MealSnap] Compression successful')
-            resolve(base64Data)
-          }
+      // Convert compressed file to base64
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          // Remove data:image/jpeg;base64, prefix
+          const base64Data = result.split(',')[1]
+          console.log('[MealSnap] Compression successful, base64 length:', base64Data.length)
+          resolve(base64Data)
         }
-        img.onerror = (error) => {
-          console.error('[MealSnap] Image load error:', error)
-          reject(new Error('Failed to load image'))
+        reader.onerror = (error) => {
+          console.error('[MealSnap] FileReader error:', error)
+          reject(new Error('Failed to read compressed image'))
         }
-        img.src = e.target?.result as string
-      }
-      reader.onerror = (error) => {
-        console.error('[MealSnap] FileReader error:', error)
-        reject(error)
-      }
-    })
+        reader.readAsDataURL(compressedFile)
+      })
+    } catch (error: any) {
+      console.error('[MealSnap] Image compression error:', error)
+      throw new Error(error.message || 'Failed to compress image')
+    }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -586,13 +537,29 @@ export default function MealSnap() {
     }
   }
 
-  const addIngredient = async () => {
+  const addIngredient = async (wasVisible?: boolean, reason?: string) => {
     if (newIngredient.trim()) {
       const cleanIngredient = newIngredient.trim().toLowerCase()
       if (!ingredients.includes(cleanIngredient)) {
         setIngredients([...ingredients, cleanIngredient])
         
+        // If we have a scan (from image upload), ask for visibility feedback
+        // Otherwise, track immediately (user is adding separately)
+        const hasRecentScan = ingredients.length > 0 || isLoading
+        
+        if (hasRecentScan && wasVisible === undefined) {
+          // Show modal to ask if ingredient was visible
+          setPendingIngredient({ 
+            name: cleanIngredient,
+            scanId: userId + '_' + Date.now(), // Generate a simple scan ID
+          })
+          setShowVisibilityModal(true)
+          setNewIngredient('')
+          return
+        }
+        
         // Track manually added ingredient for AI training
+        const scanIdToUse = wasVisible !== undefined ? (pendingIngredient?.scanId || null) : null
         try {
           await fetch('/api/track-ingredient', {
             method: 'POST',
@@ -600,6 +567,9 @@ export default function MealSnap() {
             body: JSON.stringify({
               ingredient: cleanIngredient,
               userId: userId,
+              wasVisible: wasVisible !== undefined ? wasVisible : false,
+              scanId: scanIdToUse,
+              reason: reason || null,
             }),
           }).catch(err => {
             // Silently fail - tracking shouldn't block user experience
@@ -608,8 +578,16 @@ export default function MealSnap() {
         } catch (err) {
           // Silent fail
         }
+        setPendingIngredient(null)
       }
       setNewIngredient('')
+    }
+  }
+
+  const handleVisibilityFeedback = async (wasVisible: boolean, reason?: string) => {
+    if (pendingIngredient) {
+      await addIngredient(wasVisible, reason)
+      setShowVisibilityModal(false)
     }
   }
 
@@ -731,7 +709,7 @@ export default function MealSnap() {
   const MobileMenu = () => {
     if (!showMobileMenu) return null
 
-    return (
+  return (
       <>
         {/* Backdrop */}
         <div 
@@ -824,7 +802,7 @@ export default function MealSnap() {
                 </div>
               </div>
               {userPlan === 'free' && (
-                <button
+                  <button 
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
@@ -834,9 +812,9 @@ export default function MealSnap() {
                   className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl px-4 py-3 font-bold transition-all shadow-lg hover:shadow-xl touch-manipulation"
                 >
                   Upgrade to Pro
-                </button>
-              )}
-            </div>
+                  </button>
+                )}
+              </div>
           </div>
         </div>
       </>
@@ -909,7 +887,7 @@ export default function MealSnap() {
               </button>
             )
           })}
-        </div>
+            </div>
       </nav>
     )
   }
@@ -996,7 +974,7 @@ export default function MealSnap() {
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl flex items-center justify-center border border-emerald-500/30 flex-shrink-0">
               <Sparkles className="w-6 h-6 text-emerald-400" />
-            </div>
+          </div>
             <div className="flex-1">
               <h3 className="font-bold text-[#E6FFFF] mb-1">📱 Install MealSnap</h3>
               <p className="text-sm text-[#B8D4D4] mb-3">
@@ -1015,7 +993,7 @@ export default function MealSnap() {
                 >
                   Later
                 </button>
-              </div>
+        </div>
             </div>
             <button
               onClick={handleDismiss}
@@ -1945,6 +1923,61 @@ export default function MealSnap() {
             >
               Maybe Later
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Visibility Feedback Modal */}
+      {showVisibilityModal && pendingIngredient && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              handleVisibilityFeedback(false)
+            }
+          }}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div 
+            className="bg-[#151828] border border-[#1F2332] rounded-2xl shadow-2xl max-w-md w-full p-6 relative z-[71]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => handleVisibilityFeedback(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-[#B8D4D4] hover:text-[#E6FFFF] transition-colors rounded-full hover:bg-[#1F2332] z-[72] touch-manipulation"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="mb-4">
+              <h3 className="text-xl font-bold text-[#E6FFFF] mb-2">Help Improve AI</h3>
+              <p className="text-sm text-[#B8D4D4]">
+                Was <span className="font-semibold text-emerald-400 capitalize">{pendingIngredient.name}</span> visible in your photo?
+              </p>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => handleVisibilityFeedback(true)}
+                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl px-6 py-3 font-semibold transition-all flex items-center justify-center gap-2 touch-manipulation"
+              >
+                <Check className="w-5 h-5" />
+                Yes, AI missed it
+              </button>
+              
+              <button
+                onClick={() => handleVisibilityFeedback(false)}
+                className="w-full bg-[#1F2332] hover:bg-[#2A2F45] border border-[#2A2F45] text-[#B8D4D4] rounded-xl px-6 py-3 font-semibold transition-all flex items-center justify-center gap-2 touch-manipulation"
+              >
+                <X className="w-5 h-5" />
+                No, I added it separately
+              </button>
+            </div>
+
+            <p className="text-xs text-[#B8D4D4] text-center">
+              This helps us improve ingredient detection ✨
+            </p>
           </div>
         </div>
       )}

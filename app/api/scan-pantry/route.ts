@@ -147,6 +147,46 @@ Rules for output:
     }
 
     const data = await response.json();
+    
+    // Track OpenAI costs (non-blocking)
+    try {
+      const usage = data.usage || {}
+      const promptTokens = usage.prompt_tokens || 1000 // Estimate if not provided
+      const completionTokens = usage.completion_tokens || 200
+      const totalTokens = usage.total_tokens || (promptTokens + completionTokens)
+      
+      // GPT-4o Vision pricing: $0.01 per 1K input tokens, $0.03 per 1K output tokens
+      // For images, estimate higher cost (image analysis is more expensive)
+      const imageCost = 0.002 // Approx $0.002 per image scan (high res image)
+      const textCost = (promptTokens * 0.01 / 1000) + (completionTokens * 0.03 / 1000)
+      const totalCost = imageCost + textCost
+      
+      const timestamp = new Date().toISOString()
+      const dateKey = timestamp.split('T')[0] // YYYY-MM-DD
+      const monthKey = timestamp.substring(0, 7) // YYYY-MM
+      
+      // Track daily costs (in cents to avoid floating point issues)
+      await kv.hincrbyfloat(`costs:daily:${dateKey}`, 'openai_scan', totalCost)
+      await kv.hincrbyfloat(`costs:monthly:${monthKey}`, 'openai_scan', totalCost)
+      await kv.hincrbyfloat('costs:alltime', 'openai_scan', totalCost)
+      
+      // Store detailed record for analytics
+      const recordKey = `cost:scan:${Date.now()}:${userId || 'anonymous'}`
+      await kv.set(recordKey, {
+        userId: userId || 'anonymous',
+        tokens: totalTokens,
+        cost: totalCost,
+        date: dateKey,
+        timestamp,
+        createdAt: Date.now(),
+      }, { ex: 60 * 60 * 24 * 90 }) // Expire after 90 days
+      
+      console.log('[Cost Tracking] Scan cost:', totalCost.toFixed(4), 'tokens:', totalTokens)
+    } catch (costError) {
+      // Silent fail - cost tracking shouldn't block response
+      console.warn('[Cost Tracking] Failed to track scan cost:', costError)
+    }
+    
     const rawText = data.choices?.[0]?.message?.content || "";
 
     if (!rawText) {
