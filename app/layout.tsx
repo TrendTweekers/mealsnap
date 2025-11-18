@@ -57,6 +57,9 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         {/* PWA install prompt */}
         <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        {/* Hide Safari UI on scroll */}
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ThemeProvider>

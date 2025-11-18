@@ -44,6 +44,8 @@ export default function MealSnap() {
   const [emailSubmitted, setEmailSubmitted] = useState(false)
   const [showEmailGate, setShowEmailGate] = useState(false)
   const [waitlistCount, setWaitlistCount] = useState(247)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false)
 
   // Generate or load user ID for referrals
   useEffect(() => {
@@ -104,6 +106,21 @@ export default function MealSnap() {
     }
     
     if (plan) setUserPlan(plan)
+  }, [])
+
+  // Check for install prompt on first visit
+  useEffect(() => {
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone
+    const promptDismissed = localStorage.getItem('mealsnap_install_prompt_dismissed')
+    
+    // Show install prompt if not installed and not dismissed
+    if (!isInstalled && !promptDismissed && typeof window !== 'undefined') {
+      // Only show on mobile
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      if (isMobile) {
+        setShowInstallPrompt(true)
+      }
+    }
   }, [])
 
   // Load favorites and email status from localStorage
@@ -685,13 +702,213 @@ export default function MealSnap() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="glass" size="icon" className="md:hidden">
+            <Button 
+              variant="glass" 
+              size="icon" 
+              className="md:hidden touch-manipulation"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setShowMobileMenu(true)
+              }}
+            >
               <List className="w-5 h-5" />
             </Button>
-            <Button variant="glass" size="icon">
+            <Button 
+              variant="glass" 
+              size="icon"
+              className="hidden sm:flex"
+            >
               <User className="w-5 h-5" />
             </Button>
           </div>
+        </div>
+      </nav>
+    )
+  }
+
+  // Mobile Menu Component
+  const MobileMenu = () => {
+    if (!showMobileMenu) return null
+
+    return (
+      <>
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[80] md:hidden"
+          onClick={() => setShowMobileMenu(false)}
+        />
+        
+        {/* Slide-in Menu */}
+        <div className={`fixed top-0 right-0 bottom-0 w-80 bg-[#151828] border-l border-[#1F2332] z-[81] shadow-2xl transform transition-transform duration-300 ease-out md:hidden ${
+          showMobileMenu ? 'translate-x-0' : 'translate-x-full'
+        }`}>
+          <div className="flex flex-col h-full pt-16 pb-20">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowMobileMenu(false)}
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center text-[#B8D4D4] hover:text-[#E6FFFF] transition-colors touch-manipulation"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* Menu Items */}
+            <div className="flex-1 px-6 py-4 space-y-2">
+              <button
+                onClick={() => {
+                  setCurrentView('home')
+                  setShowMobileMenu(false)
+                }}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all touch-manipulation flex items-center gap-3 ${
+                  currentView === 'home' 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                    : 'text-[#B8D4D4] hover:bg-[#1F2332] hover:text-[#E6FFFF]'
+                }`}
+              >
+                <Home className="w-5 h-5" />
+                <span className="font-semibold">Home</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setCurrentView('favorites')
+                  setShowMobileMenu(false)
+                }}
+                className={`w-full text-left px-4 py-3 rounded-xl transition-all touch-manipulation flex items-center gap-3 relative ${
+                  currentView === 'favorites' 
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                    : 'text-[#B8D4D4] hover:bg-[#1F2332] hover:text-[#E6FFFF]'
+                }`}
+              >
+                <Heart className={`w-5 h-5 ${favorites.length > 0 && currentView === 'favorites' ? 'fill-current' : ''}`} />
+                <span className="font-semibold">Favorites</span>
+                {favorites.length > 0 && (
+                  <span className="ml-auto bg-emerald-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold">
+                    {favorites.length}
+                  </span>
+                )}
+              </button>
+
+              <a
+                href="/waitlist"
+                onClick={() => setShowMobileMenu(false)}
+                className="w-full text-left px-4 py-3 rounded-xl transition-all touch-manipulation flex items-center gap-3 text-[#B8D4D4] hover:bg-[#1F2332] hover:text-[#E6FFFF]"
+              >
+                <Mail className="w-5 h-5" />
+                <span className="font-semibold">Waitlist</span>
+              </a>
+
+              <a
+                href="/about"
+                onClick={() => setShowMobileMenu(false)}
+                className="w-full text-left px-4 py-3 rounded-xl transition-all touch-manipulation flex items-center gap-3 text-[#B8D4D4] hover:bg-[#1F2332] hover:text-[#E6FFFF]"
+              >
+                <Sparkles className="w-5 h-5" />
+                <span className="font-semibold">About</span>
+              </a>
+            </div>
+
+            {/* User Info */}
+            <div className="px-6 py-4 border-t border-[#1F2332]">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl flex items-center justify-center border border-emerald-500/30">
+                  <User className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#E6FFFF]">
+                    {userPlan === 'pro' ? 'Pro Member' : userPlan === 'family' ? 'Family Plan' : 'Free Plan'}
+                  </p>
+                  <p className="text-xs text-[#B8D4D4]">
+                    {userPlan === 'free' ? `${Math.max(0, 3 - scanCount)}/3 scans remaining` : 'Unlimited scans'}
+                  </p>
+                </div>
+              </div>
+              {userPlan === 'free' && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setShowMobileMenu(false)
+                    setShowPricingModal(true)
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl px-4 py-3 font-bold transition-all shadow-lg hover:shadow-xl touch-manipulation"
+                >
+                  Upgrade to Pro
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    )
+  }
+
+  // Bottom Navigation Component
+  const BottomNav = () => {
+    const navItems = [
+      { id: 'home', label: 'Home', icon: Home, view: 'home' as View },
+      { id: 'scan', label: 'Scan', icon: Camera, view: 'home' as View, action: () => {
+        setCurrentView('home')
+        // Scroll to scan card
+        setTimeout(() => {
+          const scanCard = document.querySelector('[data-scan-card]')
+          scanCard?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }, 100)
+      }},
+      { id: 'favorites', label: 'Favorites', icon: Heart, view: 'favorites' as View, badge: favorites.length },
+      { id: 'profile', label: 'Profile', icon: User, view: 'home' as View, action: () => {
+        // For now, just show pricing or scroll to top
+        if (userPlan === 'free') {
+          setShowPricingModal(true)
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' })
+        }
+      }},
+    ]
+
+    return (
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#151828]/95 backdrop-blur-md border-t border-[#1F2332] md:hidden safe-area-inset-bottom">
+        <div className="flex items-center justify-around px-2 py-2 pb-safe">
+          {navItems.map((item) => {
+            const Icon = item.icon
+            const isActive = item.view === currentView || (item.id === 'home' && currentView === 'home')
+            
+            return (
+              <button
+                key={item.id}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  // Haptic feedback
+                  if ('vibrate' in navigator) {
+                    navigator.vibrate(10)
+                  }
+                  if (item.action) {
+                    item.action()
+                  } else {
+                    setCurrentView(item.view)
+                  }
+                }}
+                className={`flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-xl transition-all touch-manipulation min-w-[64px] min-h-[64px] ${
+                  isActive 
+                    ? 'text-emerald-400 bg-emerald-500/10' 
+                    : 'text-[#B8D4D4] active:bg-[#1F2332]'
+                }`}
+              >
+                <div className="relative">
+                  <Icon className={`w-6 h-6 ${item.id === 'favorites' && item.badge && item.badge > 0 && isActive ? 'fill-current' : ''}`} />
+                  {item.badge && item.badge > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+                <span className={`text-xs font-semibold ${isActive ? 'text-emerald-400' : 'text-[#B8D4D4]'}`}>
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </nav>
     )
@@ -739,11 +956,87 @@ export default function MealSnap() {
     )
   }
 
+  // Install Prompt Component
+  const InstallPrompt = () => {
+    if (!showInstallPrompt) return null
+
+    const handleInstall = () => {
+      // Track install prompt interaction
+      if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible('Install Prompt Clicked')
+      }
+      
+      // Dismiss prompt
+      setShowInstallPrompt(false)
+      localStorage.setItem('mealsnap_install_prompt_dismissed', 'true')
+      
+      // Instructions for iOS
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        alert('To install MealSnap:\n1. Tap the Share button (bottom of screen)\n2. Select "Add to Home Screen"\n3. Tap "Add"')
+      } else if (/Android/i.test(navigator.userAgent)) {
+        // Android PWA install prompt
+        const deferredPrompt = (window as any).deferredPrompt
+        if (deferredPrompt) {
+          deferredPrompt.prompt()
+          deferredPrompt.userChoice.then(() => {
+            (window as any).deferredPrompt = null
+          })
+        }
+      }
+    }
+
+    const handleDismiss = () => {
+      setShowInstallPrompt(false)
+      localStorage.setItem('mealsnap_install_prompt_dismissed', 'true')
+    }
+
+    return (
+      <div className="fixed top-20 left-0 right-0 z-[70] px-4 md:hidden animate-fade-in">
+        <div className="max-w-md mx-auto glass border border-emerald-500/30 rounded-2xl p-4 shadow-2xl">
+          <div className="flex items-start gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-xl flex items-center justify-center border border-emerald-500/30 flex-shrink-0">
+              <Sparkles className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-[#E6FFFF] mb-1">📱 Install MealSnap</h3>
+              <p className="text-sm text-[#B8D4D4] mb-3">
+                Add to your home screen for the best experience
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleInstall}
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-4 py-2 font-semibold transition-all shadow-lg hover:shadow-xl touch-manipulation text-sm"
+                >
+                  Install
+                </button>
+                <button
+                  onClick={handleDismiss}
+                  className="px-4 py-2 bg-[#1F2332] hover:bg-[#2A2F45] text-[#B8D4D4] rounded-xl font-semibold transition-colors touch-manipulation text-sm"
+                >
+                  Later
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={handleDismiss}
+              className="w-8 h-8 flex items-center justify-center text-[#B8D4D4] hover:text-[#E6FFFF] transition-colors touch-manipulation flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // HOME VIEW
   if (currentView === 'home') {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background pb-20 md:pb-0">
         <StickyHeader />
+        <MobileMenu />
+        <BottomNav />
+        <InstallPrompt />
         
         {/* Hero Section - Matching Lovable Design */}
         <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden pt-20">
@@ -1063,8 +1356,10 @@ export default function MealSnap() {
   // FAVORITES VIEW
   if (currentView === 'favorites') {
     return (
-      <div className="min-h-screen bg-[#0B0E1E]">
+      <div className="min-h-screen bg-[#0B0E1E] pb-20 md:pb-0">
         <StickyHeader />
+        <MobileMenu />
+        <BottomNav />
         
         <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <div className="mb-8">
@@ -1107,8 +1402,10 @@ export default function MealSnap() {
   // INGREDIENTS VIEW
   if (currentView === 'ingredients') {
     return (
-      <div className="min-h-screen bg-[#0B0E1E]">
+      <div className="min-h-screen bg-[#0B0E1E] pb-20 md:pb-0">
         <StickyHeader />
+        <MobileMenu />
+        <BottomNav />
         
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <BreadcrumbNav />
@@ -1214,8 +1511,10 @@ export default function MealSnap() {
 
   // RECIPES VIEW
   return (
-    <div className="min-h-screen bg-[#0B0E1E] pb-20">
+    <div className="min-h-screen bg-[#0B0E1E] pb-20 md:pb-0">
       <StickyHeader />
+      <MobileMenu />
+      <BottomNav />
       
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <BreadcrumbNav />
@@ -1357,7 +1656,7 @@ export default function MealSnap() {
               </div>
               <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Recipe Saved! 🎉</h3>
               <p className="text-gray-700 mb-1">Share and get <span className="font-bold text-emerald-600">5 free scans</span> for you and your friend!</p>
-            </div>
+      </div>
 
             <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-4 mb-6 border-2 border-emerald-200">
               <p className="text-sm text-gray-600 mb-2 font-semibold">Share this recipe:</p>

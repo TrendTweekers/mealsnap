@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
-import { Check, X, RefreshCw, TrendingUp, Loader2, BarChart3, Users, Camera, ChefHat, ArrowUpRight } from 'lucide-react'
+import { Check, X, RefreshCw, TrendingUp, Loader2, BarChart3, Users, Camera, ChefHat, ArrowUpRight, Activity, AlertCircle, Copy, CheckCircle2 } from 'lucide-react'
 
 type IngredientStat = {
   ingredient: string
@@ -46,6 +46,9 @@ export default function AdminPage() {
   const [totalManualAdds, setTotalManualAdds] = useState(0)
   const [stats, setStats] = useState<StatsData | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [healthCheck, setHealthCheck] = useState<any>(null)
+  const [healthCheckLoading, setHealthCheckLoading] = useState(false)
+  const [healthCheckError, setHealthCheckError] = useState<string>('')
 
   useEffect(() => {
     checkAuth()
@@ -192,6 +195,64 @@ export default function AdminPage() {
     setScanCount(0)
     setMessage('Scan count reset to 0.')
     setTimeout(() => setMessage(''), 3000)
+  }
+
+  const runHealthCheck = async () => {
+    try {
+      setHealthCheckLoading(true)
+      setHealthCheckError('')
+      
+      const res = await fetch('/api/admin/health-check')
+      
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Health check failed: ${res.status}`)
+      }
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setHealthCheck(data)
+      } else {
+        setHealthCheckError(data.error || 'Health check failed')
+      }
+    } catch (err: any) {
+      console.error('Health check error:', err)
+      setHealthCheckError(err.message || 'Failed to run health check. Run `npm run health-check` in terminal.')
+    } finally {
+      setHealthCheckLoading(false)
+    }
+  }
+
+  const copyHealthCheckResults = () => {
+    if (!healthCheck) return
+    
+    const text = `MealSnap Health Check Results
+Timestamp: ${healthCheck.timestamp}
+Overall Status: ${healthCheck.status.toUpperCase()}
+
+Summary:
+- Total Checks: ${healthCheck.summary.total}
+- Passed: ${healthCheck.summary.passed}
+- Failed: ${healthCheck.summary.failed}
+- Warnings: ${healthCheck.summary.warnings}
+
+Details:
+${healthCheck.checks.map((check: any) => 
+  `${check.status === 'pass' ? '✅' : check.status === 'fail' ? '❌' : '⚠️'} ${check.name}: ${check.message}${check.details ? `\n   ${check.details}` : ''}`
+).join('\n')}`
+    
+    navigator.clipboard.writeText(text).then(() => {
+      setMessage('Health check results copied to clipboard!')
+      setTimeout(() => setMessage(''), 3000)
+    }).catch(() => {
+      setMessage('Failed to copy results')
+      setTimeout(() => setMessage(''), 3000)
+    })
   }
 
   // Password protection screen
@@ -602,6 +663,172 @@ export default function AdminPage() {
                     </div>
                   )}
                 </>
+              )}
+            </div>
+
+            {/* System Health Check */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Activity className="w-6 h-6 text-emerald-600" />
+                  System Health Check
+                </h2>
+                {healthCheck && (
+                  <button
+                    onClick={copyHealthCheckResults}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Copy results"
+                  >
+                    <Copy className="w-5 h-5 text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <p className="text-gray-600 mb-4">
+                Run automated checks to verify all systems are operational. This checks API endpoints, environment variables, and system status.
+              </p>
+              
+              <button
+                onClick={runHealthCheck}
+                disabled={healthCheckLoading}
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                {healthCheckLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Running checks...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Run Health Check Now</span>
+                  </>
+                )}
+              </button>
+
+              {healthCheckError && (
+                <div className="mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <div className="font-semibold text-red-800 mb-1">Health Check Failed</div>
+                      <div className="text-sm text-red-700">{healthCheckError}</div>
+                      <div className="text-xs text-red-600 mt-2">
+                        💡 Tip: Run <code className="bg-red-100 px-1 rounded">npm run health-check</code> in terminal for detailed diagnostics
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {healthCheck && !healthCheckError && (
+                <div className="mt-6 space-y-4">
+                  {/* Status Summary */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    healthCheck.status === 'healthy' 
+                      ? 'bg-emerald-50 border-emerald-200' 
+                      : healthCheck.status === 'warning'
+                      ? 'bg-yellow-50 border-yellow-200'
+                      : 'bg-red-50 border-red-200'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {healthCheck.status === 'healthy' ? (
+                          <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        ) : healthCheck.status === 'warning' ? (
+                          <AlertCircle className="w-6 h-6 text-yellow-600" />
+                        ) : (
+                          <X className="w-6 h-6 text-red-600" />
+                        )}
+                        <span className={`text-lg font-bold ${
+                          healthCheck.status === 'healthy' 
+                            ? 'text-emerald-800' 
+                            : healthCheck.status === 'warning'
+                            ? 'text-yellow-800'
+                            : 'text-red-800'
+                        }`}>
+                          Status: {healthCheck.status.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {new Date(healthCheck.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-sm">
+                      <div className="text-center">
+                        <div className="font-semibold text-gray-700">Total</div>
+                        <div className="text-xl font-bold text-gray-900">{healthCheck.summary.total}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-emerald-700">Passed</div>
+                        <div className="text-xl font-bold text-emerald-600">{healthCheck.summary.passed}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-red-700">Failed</div>
+                        <div className="text-xl font-bold text-red-600">{healthCheck.summary.failed}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-yellow-700">Warnings</div>
+                        <div className="text-xl font-bold text-yellow-600">{healthCheck.summary.warnings}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Check Results */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold text-gray-700 mb-2">Check Details:</div>
+                    {healthCheck.checks.map((check: any, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-xl border-2 ${
+                          check.status === 'pass'
+                            ? 'bg-emerald-50 border-emerald-200'
+                            : check.status === 'fail'
+                            ? 'bg-red-50 border-red-200'
+                            : 'bg-yellow-50 border-yellow-200'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {check.status === 'pass' ? (
+                              <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                            ) : check.status === 'fail' ? (
+                              <X className="w-5 h-5 text-red-600" />
+                            ) : (
+                              <AlertCircle className="w-5 h-5 text-yellow-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-900 mb-1">{check.name}</div>
+                            <div className={`text-sm ${
+                              check.status === 'pass'
+                                ? 'text-emerald-700'
+                                : check.status === 'fail'
+                                ? 'text-red-700'
+                                : 'text-yellow-700'
+                            }`}>
+                              {check.message}
+                            </div>
+                            {check.details && (
+                              <div className="mt-2 text-xs text-gray-600 bg-white/50 rounded px-2 py-1 font-mono">
+                                {check.details}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Refresh Button */}
+                  <button
+                    onClick={runHealthCheck}
+                    disabled={healthCheckLoading}
+                    className="w-full bg-gray-100 hover:bg-gray-200 disabled:bg-gray-100 text-gray-700 rounded-xl px-4 py-2 font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${healthCheckLoading ? 'animate-spin' : ''}`} />
+                    Refresh Results
+                  </button>
+                </div>
               )}
             </div>
 

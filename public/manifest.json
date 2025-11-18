@@ -1,11 +1,12 @@
 {
-  "name": "MealSnap",
+  "name": "MealSnap - AI Recipe Generator",
   "short_name": "MealSnap",
-  "description": "AI Recipe Generator from Your Pantry",
+  "description": "Snap your fridge, get instant recipes",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#10B981",
-  "theme_color": "#10B981",
+  "background_color": "#0f172a",
+  "theme_color": "#10b981",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icon-192x192.png",

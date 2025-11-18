@@ -6,6 +6,9 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "health-check": "bash scripts/health-check.sh",
     "start": "next start"
   },
   "dependencies": {
