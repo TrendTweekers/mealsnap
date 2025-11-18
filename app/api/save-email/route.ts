@@ -3,11 +3,53 @@ import { kv } from '@vercel/kv'
 
 export async function POST(req: NextRequest) {
   try {
+    // Limit request body size
+    const contentLength = req.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > 10 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: 'Request too large' },
+        { status: 413 }
+      )
+    }
+
     const { email, source, userId } = await req.json()
 
-    if (!email || !email.includes('@')) {
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
       return NextResponse.json(
         { ok: false, error: 'Invalid email address' },
+        { status: 400 }
+      )
+    }
+
+    // Validate email length
+    if (email.length > 254) {
+      return NextResponse.json(
+        { ok: false, error: 'Email address too long' },
+        { status: 400 }
+      )
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.toLowerCase())) {
+      return NextResponse.json(
+        { ok: false, error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+
+    // Validate source if provided
+    if (source && typeof source === 'string' && source.length > 50) {
+      return NextResponse.json(
+        { ok: false, error: 'Invalid source' },
+        { status: 400 }
+      )
+    }
+
+    // Validate userId if provided
+    if (userId && typeof userId === 'string' && userId.length > 200) {
+      return NextResponse.json(
+        { ok: false, error: 'Invalid user ID' },
         { status: 400 }
       )
     }

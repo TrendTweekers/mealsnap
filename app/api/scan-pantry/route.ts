@@ -15,6 +15,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Limit request body size (10MB max)
+    const contentLength = req.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: "Image too large. Maximum size: 10MB." },
+        { status: 413 }
+      )
+    }
+
     const { imageBase64 } = await req.json();
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
@@ -24,9 +33,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Validate base64 string length (approximate max 10MB)
+    if (imageBase64.length > 15 * 1024 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: "Image data too large. Maximum size: 10MB." },
+        { status: 413 }
+      )
+    }
+
     const base64Data = imageBase64.includes(",")
       ? imageBase64.split(",")[1]
       : imageBase64;
+
+    // Additional validation: base64 should be reasonable length
+    if (base64Data.length < 100 || base64Data.length > 14 * 1024 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid image data size." },
+        { status: 400 }
+      )
+    }
 
     const prompt = `
 You are helping with pantry / fridge inventory from a photo.

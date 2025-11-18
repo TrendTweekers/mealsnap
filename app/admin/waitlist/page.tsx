@@ -35,7 +35,15 @@ export default function AdminWaitlistPage() {
     setError('')
     try {
       const res = await fetch('/api/admin/waitlist')
-      if (!res.ok) throw new Error('Failed to fetch data')
+      if (res.status === 401) {
+        // Unauthorized - redirect to admin login
+        window.location.href = '/admin'
+        return
+      }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to fetch data')
+      }
       const waitlistData = await res.json()
       setData(waitlistData)
     } catch (err: any) {

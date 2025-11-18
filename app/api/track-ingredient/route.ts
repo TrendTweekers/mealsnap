@@ -3,6 +3,15 @@ import { kv } from '@vercel/kv'
 
 export async function POST(req: NextRequest) {
   try {
+    // Limit request body size
+    const contentLength = req.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > 10 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: 'Request too large' },
+        { status: 413 }
+      )
+    }
+
     const { ingredient, userId } = await req.json()
 
     if (!ingredient || typeof ingredient !== 'string') {
@@ -12,11 +21,35 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Validate ingredient length
+    if (ingredient.length > 100) {
+      return NextResponse.json(
+        { ok: false, error: 'Ingredient name too long (max 100 characters)' },
+        { status: 400 }
+      )
+    }
+
+    // Validate userId length if provided
+    if (userId && typeof userId === 'string' && userId.length > 200) {
+      return NextResponse.json(
+        { ok: false, error: 'Invalid user ID' },
+        { status: 400 }
+      )
+    }
+
     const cleanIngredient = ingredient.toLowerCase().trim()
     
     if (!cleanIngredient) {
       return NextResponse.json(
         { ok: false, error: 'Ingredient cannot be empty' },
+        { status: 400 }
+      )
+    }
+
+    // Basic sanitization - remove special characters that could cause issues
+    if (!/^[a-z0-9\s\-']+$/.test(cleanIngredient)) {
+      return NextResponse.json(
+        { ok: false, error: 'Ingredient contains invalid characters' },
         { status: 400 }
       )
     }

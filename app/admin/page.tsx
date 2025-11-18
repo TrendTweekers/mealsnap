@@ -10,6 +10,10 @@ type IngredientStat = {
 }
 
 export default function AdminPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
+  const [password, setPassword] = useState('')
+  const [authLoading, setAuthLoading] = useState(true)
+  const [loginError, setLoginError] = useState('')
   const [isFounder, setIsFounder] = useState(false)
   const [scanCount, setScanCount] = useState(0)
   const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'family'>('free')
@@ -19,6 +23,30 @@ export default function AdminPage() {
   const [totalManualAdds, setTotalManualAdds] = useState(0)
 
   useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    try {
+      setAuthLoading(true)
+      const res = await fetch('/api/admin/auth')
+      const data = await res.json()
+      
+      if (data.ok && data.authenticated) {
+        setIsAuthenticated(true)
+        loadAdminData()
+      } else {
+        setIsAuthenticated(false)
+      }
+    } catch (err) {
+      console.error('Failed to check auth:', err)
+      setIsAuthenticated(false)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const loadAdminData = () => {
     if (typeof window !== 'undefined') {
       const founder = localStorage.getItem('mealsnap_founder') === 'true'
       const count = localStorage.getItem('mealsnap_scan_count')
@@ -31,13 +59,57 @@ export default function AdminPage() {
     
     // Load ingredient stats
     fetchIngredientStats()
-  }, [])
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginError('')
+    
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setIsAuthenticated(true)
+        setPassword('')
+        loadAdminData()
+      } else {
+        setLoginError(data.error || 'Invalid password')
+      }
+    } catch (err) {
+      setLoginError('Failed to authenticate. Please try again.')
+      console.error('Login error:', err)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/auth', { method: 'DELETE' })
+      setIsAuthenticated(false)
+      setPassword('')
+      setMessage('Logged out successfully')
+      setTimeout(() => setMessage(''), 3000)
+    } catch (err) {
+      console.error('Logout error:', err)
+    }
+  }
 
   const fetchIngredientStats = async () => {
     try {
       setIngredientsLoading(true)
       const res = await fetch('/api/admin/ingredients')
       const data = await res.json()
+      
+      if (res.status === 401) {
+        // Unauthorized - logout
+        setIsAuthenticated(false)
+        return
+      }
       
       if (data.ok) {
         setIngredients(data.ingredients || [])
@@ -75,13 +147,92 @@ export default function AdminPage() {
     setTimeout(() => setMessage(''), 3000)
   }
 
+  // Password protection screen
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full">
+          <div className="flex items-center justify-center mb-6">
+            <MealSnapLogo className="w-12 h-12" />
+            <h1 className="text-2xl font-extrabold text-gray-900 ml-4">Admin Panel</h1>
+          </div>
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+            <span className="ml-3 text-gray-600">Checking authentication...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full">
+          <div className="flex items-center justify-center mb-8">
+            <MealSnapLogo className="w-12 h-12" />
+            <h1 className="text-2xl font-extrabold text-gray-900 ml-4">Admin Login</h1>
+          </div>
+          
+          {loginError && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-800">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-900"
+                placeholder="Enter admin password"
+                required
+                autoFocus
+              />
+            </div>
+            
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl"
+            >
+              Login
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <a
+              href="/"
+              className="text-emerald-600 hover:text-emerald-700 font-semibold hover:underline text-sm"
+            >
+              ← Back to Home
+            </a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 p-6">
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-xl p-8">
-          <div className="flex items-center justify-center mb-8">
-            <MealSnapLogo className="w-12 h-12" />
-            <h1 className="text-3xl font-extrabold text-gray-900 ml-4">Admin Panel</h1>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center">
+              <MealSnapLogo className="w-12 h-12" />
+              <h1 className="text-3xl font-extrabold text-gray-900 ml-4">Admin Panel</h1>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors text-sm"
+            >
+              Logout
+            </button>
           </div>
 
           {message && (

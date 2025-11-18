@@ -1,7 +1,22 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { kv } from '@vercel/kv'
+import { cookies } from 'next/headers'
 
-export async function GET() {
+async function checkAdminAuth() {
+  const cookieStore = await cookies()
+  const authCookie = cookieStore.get('admin_auth')
+  return authCookie?.value === 'authenticated'
+}
+
+export async function GET(req: NextRequest) {
+  // Check admin authentication
+  const isAuthenticated = await checkAdminAuth()
+  if (!isAuthenticated) {
+    return NextResponse.json(
+      { ok: false, error: 'Unauthorized. Admin authentication required.' },
+      { status: 401 }
+    )
+  }
   try {
     // Get all email keys
     const emailKeys = await kv.keys('email:*')

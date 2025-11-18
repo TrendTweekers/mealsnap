@@ -9,6 +9,15 @@ if (!apiKey) {
 export async function POST(req: NextRequest) {
   try {
     // --- 1. Read & validate body -----------------------------------------
+    // Limit request body size (1MB max for ingredients list)
+    const contentLength = req.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > 1024 * 1024) {
+      return NextResponse.json(
+        { ok: false, error: "Request too large. Maximum size: 1MB." },
+        { status: 413 }
+      )
+    }
+
     const body = await req.json().catch((err) => {
       console.error("[generate-recipes] Failed to parse request JSON:", err);
       return null;
@@ -21,6 +30,7 @@ export async function POST(req: NextRequest) {
         ? rawIngredients
             .map((i: unknown) => String(i ?? "").trim())
             .filter((i) => i.length > 0)
+            .slice(0, 100) // Limit to 100 ingredients max
         : null;
 
     if (!ingredients || ingredients.length === 0) {
@@ -28,6 +38,15 @@ export async function POST(req: NextRequest) {
         { ok: false, error: "No ingredients provided." },
         { status: 400 }
       );
+    }
+
+    // Validate ingredient lengths (prevent extremely long strings)
+    const invalidIngredients = ingredients.filter(i => i.length > 100)
+    if (invalidIngredients.length > 0) {
+      return NextResponse.json(
+        { ok: false, error: "Invalid ingredient: maximum length is 100 characters." },
+        { status: 400 }
+      )
     }
 
     if (!apiKey) {
