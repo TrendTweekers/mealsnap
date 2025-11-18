@@ -717,27 +717,28 @@ export default function MealSnap() {
         <StickyHeader />
         
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Hero Section - Dark Theme */}
+          {/* Hero Section - Dark Theme with Image */}
           <section className="relative overflow-hidden pt-20 pb-32 px-6">
-            <div className="relative z-10 max-w-5xl mx-auto">
-              <div className="text-center mb-12">
-                {/* Powered by AI Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#151828]/40 backdrop-blur-sm rounded-full border border-[#1F2332] mb-8">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <span className="text-sm font-semibold text-[#E6FFFF]">Powered by AI</span>
-              </div>
+            <div className="relative z-10 max-w-7xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Left Column - Text Content */}
+                <div className="space-y-8">
+                  {/* Powered by AI Badge */}
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#151828]/40 backdrop-blur-sm rounded-full border border-[#1F2332]">
+                    <Sparkles className="w-4 h-4 text-cyan-400" />
+                    <span className="text-sm font-semibold text-[#E6FFFF]">Powered by AI</span>
+                  </div>
             
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-[#E6FFFF] mb-6 leading-[1.1] tracking-tight">
-                  Stop wasting food. Start cooking what you have.
-                </h1>
+                  <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-[#E6FFFF] leading-tight">
+                    Stop wasting food. <span className="bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">Start cooking</span> what you have.
+                  </h1>
               
-                <p className="mt-8 text-lg md:text-xl text-[#B8D4D4] max-w-3xl mx-auto font-medium leading-relaxed">
-                  Snap your fridge, get <span className="font-bold text-[#E6FFFF]">6-8 recipes</span> you can make tonight. Missing something? Add to cart in <span className="font-bold text-[#E6FFFF]">1 tap</span>.
-                </p>
-              </div>
-              
-              {/* Benefits Grid */}
-              <div className="mt-16 grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
+                  <p className="text-lg text-[#B8D4D4] max-w-xl font-medium leading-relaxed">
+                    Snap your fridge, get <span className="font-bold text-emerald-400">6-8 recipes</span> you can make tonight. Missing something? Add to cart in <span className="font-bold text-emerald-400">1 tap</span>.
+                  </p>
+                  
+                  {/* Benefits Grid */}
+                  <div className="grid sm:grid-cols-2 gap-4">
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-6 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
@@ -770,6 +771,56 @@ export default function MealSnap() {
                     <span className="text-[#E6FFFF] font-semibold text-lg pt-1">One-tap grocery delivery for anything missing</span>
                   </div>
                 </div>
+                  </div>
+                  
+                  {/* CTA Buttons */}
+                  <div className="flex flex-wrap gap-4 pt-4">
+                    <button
+                      onClick={() => {
+                        const scanCard = document.querySelector('[data-scan-card]');
+                        scanCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-semibold h-12 rounded-lg px-8 text-base transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group"
+                    >
+                      Get Started
+                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const stepsSection = document.querySelector('[data-steps-section]');
+                        stepsSection?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center justify-center gap-2 border-2 border-emerald-500/50 bg-transparent text-[#E6FFFF] hover:bg-emerald-500/10 font-medium h-12 rounded-lg px-8 text-base transition-all duration-300 hover:scale-105"
+                    >
+                      See How It Works
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Right Column - Image */}
+                <div className="relative">
+                  <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                    <img 
+                      src="https://futuro-meal-muse.lovable.app/assets/hero-image-BzJPPt3O.jpg" 
+                      alt="Fresh colorful ingredients in space" 
+                      className="w-full h-auto"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0E1E]/50 to-transparent"></div>
+                  </div>
+                  
+                  {/* "10s Photo to Recipe" Overlay Card */}
+                  <div className="absolute -bottom-6 -left-6 bg-[#151828]/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl max-w-xs border border-[#1F2332]">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                        <Camera className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent">10s</div>
+                        <div className="text-sm text-[#B8D4D4]">Photo to Recipe</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -787,7 +838,7 @@ export default function MealSnap() {
           )}
 
           {/* Scan Card - Dark Theme */}
-          <div className="relative max-w-2xl mx-auto bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] p-10 sm:p-14 mb-20 transform transition-all duration-300 hover:border-[#2A2F45]">
+          <div data-scan-card className="relative max-w-2xl mx-auto bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] p-10 sm:p-14 mb-20 transform transition-all duration-300 hover:border-[#2A2F45]">
             <div className="text-center mb-10">
               <div className="w-24 h-24 bg-gradient-to-br from-emerald-500 to-green-500 rounded-3xl mx-auto mb-8 flex items-center justify-center shadow-lg transform transition-transform duration-300 hover:scale-110">
                 <Camera className="w-12 h-12 text-white" />
@@ -850,7 +901,7 @@ export default function MealSnap() {
         </div>
 
           {/* Three Steps Section - Dark Theme */}
-          <section className="relative py-24 px-6 overflow-hidden">
+          <section data-steps-section className="relative py-24 px-6 overflow-hidden">
             <div className="relative z-10 max-w-6xl mx-auto">
               <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#E6FFFF] mb-4 tracking-tight">
