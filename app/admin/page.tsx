@@ -2,13 +2,21 @@
 
 import { useState, useEffect } from 'react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
-import { Check, X, RefreshCw } from 'lucide-react'
+import { Check, X, RefreshCw, TrendingUp, Loader2 } from 'lucide-react'
+
+type IngredientStat = {
+  ingredient: string
+  count: number
+}
 
 export default function AdminPage() {
   const [isFounder, setIsFounder] = useState(false)
   const [scanCount, setScanCount] = useState(0)
   const [userPlan, setUserPlan] = useState<'free' | 'pro' | 'family'>('free')
   const [message, setMessage] = useState<string>('')
+  const [ingredients, setIngredients] = useState<IngredientStat[]>([])
+  const [ingredientsLoading, setIngredientsLoading] = useState(true)
+  const [totalManualAdds, setTotalManualAdds] = useState(0)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -20,7 +28,27 @@ export default function AdminPage() {
       setScanCount(count ? parseInt(count, 10) : 0)
       setUserPlan(plan || 'free')
     }
+    
+    // Load ingredient stats
+    fetchIngredientStats()
   }, [])
+
+  const fetchIngredientStats = async () => {
+    try {
+      setIngredientsLoading(true)
+      const res = await fetch('/api/admin/ingredients')
+      const data = await res.json()
+      
+      if (data.ok) {
+        setIngredients(data.ingredients || [])
+        setTotalManualAdds(data.total || 0)
+      }
+    } catch (err) {
+      console.error('Failed to fetch ingredient stats:', err)
+    } finally {
+      setIngredientsLoading(false)
+    }
+  }
 
   const enableFounderMode = () => {
     localStorage.setItem('mealsnap_founder', 'true')
@@ -128,6 +156,74 @@ export default function AdminPage() {
               </button>
             </div>
 
+            {/* Manually Added Ingredients Stats */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Manual Ingredient Tracking</h2>
+                <button
+                  onClick={fetchIngredientStats}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title="Refresh stats"
+                >
+                  <RefreshCw className={`w-5 h-5 text-gray-600 ${ingredientsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <p className="text-gray-600 mb-4">
+                Track which ingredients users manually add most often. This helps improve AI detection over time.
+              </p>
+              
+              {ingredientsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
+                  <span className="ml-2 text-gray-600">Loading stats...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700 font-medium">Total Manual Adds:</span>
+                      <span className="text-2xl font-bold text-emerald-600">{totalManualAdds}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-gray-700 font-medium">Unique Ingredients:</span>
+                      <span className="text-xl font-bold text-gray-900">{ingredients.length}</span>
+                    </div>
+                  </div>
+
+                  {ingredients.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No manually added ingredients tracked yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {ingredients.slice(0, 20).map((item, index) => (
+                        <div
+                          key={item.ingredient}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                              index === 1 ? 'bg-gray-300 text-gray-700' :
+                              index === 2 ? 'bg-orange-300 text-orange-900' :
+                              'bg-gray-200 text-gray-600'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            <span className="font-medium text-gray-900 capitalize">{item.ingredient}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-emerald-600" />
+                            <span className="font-bold text-emerald-600">{item.count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
             {/* Quick Links */}
             <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border-2 border-emerald-200">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Links</h2>
@@ -143,6 +239,12 @@ export default function AdminPage() {
                   className="block text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
                 >
                   Enable Founder Mode via URL (?founder=true)
+                </a>
+                <a
+                  href="/admin/waitlist"
+                  className="block text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
+                >
+                  View Waitlist
                 </a>
               </div>
             </div>

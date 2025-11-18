@@ -555,11 +555,28 @@ export default function MealSnap() {
     }
   }
 
-  const addIngredient = () => {
+  const addIngredient = async () => {
     if (newIngredient.trim()) {
       const cleanIngredient = newIngredient.trim().toLowerCase()
       if (!ingredients.includes(cleanIngredient)) {
         setIngredients([...ingredients, cleanIngredient])
+        
+        // Track manually added ingredient for AI training
+        try {
+          await fetch('/api/track-ingredient', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ingredient: cleanIngredient,
+              userId: userId,
+            }),
+          }).catch(err => {
+            // Silently fail - tracking shouldn't block user experience
+            console.warn('Failed to track ingredient:', err)
+          })
+        } catch (err) {
+          // Silent fail
+        }
       }
       setNewIngredient('')
     }
