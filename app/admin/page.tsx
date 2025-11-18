@@ -579,9 +579,8 @@ ${healthCheck.checks.map((check: any) =>
               </div>
             )}
 
-            {/* Financial Snapshot */}
-
-            {/* Financial Snapshot */}
+            {/* Financial Snapshot - TEMPORARILY DISABLED */}
+            {/* 
             <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
@@ -597,7 +596,6 @@ ${healthCheck.checks.map((check: any) =>
                 </button>
               </div>
 
-              {/* Period Selector - Pill Style */}
               <div className="flex gap-2 mb-6 flex-wrap">
                 {(['today', 'week', 'month', 'alltime'] as const).map((period) => (
                   <button
@@ -620,7 +618,6 @@ ${healthCheck.checks.map((check: any) =>
                 </div>
               ) : profitData ? (
                 <div className="space-y-4">
-                  {/* Compact Financial Overview */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Revenue</div>
@@ -643,7 +640,6 @@ ${healthCheck.checks.map((check: any) =>
                     </div>
                   </div>
 
-                  {/* Revenue Section */}
                   <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
                     <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
                       <TrendingUp className="w-5 h-5 text-emerald-400" />
@@ -685,7 +681,6 @@ ${healthCheck.checks.map((check: any) =>
                     </div>
                   </div>
 
-                  {/* Costs Section */}
                   <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
                     <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
                       <TrendingDown className="w-5 h-5 text-red-400" />
@@ -713,7 +708,6 @@ ${healthCheck.checks.map((check: any) =>
                     </div>
                   </div>
 
-                  {/* Break-even & Conversion */}
                   <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
                     <h3 className="text-lg font-bold text-[#F1F5F9] mb-4">Metrics</h3>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
@@ -736,7 +730,6 @@ ${healthCheck.checks.map((check: any) =>
                     </div>
                   </div>
 
-                  {/* Projections */}
                   <div className="bg-slate-800/50 border border-amber-500/30 rounded-xl p-5">
                     <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
                       <Target className="w-5 h-5 text-amber-400" />
@@ -765,7 +758,6 @@ ${healthCheck.checks.map((check: any) =>
                     </div>
                   </div>
 
-                  {/* Optimization Suggestions */}
                   {profitData.suggestions && profitData.suggestions.length > 0 && (
                     <div className="bg-slate-800 border border-amber-500/30 rounded-xl p-5">
                       <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
@@ -797,7 +789,6 @@ ${healthCheck.checks.map((check: any) =>
                     </div>
                   )}
 
-                  {/* Actions */}
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={exportProfitCSV}
@@ -813,6 +804,16 @@ ${healthCheck.checks.map((check: any) =>
                   No profit data available yet. Start using the app to see metrics!
                 </div>
               )}
+            </div>
+            */}
+
+            <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
+              <h2 className="text-xl font-bold text-white mb-4">
+                💰 Financial Dashboard
+              </h2>
+              <p className="text-gray-400">
+                Coming soon - Dashboard under maintenance
+              </p>
             </div>
 
             {/* Statistics Dashboard */}
