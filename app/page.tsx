@@ -589,7 +589,7 @@ export default function MealSnap() {
           >
             <div className="w-10 h-10 bg-gradient-to-br from-cyan to-teal rounded-xl flex items-center justify-center shadow-lg">
               <Camera className="w-6 h-6 text-primary-foreground" />
-            </div>
+        </div>
             <span className="text-xl font-bold text-gradient">MealSnap</span>
           </button>
 
@@ -702,9 +702,8 @@ export default function MealSnap() {
       <div className="min-h-screen bg-background">
         <StickyHeader />
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
-          {/* Hero Section - Matching Lovable Design */}
-          <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden">
+        {/* Hero Section - Matching Lovable Design */}
+        <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden pt-20">
             {/* Background gradient glow */}
             <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
             <div 
@@ -729,7 +728,7 @@ export default function MealSnap() {
                   </h1>
                   
                   <p className="text-lg text-muted-foreground max-w-xl">
-                    Snap your fridge, get <span className="text-primary font-semibold">6-8 recipes</span> you can make tonight. 
+                    Snap your fridge, get <span className="text-primary font-semibold">6-8 recipes</span> you can make tonight.{" "}
                     Missing something? Add to cart in <span className="text-accent font-semibold">1 tap</span>.
                   </p>
                   
@@ -803,6 +802,7 @@ export default function MealSnap() {
             </div>
           </section>
 
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {error && (
             <div className="max-w-2xl mx-auto mb-6 bg-red-500/20 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
