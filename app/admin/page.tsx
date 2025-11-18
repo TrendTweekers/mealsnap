@@ -624,11 +624,11 @@ ${healthCheck.checks.map((check: any) =>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Revenue</div>
-                      <div className="text-2xl font-mono font-bold text-emerald-400">{`$${profitData.revenue?.total?.toFixed(2) || '0.00'}`}</div>
+                      <div className="text-2xl font-mono font-bold text-emerald-400">${profitData.revenue?.total?.toFixed(2) || '0.00'}</div>
                     </div>
                     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Costs</div>
-                      <div className="text-2xl font-mono font-bold text-red-400">{`$${profitData.costs?.total?.toFixed(2) || '0.00'}`}</div>
+                      <div className="text-2xl font-mono font-bold text-red-400">${profitData.costs?.total?.toFixed(2) || '0.00'}</div>
                     </div>
                     <div className={`bg-slate-800 border rounded-xl p-4 ${
                       profitData.profit?.net >= 0 ? 'border-emerald-500/50' : 'border-red-500/50'
@@ -637,7 +637,7 @@ ${healthCheck.checks.map((check: any) =>
                       <div className={`text-2xl font-mono font-bold ${
                         profitData.profit?.net >= 0 ? 'text-emerald-400' : 'text-red-400'
                       }`}>
-                        {`$${profitData.profit?.net?.toFixed(2) || '0.00'}`}
+                        ${profitData.profit?.net?.toFixed(2) || '0.00'}
                         {profitData.profit?.net < 0 ? ' 🔴' : ' 🟢'}
                       </div>
                     </div>
@@ -652,7 +652,7 @@ ${healthCheck.checks.map((check: any) =>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">Subscriptions:</span>
-                        <span className="font-mono font-bold text-[#F1F5F9]">{`$${profitData.revenue?.subscriptions?.toFixed(2) || '0.00'}`}</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.revenue?.subscriptions?.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="pl-4 space-y-1 text-sm text-slate-400">
                         <div className="flex justify-between">
@@ -670,7 +670,7 @@ ${healthCheck.checks.map((check: any) =>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-slate-700">
                         <span className="text-slate-400">Affiliate Revenue:</span>
-                        <span className="font-mono font-bold text-[#F1F5F9]">{`$${profitData.revenue?.affiliate?.toFixed(2) || '0.00'}`}</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.revenue?.affiliate?.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="pl-4 space-y-1 text-sm text-slate-400">
                         <div className="flex justify-between">
@@ -694,21 +694,21 @@ ${healthCheck.checks.map((check: any) =>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-400">OpenAI API:</span>
-                        <span className="font-mono font-bold text-[#F1F5F9]">{`$${profitData.costs?.openai?.total?.toFixed(2) || '0.00'}`}</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.costs?.openai?.total?.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="pl-4 space-y-1 text-sm text-slate-400">
                         <div className="flex justify-between">
                           <span>Scans (Vision):</span>
-                          <span className="font-mono">{`$${profitData.costs?.openai?.scan?.toFixed(4) || '0.00'}`}</span>
+                          <span className="font-mono">${profitData.costs?.openai?.scan?.toFixed(4) || '0.00'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Recipes (GPT-4o):</span>
-                          <span className="font-mono">{`$${profitData.costs?.openai?.recipes?.toFixed(4) || '0.00'}`}</span>
+                          <span className="font-mono">${profitData.costs?.openai?.recipes?.toFixed(4) || '0.00'}</span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-slate-700">
                         <span className="text-slate-400">Infrastructure:</span>
-                        <span className="font-mono font-bold text-[#F1F5F9]">{`$${(profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00')}/day`}</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00'} per day</span>
                       </div>
                     </div>
                   </div>
@@ -730,7 +730,7 @@ ${healthCheck.checks.map((check: any) =>
                         <div className={`font-mono font-bold ${
                           profitData.metrics?.unitEconomics >= 0 ? 'text-emerald-400' : 'text-red-400'
                         }`}>
-                          {`$${profitData.metrics?.unitEconomics?.toFixed(2) || '0.00'}`}
+                          ${profitData.metrics?.unitEconomics?.toFixed(2) || '0.00'}
                         </div>
                       </div>
                     </div>
@@ -745,23 +745,23 @@ ${healthCheck.checks.map((check: any) =>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                       <div>
                         <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Expected Cost</div>
-                        <div className="font-mono font-bold text-red-400">{`$${profitData.projections?.next30Days?.expectedCost?.toFixed(2) || '0.00'}`}</div>
+                        <div className="font-mono font-bold text-red-400">${profitData.projections?.next30Days?.expectedCost?.toFixed(2) || '0.00'}</div>
                       </div>
                       <div>
                         <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Expected Revenue</div>
-                        <div className="font-mono font-bold text-emerald-400">{`$${profitData.projections?.next30Days?.expectedRevenue?.toFixed(2) || '0.00'}`}</div>
+                        <div className="font-mono font-bold text-emerald-400">${profitData.projections?.next30Days?.expectedRevenue?.toFixed(2) || '0.00'}</div>
                       </div>
                       <div>
                         <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Expected Profit</div>
                         <div className={`font-mono font-bold ${
                           profitData.projections?.next30Days?.expectedProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
                         }`}>
-                          {`$${profitData.projections?.next30Days?.expectedProfit?.toFixed(2) || '0.00'}`}
+                          ${profitData.projections?.next30Days?.expectedProfit?.toFixed(2) || '0.00'}
                         </div>
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-400">
-                      Break-even: {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ $9.99/mo
+                      Break-even: {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ $9.99 per month
                     </div>
                   </div>
 
