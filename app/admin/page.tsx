@@ -708,7 +708,7 @@ ${healthCheck.checks.map((check: any) =>
                       </div>
                       <div className="flex items-center justify-between pt-2 border-t border-slate-700">
                         <span className="text-slate-400">Infrastructure:</span>
-                        <span className="font-mono font-bold text-[#F1F5F9]">{`$${profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00'}/day`}</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">{`$${profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00'}` + '/day'}</span>
                       </div>
                     </div>
                   </div>
@@ -1427,7 +1427,7 @@ ${healthCheck.checks.map((check: any) =>
                   ← Back to Home
                 </a>
                 <a
-                  href="/?founder=true"
+                  href={"/?founder=true"}
                   className="block text-emerald-600 hover:text-emerald-700 font-semibold hover:underline"
                 >
                   Enable Founder Mode via URL (?founder=true)
