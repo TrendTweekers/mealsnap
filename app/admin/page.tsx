@@ -788,7 +788,7 @@ ${healthCheck.checks.map((check: any) =>
                                 <div className="text-sm text-slate-400 mt-1">{suggestion.description}</div>
                               </div>
                               {suggestion.savings > 0 && (
-                                <span className="font-bold text-emerald-400">Save ${suggestion.savings.toFixed(2)}</span>
+                                <span className="font-bold text-emerald-400">{`Save $${suggestion.savings.toFixed(2)}`}</span>
                               )}
                             </div>
                           </div>
