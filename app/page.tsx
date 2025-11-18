@@ -588,8 +588,8 @@ export default function MealSnap() {
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-cyan to-teal rounded-xl flex items-center justify-center shadow-lg">
-              <Camera className="w-6 h-6 text-white" />
-        </div>
+              <Camera className="w-6 h-6 text-primary-foreground" />
+            </div>
             <span className="text-xl font-bold text-gradient">MealSnap</span>
           </button>
 
