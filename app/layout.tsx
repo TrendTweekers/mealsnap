@@ -45,9 +45,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="dark">
       <head>
-        <meta name="theme-color" content="#10B981" />
+        <meta name="theme-color" content="#0B1629" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
