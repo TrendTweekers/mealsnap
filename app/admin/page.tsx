@@ -64,10 +64,27 @@ export default function AdminPage() {
   const checkAuth = async () => {
     try {
       setAuthLoading(true)
+      
+      // First check localStorage (faster, works immediately)
+      if (typeof window !== 'undefined') {
+        const localStorageAuth = localStorage.getItem('admin_authenticated') === 'true'
+        if (localStorageAuth) {
+          setIsAuthenticated(true)
+          loadAdminData()
+          setAuthLoading(false)
+          return
+        }
+      }
+      
+      // Fallback to cookie check (for server-side auth)
       const res = await fetch('/api/admin/auth')
       const data = await res.json()
       
       if (data.ok && data.authenticated) {
+        // Also set localStorage for future checks
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin_authenticated', 'true')
+        }
         setIsAuthenticated(true)
         loadAdminData()
       } else {
@@ -104,6 +121,10 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/stats')
       
       if (res.status === 401) {
+        // Clear localStorage on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_authenticated')
+        }
         setIsAuthenticated(false)
         return
       }
@@ -133,6 +154,10 @@ export default function AdminPage() {
       const data = await res.json()
       
       if (data.ok) {
+        // Store in localStorage for persistence
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin_authenticated', 'true')
+        }
         setIsAuthenticated(true)
         setPassword('')
         loadAdminData()
@@ -147,13 +172,25 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
+      // Remove from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_authenticated')
+      }
+      
+      // Also clear server-side cookie
       await fetch('/api/admin/auth', { method: 'DELETE' })
+      
       setIsAuthenticated(false)
       setPassword('')
       setMessage('Logged out successfully')
       setTimeout(() => setMessage(''), 3000)
     } catch (err) {
       console.error('Logout error:', err)
+      // Even if API call fails, still logout locally
+      setIsAuthenticated(false)
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('admin_authenticated')
+      }
     }
   }
 
@@ -213,6 +250,10 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/health-check')
       
       if (res.status === 401) {
+        // Clear localStorage on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_authenticated')
+        }
         setIsAuthenticated(false)
         return
       }
@@ -269,6 +310,10 @@ ${healthCheck.checks.map((check: any) =>
       const res = await fetch('/api/admin/training-data')
       
       if (res.status === 401) {
+        // Clear localStorage on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_authenticated')
+        }
         setIsAuthenticated(false)
         return
       }
@@ -297,6 +342,10 @@ ${healthCheck.checks.map((check: any) =>
       const res = await fetch('/api/admin/generate-prompt')
       
       if (res.status === 401) {
+        // Clear localStorage on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_authenticated')
+        }
         setIsAuthenticated(false)
         return
       }
@@ -364,6 +413,10 @@ ${healthCheck.checks.map((check: any) =>
       const res = await fetch(`/api/admin/profit-calculator?period=${period}`)
       
       if (res.status === 401) {
+        // Clear localStorage on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_authenticated')
+        }
         setIsAuthenticated(false)
         return
       }
