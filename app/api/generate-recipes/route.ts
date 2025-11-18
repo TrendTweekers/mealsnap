@@ -69,12 +69,16 @@ export async function POST(req: NextRequest) {
     const ingredientsString = sortedIngredients.join(',')
     const cacheKey = createHash('sha256').update(ingredientsString).digest('hex')
     const cacheRedisKey = `recipes:${cacheKey}`
+    
+    // Track if we're using cached data (used later for cost tracking)
+    let isCached = false
 
     try {
       // Check if we have cached recipes for these ingredients
       const cached = await kv.get(cacheRedisKey)
       
       if (cached) {
+        isCached = true
         console.log(`[generate-recipes] Cache HIT for key: ${cacheKey.substring(0, 8)}...`)
         
         // Track cache hit (non-blocking)
@@ -272,7 +276,7 @@ RULES:
     }
 
     // Track OpenAI costs (non-blocking) - only if not cached
-    if (!cached) {
+    if (!isCached) {
       try {
         const usage = data.usage || {}
         const promptTokens = usage.prompt_tokens || 2000 // Estimate if not provided
@@ -320,12 +324,12 @@ RULES:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: userId || 'anonymous',
-          recipeCount: parsed.recipes?.length || 0,
-          ingredientCount: ingredients.length,
-          success: true,
-          cached: cached || false,
-        }),
+            userId: userId || 'anonymous',
+            recipeCount: parsed.recipes?.length || 0,
+            ingredientCount: ingredients.length,
+            success: true,
+            cached: false, // This is a fresh generation, not cached
+          }),
       }).catch(err => {
         // Silent fail - tracking shouldn't block response
         console.warn('Failed to track recipe generation:', err)

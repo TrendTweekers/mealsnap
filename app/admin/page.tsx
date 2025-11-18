@@ -509,105 +509,152 @@ ${healthCheck.checks.map((check: any) =>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 p-6">
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-3xl shadow-xl p-8">
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center">
-              <MealSnapLogo className="w-12 h-12" />
-              <h1 className="text-3xl font-extrabold text-gray-900 ml-4">Admin Panel</h1>
+    <div className="min-h-screen bg-[#0F172A] p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-[#1E293B]/95 backdrop-blur-sm border-b border-slate-700 rounded-t-2xl px-6 py-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <MealSnapLogo className="w-10 h-10" />
+              <h1 className="text-2xl font-bold text-[#F1F5F9]">Admin Panel</h1>
             </div>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-semibold transition-colors text-sm"
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-[#F1F5F9] rounded-lg font-semibold transition-all duration-200 text-sm"
             >
               Logout
             </button>
           </div>
+        </div>
 
           {message && (
-            <div className={`mb-6 p-4 rounded-xl ${
+            <div className={`mb-6 p-4 rounded-xl border ${
               message.includes('✅') 
-                ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-800' 
-                : 'bg-gray-50 border-2 border-gray-200 text-gray-800'
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                : 'bg-slate-800 border-slate-700 text-slate-300'
             }`}>
               {message}
             </div>
           )}
 
           <div className="space-y-6">
-            {/* Current Status */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Current Status</h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">Founder Mode:</span>
-                  <span className={`font-bold ${isFounder ? 'text-emerald-600' : 'text-gray-400'}`}>
-                    {isFounder ? '✅ Enabled' : '❌ Disabled'}
-                  </span>
+            {/* Key Metrics Grid */}
+            {stats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Camera className="w-5 h-5 text-emerald-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Scans</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.totalScans.toLocaleString()}</div>
+                  <div className="text-xs text-slate-400 mt-1">{stats.scansToday} today</div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">User Plan:</span>
-                  <span className="font-bold text-emerald-600 capitalize">{userPlan}</span>
+
+                <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ChefHat className="w-5 h-5 text-purple-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Recipes</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.totalRecipeGenerations.toLocaleString()}</div>
+                  <div className="text-xs text-slate-400 mt-1">{stats.recipesToday} today</div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-700 font-medium">Scan Count:</span>
-                  <span className="font-bold text-gray-900">{scanCount}/3</span>
+
+                <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-5 h-5 text-blue-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Convert</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.conversionRate.toFixed(1)}%</div>
+                  <div className="text-xs text-slate-400 mt-1">Success rate</div>
+                </div>
+
+                <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 text-cyan-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Users</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.uniqueUsers.toLocaleString()}</div>
+                  <div className="text-xs text-slate-400 mt-1">Total unique</div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Revenue & Costs Dashboard */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <DollarSign className="w-6 h-6 text-blue-600" />
-                  Revenue & Costs Dashboard
+            {/* Financial Snapshot */}
+
+            {/* Financial Snapshot */}
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <DollarSign className="w-6 h-6 text-emerald-400" />
+                  Financial Snapshot
                 </h2>
                 <button
                   onClick={() => fetchProfitData(profitPeriod)}
-                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
                   title="Refresh profit data"
                 >
-                  <RefreshCw className={`w-5 h-5 text-blue-600 ${profitLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-5 h-5 text-emerald-400 ${profitLoading ? 'animate-spin' : ''}`} />
                 </button>
               </div>
 
-              {/* Period Selector */}
+              {/* Period Selector - Pill Style */}
               <div className="flex gap-2 mb-6 flex-wrap">
                 {(['today', 'week', 'month', 'alltime'] as const).map((period) => (
                   <button
                     key={period}
                     onClick={() => handleProfitPeriodChange(period)}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                    className={`px-4 py-2 rounded-full font-semibold text-sm transition-all duration-200 ${
                       profitPeriod === period
-                        ? 'bg-blue-600 text-white shadow-lg'
-                        : 'bg-white text-gray-700 hover:bg-gray-100'
+                        ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
                   >
-                    {period === 'today' ? 'Today' : period === 'week' ? 'This Week' : period === 'month' ? 'This Month' : 'All Time'}
+                    {period === 'today' ? 'Today' : period === 'week' ? 'Week' : period === 'month' ? 'Month' : 'All Time'}
                   </button>
                 ))}
               </div>
 
               {profitLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
                 </div>
               ) : profitData ? (
-                <div className="space-y-6">
+                <div className="space-y-4">
+                  {/* Compact Financial Overview */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Revenue</div>
+                      <div className="text-2xl font-mono font-bold text-emerald-400">${profitData.revenue?.total?.toFixed(2) || '0.00'}</div>
+                    </div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Costs</div>
+                      <div className="text-2xl font-mono font-bold text-red-400">${profitData.costs?.total?.toFixed(2) || '0.00'}</div>
+                    </div>
+                    <div className={`bg-slate-800 border rounded-xl p-4 ${
+                      profitData.profit?.net >= 0 ? 'border-emerald-500/50' : 'border-red-500/50'
+                    }`}>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Profit</div>
+                      <div className={`text-2xl font-mono font-bold ${
+                        profitData.profit?.net >= 0 ? 'text-emerald-400' : 'text-red-400'
+                      }`}>
+                        ${profitData.profit?.net?.toFixed(2) || '0.00'}
+                        {profitData.profit?.net < 0 ? ' 🔴' : ' 🟢'}
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Revenue Section */}
-                  <div className="bg-white rounded-xl p-5 border border-blue-100">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-emerald-600" />
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                    <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-emerald-400" />
                       Revenue
                     </h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-700">Subscriptions:</span>
-                        <span className="font-bold text-gray-900">${profitData.revenue?.subscriptions?.toFixed(2) || '0.00'}</span>
+                        <span className="text-slate-400">Subscriptions:</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.revenue?.subscriptions?.toFixed(2) || '0.00'}</span>
                       </div>
-                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                      <div className="pl-4 space-y-1 text-sm text-slate-400">
                         <div className="flex justify-between">
                           <span>Free users:</span>
                           <span>{profitData.revenue?.breakdown?.free || 0}</span>
@@ -621,11 +668,11 @@ ${healthCheck.checks.map((check: any) =>
                           <span>{profitData.revenue?.breakdown?.family || 0}</span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <span className="text-gray-700">Affiliate Revenue:</span>
-                        <span className="font-bold text-gray-900">${profitData.revenue?.affiliate?.toFixed(2) || '0.00'}</span>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+                        <span className="text-slate-400">Affiliate Revenue:</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.revenue?.affiliate?.toFixed(2) || '0.00'}</span>
                       </div>
-                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                      <div className="pl-4 space-y-1 text-sm text-slate-400">
                         <div className="flex justify-between">
                           <span>Instacart clicks:</span>
                           <span>{profitData.metrics?.instacartClicks || 0}</span>
@@ -635,226 +682,113 @@ ${healthCheck.checks.map((check: any) =>
                           <span>{profitData.metrics?.estimatedConversions || 0}</span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t-2 border-emerald-200">
-                        <span className="font-bold text-gray-900">Total Revenue:</span>
-                        <span className="font-extrabold text-emerald-600 text-xl">${profitData.revenue?.total?.toFixed(2) || '0.00'}</span>
-                      </div>
                     </div>
                   </div>
 
                   {/* Costs Section */}
-                  <div className="bg-white rounded-xl p-5 border border-red-100">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <TrendingDown className="w-5 h-5 text-red-600" />
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                    <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
+                      <TrendingDown className="w-5 h-5 text-red-400" />
                       Costs
                     </h3>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-700">OpenAI API:</span>
-                        <span className="font-bold text-gray-900">${profitData.costs?.openai?.total?.toFixed(2) || '0.00'}</span>
+                        <span className="text-slate-400">OpenAI API:</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.costs?.openai?.total?.toFixed(2) || '0.00'}</span>
                       </div>
-                      <div className="pl-4 space-y-1 text-sm text-gray-600">
+                      <div className="pl-4 space-y-1 text-sm text-slate-400">
                         <div className="flex justify-between">
                           <span>Scans (Vision):</span>
-                          <span>${profitData.costs?.openai?.scan?.toFixed(4) || '0.00'}</span>
+                          <span className="font-mono">${profitData.costs?.openai?.scan?.toFixed(4) || '0.00'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Recipes (GPT-4o):</span>
-                          <span>${profitData.costs?.openai?.recipes?.toFixed(4) || '0.00'}</span>
+                          <span className="font-mono">${profitData.costs?.openai?.recipes?.toFixed(4) || '0.00'}</span>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <span className="text-gray-700">Infrastructure:</span>
-                        <span className="font-bold text-gray-900">${profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00'}/day</span>
-                      </div>
-                      <div className="pl-4 space-y-1 text-sm text-gray-600">
-                        <div className="flex justify-between">
-                          <span>Vercel hosting:</span>
-                          <span>${profitData.costs?.infrastructure?.vercel_hosting?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Vercel KV:</span>
-                          <span>${profitData.costs?.infrastructure?.vercel_kv?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Plausible Analytics:</span>
-                          <span>${profitData.costs?.infrastructure?.plausible_analytics?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Domain:</span>
-                          <span>${profitData.costs?.infrastructure?.domain?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Monitoring:</span>
-                          <span>${profitData.costs?.infrastructure?.monitoring?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Email service:</span>
-                          <span>${profitData.costs?.infrastructure?.email_service?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Backups:</span>
-                          <span>${profitData.costs?.infrastructure?.backups?.toFixed(2) || '0.00'}/day</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t-2 border-red-200">
-                        <span className="font-bold text-gray-900">Total Costs:</span>
-                        <span className="font-extrabold text-red-600 text-xl">${profitData.costs?.total?.toFixed(2) || '0.00'}</span>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+                        <span className="text-slate-400">Infrastructure:</span>
+                        <span className="font-mono font-bold text-[#F1F5F9]">${profitData.costs?.infrastructure?.total?.toFixed(2) || '0.00'}/day</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Profit/Loss Section */}
-                  <div className={`bg-white rounded-xl p-5 border-2 ${
-                    profitData.profit?.net >= 0 
-                      ? 'border-emerald-300 bg-emerald-50' 
-                      : 'border-red-300 bg-red-50'
-                  }`}>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      {profitData.profit?.net >= 0 ? (
-                        <TrendingUp className="w-5 h-5 text-emerald-600" />
-                      ) : (
-                        <TrendingDown className="w-5 h-5 text-red-600" />
-                      )}
-                      Profit/Loss
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 font-medium">Net Profit ({profitPeriod === 'today' ? 'Today' : profitPeriod === 'week' ? 'This Week' : profitPeriod === 'month' ? 'MTD' : 'All Time'}):</span>
-                        <span className={`font-extrabold text-2xl ${
-                          profitData.profit?.net >= 0 ? 'text-emerald-600' : 'text-red-600'
-                        }`}>
-                          ${profitData.profit?.net?.toFixed(2) || '0.00'} 
-                          {profitData.profit?.net < 0 ? ' 🔴' : ' 🟢'}
-                        </span>
+                  {/* Break-even & Conversion */}
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                    <h3 className="text-lg font-bold text-[#F1F5F9] mb-4">Metrics</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Break-even</div>
+                        <div className="font-mono font-bold text-[#F1F5F9]">{profitData.metrics?.breakEvenUsers || 0} users</div>
                       </div>
-                      <div className="pt-2 border-t border-gray-200 space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Break-even Point:</span>
-                          <span className="font-semibold">{profitData.metrics?.breakEvenUsers || 0} paid users</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Current Conversion:</span>
-                          <span className="font-semibold">{profitData.metrics?.conversionRate?.toFixed(1) || '0.0'}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Target Conversion:</span>
-                          <span className="font-semibold">3%</span>
-                        </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Conversion</div>
+                        <div className="font-mono font-bold text-[#F1F5F9]">{profitData.metrics?.conversionRate?.toFixed(1) || '0.0'}%</div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Per-User Metrics */}
-                  <div className="bg-white rounded-xl p-5 border border-gray-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Users className="w-5 h-5 text-purple-600" />
-                      Per-User Metrics
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700">Avg Cost per User:</span>
-                        <span className="font-bold text-gray-900">${profitData.metrics?.avgCostPerUser?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="pl-4 space-y-1 text-sm text-gray-600">
-                        <div className="flex justify-between">
-                          <span>Scan cost:</span>
-                          <span>~$0.15</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Recipe gen cost:</span>
-                          <span>~$0.20</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <span className="text-gray-700">Avg Revenue per User:</span>
-                        <span className="font-bold text-gray-900">${profitData.metrics?.avgRevenuePerUser?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t-2 border-gray-300">
-                        <span className="font-bold text-gray-900">Unit Economics:</span>
-                        <span className={`font-extrabold text-xl ${
-                          profitData.metrics?.unitEconomics >= 0 ? 'text-emerald-600' : 'text-red-600'
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Unit Economics</div>
+                        <div className={`font-mono font-bold ${
+                          profitData.metrics?.unitEconomics >= 0 ? 'text-emerald-400' : 'text-red-400'
                         }`}>
                           ${profitData.metrics?.unitEconomics?.toFixed(2) || '0.00'}
-                          {profitData.metrics?.unitEconomics < 0 ? ' 🔴' : ' 🟢'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                        <span className="text-gray-600 text-sm">LTV:CAC Ratio:</span>
-                        <span className="font-semibold text-sm">
-                          {profitData.metrics?.ltvCacRatio > 0 ? profitData.metrics.ltvCacRatio.toFixed(1) : '0'}:1
-                          {profitData.metrics?.ltvCacRatio >= 3 ? ' 🟢' : profitData.metrics?.ltvCacRatio > 0 ? ' 🟡' : ' 🔴'}
-                        </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
                   {/* Projections */}
-                  <div className="bg-white rounded-xl p-5 border border-yellow-200 bg-yellow-50">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <Target className="w-5 h-5 text-yellow-600" />
-                      Projections (Next 30 Days)
+                  <div className="bg-slate-800/50 border border-amber-500/30 rounded-xl p-5">
+                    <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
+                      <Target className="w-5 h-5 text-amber-400" />
+                      30-Day Projection
                     </h3>
-                    <div className="space-y-3 text-sm">
-                      <div className="text-gray-700 mb-3">If growth continues:</div>
-                      <div className="space-y-2 pl-4">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Expected users:</span>
-                          <span className="font-semibold">{profitData.metrics?.totalUsers || 0}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Expected costs:</span>
-                          <span className="font-semibold">${profitData.projections?.next30Days?.expectedCost?.toFixed(2) || '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Expected revenue:</span>
-                          <span className="font-semibold">${profitData.projections?.next30Days?.expectedRevenue?.toFixed(2) || '0.00'}</span>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-yellow-200">
-                          <span className="font-bold text-gray-900">Expected profit:</span>
-                          <span className={`font-extrabold ${
-                            profitData.projections?.next30Days?.expectedProfit >= 0 ? 'text-emerald-600' : 'text-red-600'
-                          }`}>
-                            ${profitData.projections?.next30Days?.expectedProfit?.toFixed(2) || '0.00'}
-                            {profitData.projections?.next30Days?.expectedProfit < 0 ? ' 🔴' : ' 🟢'}
-                          </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Expected Cost</div>
+                        <div className="font-mono font-bold text-red-400">${profitData.projections?.next30Days?.expectedCost?.toFixed(2) || '0.00'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Expected Revenue</div>
+                        <div className="font-mono font-bold text-emerald-400">${profitData.projections?.next30Days?.expectedRevenue?.toFixed(2) || '0.00'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Expected Profit</div>
+                        <div className={`font-mono font-bold ${
+                          profitData.projections?.next30Days?.expectedProfit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        }`}>
+                          ${profitData.projections?.next30Days?.expectedProfit?.toFixed(2) || '0.00'}
                         </div>
                       </div>
-                      <div className="pt-3 border-t border-yellow-200">
-                        <div className="text-gray-700 font-medium mb-2">To break even, you need:</div>
-                        <div className="pl-4 space-y-1 text-gray-600">
-                          <div>• {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ $9.99/mo</div>
-                          <div>• OR 5% conversion rate</div>
-                          <div>• OR reduce costs by 70%</div>
-                        </div>
-                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-slate-700 text-xs text-slate-400">
+                      Break-even: {profitData.projections?.next30Days?.breakEvenUsers || 0} paid users @ $9.99/mo
                     </div>
                   </div>
 
                   {/* Optimization Suggestions */}
                   {profitData.suggestions && profitData.suggestions.length > 0 && (
-                    <div className="bg-white rounded-xl p-5 border-2 border-orange-200 bg-orange-50">
-                      <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                        <Zap className="w-5 h-5 text-orange-600" />
-                        Cost Optimization Suggestions
+                    <div className="bg-slate-800 border border-amber-500/30 rounded-xl p-5">
+                      <h3 className="text-lg font-bold text-[#F1F5F9] mb-4 flex items-center gap-2">
+                        <Zap className="w-5 h-5 text-amber-400" />
+                        Optimizations
                       </h3>
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {profitData.suggestions.map((suggestion: any, index: number) => (
                           <div
                             key={index}
                             className={`p-3 rounded-lg border ${
                               suggestion.type === 'critical' 
-                                ? 'bg-red-50 border-red-200' 
-                                : 'bg-yellow-50 border-yellow-200'
+                                ? 'bg-red-500/10 border-red-500/30' 
+                                : 'bg-amber-500/10 border-amber-500/30'
                             }`}
                           >
                             <div className="flex items-start justify-between">
                               <div>
-                                <div className="font-semibold text-gray-900">{suggestion.title}</div>
-                                <div className="text-sm text-gray-600 mt-1">{suggestion.description}</div>
+                                <div className="font-semibold text-[#F1F5F9]">{suggestion.title}</div>
+                                <div className="text-sm text-slate-400 mt-1">{suggestion.description}</div>
                               </div>
                               {suggestion.savings > 0 && (
-                                <span className="font-bold text-emerald-600">Save ${suggestion.savings.toFixed(2)}</span>
+                                <span className="font-bold text-emerald-400">Save ${suggestion.savings.toFixed(2)}</span>
                               )}
                             </div>
                           </div>
@@ -867,7 +801,7 @@ ${healthCheck.checks.map((check: any) =>
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={exportProfitCSV}
-                      className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl px-4 py-3 font-semibold transition-colors flex items-center justify-center gap-2 text-sm"
+                      className="flex-1 bg-slate-700 hover:bg-slate-600 text-[#F1F5F9] rounded-xl px-4 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm"
                     >
                       <Download className="w-4 h-4" />
                       Export Report
@@ -875,105 +809,61 @@ ${healthCheck.checks.map((check: any) =>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-slate-400">
                   No profit data available yet. Start using the app to see metrics!
                 </div>
               )}
             </div>
 
             {/* Statistics Dashboard */}
-            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <BarChart3 className="w-6 h-6 text-emerald-600" />
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-emerald-400" />
                   Statistics Dashboard
                 </h2>
                 <button
                   onClick={fetchStats}
-                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
                   title="Refresh stats"
                 >
-                  <RefreshCw className={`w-5 h-5 text-emerald-600 ${statsLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-5 h-5 text-emerald-400 ${statsLoading ? 'animate-spin' : ''}`} />
                 </button>
               </div>
 
               {statsLoading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
                 </div>
               ) : stats ? (
                 <div className="space-y-6">
-                  {/* Key Metrics */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Camera className="w-5 h-5 text-emerald-600" />
-                        <span className="text-sm text-gray-600">Total Scans</span>
-                      </div>
-                      <div className="text-2xl font-extrabold text-gray-900">{stats.totalScans.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {stats.scansToday} today
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <ChefHat className="w-5 h-5 text-purple-600" />
-                        <span className="text-sm text-gray-600">Recipe Gens</span>
-                      </div>
-                      <div className="text-2xl font-extrabold text-gray-900">{stats.totalRecipeGenerations.toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        {stats.recipesToday} today
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="w-5 h-5 text-blue-600" />
-                        <span className="text-sm text-gray-600">Conversion</span>
-                      </div>
-                      <div className="text-2xl font-extrabold text-gray-900">{stats.conversionRate.toFixed(1)}%</div>
-                      <div className="text-xs text-gray-500 mt-1">
-                        Scans → Recipes
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="w-5 h-5 text-orange-600" />
-                        <span className="text-sm text-gray-600">Unique Users</span>
-                      </div>
-                      <div className="text-2xl font-extrabold text-gray-900">{stats.uniqueUsers.toLocaleString()}</div>
-                    </div>
-                  </div>
-
                   {/* Success Rates */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white rounded-xl p-4 border border-gray-100">
-                      <div className="text-sm text-gray-600 mb-1">Scan Success Rate</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scan Success Rate</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-extrabold text-gray-900">{stats.scanSuccessRate.toFixed(1)}%</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-2xl font-mono font-bold text-emerald-400">{stats.scanSuccessRate.toFixed(1)}%</span>
+                        <span className="text-sm text-slate-400">
                           ({stats.successfulScans}/{stats.totalScans})
                         </span>
                       </div>
                       {stats.failedScans > 0 && (
-                        <div className="text-xs text-red-600 mt-1">
+                        <div className="text-xs text-red-400 mt-1">
                           {stats.failedScans} failed
                         </div>
                       )}
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 border border-gray-100">
-                      <div className="text-sm text-gray-600 mb-1">Recipe Gen Success Rate</div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipe Gen Success Rate</div>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-2xl font-extrabold text-gray-900">{stats.recipeSuccessRate.toFixed(1)}%</span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-2xl font-mono font-bold text-emerald-400">{stats.recipeSuccessRate.toFixed(1)}%</span>
+                        <span className="text-sm text-slate-400">
                           ({stats.successfulRecipeGenerations}/{stats.totalRecipeGenerations})
                         </span>
                       </div>
                       {stats.failedRecipeGenerations > 0 && (
-                        <div className="text-xs text-red-600 mt-1">
+                        <div className="text-xs text-red-400 mt-1">
                           {stats.failedRecipeGenerations} failed
                         </div>
                       )}
@@ -981,48 +871,48 @@ ${healthCheck.checks.map((check: any) =>
                   </div>
 
                   {/* Recipe Stats */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-100">
-                    <div className="text-sm font-semibold text-gray-700 mb-3">Recipe Statistics</div>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Recipe Statistics</div>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <div className="text-xs text-gray-500">Total Recipes Generated</div>
-                        <div className="text-xl font-bold text-gray-900">{stats.totalRecipesGenerated.toLocaleString()}</div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Generated</div>
+                        <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.totalRecipesGenerated.toLocaleString()}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-gray-500">Avg Recipes per Gen</div>
-                        <div className="text-xl font-bold text-gray-900">{stats.avgRecipesPerGeneration.toFixed(1)}</div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg per Gen</div>
+                        <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.avgRecipesPerGeneration.toFixed(1)}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Ingredient Stats */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-100">
-                    <div className="text-sm font-semibold text-gray-700 mb-3">Ingredient Statistics</div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Ingredient Statistics</div>
                     <div>
-                      <div className="text-xs text-gray-500">Avg Ingredients per Scan</div>
-                      <div className="text-xl font-bold text-gray-900">{stats.avgIngredientsPerScan.toFixed(1)}</div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg per Scan</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.avgIngredientsPerScan.toFixed(1)}</div>
                     </div>
                   </div>
 
                   {/* Daily Trend (Last 7 Days) */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-100">
-                    <div className="text-sm font-semibold text-gray-700 mb-3">Daily Activity (Last 7 Days)</div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Daily Activity (Last 7 Days)</div>
                     <div className="space-y-2">
                       {Object.entries(stats.dailyScans)
                         .sort(([a], [b]) => a.localeCompare(b))
                         .map(([date, count]) => (
-                        <div key={date} className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">
+                        <div key={date} className="flex items-center justify-between text-sm py-1 border-b border-slate-700 last:border-0">
+                          <span className="text-slate-400">
                             {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                           </span>
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
-                              <Camera className="w-4 h-4 text-emerald-600" />
-                              <span className="font-semibold text-gray-900">{count}</span>
+                              <Camera className="w-4 h-4 text-emerald-400" />
+                              <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
                             </div>
                             <div className="flex items-center gap-1">
-                              <ChefHat className="w-4 h-4 text-purple-600" />
-                              <span className="font-semibold text-gray-900">{stats.dailyRecipes[date] || 0}</span>
+                              <ChefHat className="w-4 h-4 text-purple-400" />
+                              <span className="font-mono font-semibold text-[#F1F5F9]">{stats.dailyRecipes[date] || 0}</span>
                             </div>
                           </div>
                         </div>
@@ -1031,26 +921,26 @@ ${healthCheck.checks.map((check: any) =>
                   </div>
 
                   {/* Distributions */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white rounded-xl p-4 border border-gray-100">
-                      <div className="text-sm font-semibold text-gray-700 mb-3">Ingredient Count Distribution</div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Ingredient Count Distribution</div>
                       <div className="space-y-2">
                         {Object.entries(stats.ingredientCountDistribution).map(([range, count]) => (
                           <div key={range} className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">{range}</span>
-                            <span className="font-semibold text-gray-900">{count}</span>
+                            <span className="text-slate-400">{range}</span>
+                            <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-4 border border-gray-100">
-                      <div className="text-sm font-semibold text-gray-700 mb-3">Recipe Count Distribution</div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Recipe Count Distribution</div>
                       <div className="space-y-2">
                         {Object.entries(stats.recipeCountDistribution).map(([range, count]) => (
                           <div key={range} className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">{range}</span>
-                            <span className="font-semibold text-gray-900">{count}</span>
+                            <span className="text-slate-400">{range}</span>
+                            <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
                           </div>
                         ))}
                       </div>
@@ -1058,22 +948,22 @@ ${healthCheck.checks.map((check: any) =>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-slate-400">
                   No statistics available yet
                 </div>
               )}
             </div>
 
             {/* Founder Mode Controls */}
-            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Founder Mode</h2>
-              <p className="text-gray-600 mb-4">
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Founder Mode</h2>
+              <p className="text-slate-400 mb-4 text-sm">
                 Enable unlimited scans for testing. This bypasses all scan limits.
               </p>
               {isFounder ? (
                 <button
                   onClick={disableFounderMode}
-                  className="w-full bg-red-500 hover:bg-red-600 text-white rounded-xl px-6 py-3 font-bold transition-colors flex items-center justify-center gap-2"
+                  className="w-full bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-400 rounded-xl px-6 py-3 font-bold transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   <X className="w-5 h-5" />
                   Disable Founder Mode
@@ -1081,7 +971,7 @@ ${healthCheck.checks.map((check: any) =>
               ) : (
                 <button
                   onClick={enableFounderMode}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-6 py-3 font-bold transition-all duration-200 shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 flex items-center justify-center gap-2"
                 >
                   <Check className="w-5 h-5" />
                   Enable Founder Mode
@@ -1090,14 +980,14 @@ ${healthCheck.checks.map((check: any) =>
             </div>
 
             {/* Reset Scan Count */}
-            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Reset Scan Count</h2>
-              <p className="text-gray-600 mb-4">
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Reset Scan Count</h2>
+              <p className="text-slate-400 mb-4 text-sm">
                 Reset your scan count back to 0. Useful for testing the scan limit flow.
               </p>
               <button
                 onClick={resetScanCount}
-                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl px-6 py-3 font-semibold transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-slate-700 hover:bg-slate-600 text-[#F1F5F9] rounded-xl px-6 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2"
               >
                 <RefreshCw className="w-5 h-5" />
                 Reset to 0
@@ -1105,7 +995,7 @@ ${healthCheck.checks.map((check: any) =>
             </div>
 
             {/* Manually Added Ingredients Stats */}
-            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6">
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Manual Ingredient Tracking</h2>
                 <button
