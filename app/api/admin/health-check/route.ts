@@ -135,33 +135,68 @@ export async function GET(req: NextRequest) {
     ? `https://${process.env.VERCEL_URL}` 
     : req.nextUrl.origin
 
+  // Get performance metrics from KV
+  const todayDate = new Date().toISOString().split('T')[0]
+  
   for (const endpoint of apiEndpoints) {
     try {
+      const startTime = Date.now()
       const testRes = await fetch(`${baseUrl}${endpoint.path}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ test: true }),
         signal: AbortSignal.timeout(5000),
       })
+      const responseTime = Date.now() - startTime
+
+      // Get success/error stats from KV
+      let successRate = 'N/A'
+      let totalToday = 0
+      try {
+        if (endpoint.name === 'scan-pantry') {
+          const total = await kv.get<number>('stats:scans:total') || 0
+          const successful = await kv.get<number>('stats:scans:success') || 0
+          const todayCount = await kv.get<number>(`stats:scans:daily:${todayDate}`) || 0
+          totalToday = todayCount
+          successRate = total > 0 ? `${Math.round((successful / total) * 100)}%` : 'N/A'
+        } else if (endpoint.name === 'generate-recipes') {
+          const total = await kv.get<number>('stats:recipes:total') || 0
+          const successful = await kv.get<number>('stats:recipes:success') || 0
+          const todayCount = await kv.get<number>(`stats:recipes:daily:${todayDate}`) || 0
+          totalToday = todayCount
+          successRate = total > 0 ? `${Math.round((successful / total) * 100)}%` : 'N/A'
+          
+          // Get cache hit rate
+          const cached = await kv.get<number>('stats:recipes:cached') || 0
+          if (total > 0) {
+            const cacheRate = Math.round((cached / total) * 100)
+            successRate += ` | Cache: ${cacheRate}%`
+          }
+        }
+      } catch {
+        // Ignore KV errors for metrics
+      }
       
       // Even if it returns an error, the endpoint exists
       if (testRes.status === 400 || testRes.status === 401 || testRes.status === 500) {
         checks.push({
           name: `API: ${endpoint.name}`,
           status: 'pass',
-          message: 'Endpoint accessible',
+          message: 'Responding',
+          details: `Response time: ${responseTime}ms | Success rate: ${successRate} | Today: ${totalToday}`,
         })
       } else if (testRes.status === 404) {
         checks.push({
           name: `API: ${endpoint.name}`,
           status: 'fail',
-          message: 'Endpoint not found (404)',
+          message: 'Not found (404)',
         })
       } else {
         checks.push({
           name: `API: ${endpoint.name}`,
           status: 'warning',
           message: `Unexpected status: ${testRes.status}`,
+          details: `Response time: ${responseTime}ms`,
         })
       }
     } catch (error: any) {
@@ -177,7 +212,7 @@ export async function GET(req: NextRequest) {
         checks.push({
           name: `API: ${endpoint.name}`,
           status: 'fail',
-          message: 'Endpoint test failed',
+          message: 'Test failed',
           details: error?.message?.substring(0, 200) || 'Unknown error',
         })
       }
