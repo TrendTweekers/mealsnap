@@ -537,6 +537,7 @@ export default function MealSnap() {
           name: item,
         }))
         
+        console.log('[MealSnap] Shopping list items:', uniqueItems.length, uniqueItems)
         setShoppingList(uniqueItems)
         setCurrentView('recipes')
         
@@ -545,11 +546,18 @@ export default function MealSnap() {
           (window as any).plausible('Recipes Generated', { props: { count: data.recipes.length } })
         }
         
-        // Show email capture modal after first recipe generation (if email not submitted)
+        // Show email capture modal after FIRST recipe generation (if email not submitted)
         const hasSubmittedEmail = localStorage.getItem('mealsnap_email_submitted')
-        if (!hasSubmittedEmail) {
+        const recipeGenerationCount = parseInt(localStorage.getItem('mealsnap_recipe_generation_count') || '0', 10)
+        
+        // Always show after first recipe generation
+        if (recipeGenerationCount === 0 && !hasSubmittedEmail) {
+          localStorage.setItem('mealsnap_recipe_generation_count', '1')
           setShowEmailModal(true)
         }
+        
+        // Increment count
+        localStorage.setItem('mealsnap_recipe_generation_count', (recipeGenerationCount + 1).toString())
       } else {
         setError('No recipes generated. Try adding more ingredients.')
       }
@@ -593,8 +601,16 @@ export default function MealSnap() {
   }
 
   const copyShoppingList = () => {
-    const listText = shoppingList.map((item, i) => `${i + 1}. ${item.name}`).join('\n')
-    navigator.clipboard.writeText(listText).catch((err) => {
+    const listToCopy = shoppingList.length > 0
+      ? shoppingList.map((item, i) => `${i + 1}. ${item.name}`).join('\n')
+      : recipes
+          .flatMap(r => r.youNeedToBuy || [])
+          .filter((item: string, index: number, self: string[]) => item && self.indexOf(item) === index)
+          .map((item: string, i: number) => `${i + 1}. ${item}`)
+          .join('\n')
+    navigator.clipboard.writeText(listToCopy).then(() => {
+      alert('Shopping list copied to clipboard!')
+    }).catch((err) => {
       console.error('Failed to copy:', err)
     })
   }
@@ -629,21 +645,25 @@ export default function MealSnap() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setShowPricingModal(true)
-                }}
-              >
-                Upgrade to Pro
-              </Button>
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                console.log('[MealSnap] Upgrade to Pro clicked, showing pricing modal')
+                setShowPricingModal(true)
+              }}
+              className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg"
+            >
+              Upgrade to Pro
+            </Button>
             )}
             
             <Button
-              variant="ghost"
+              variant="hero"
               size="sm"
               onClick={() => setCurrentView('home')}
+              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold shadow-lg"
             >
+              <Camera className="w-4 h-4 mr-1" />
               New Scan
             </Button>
             <Button
@@ -857,12 +877,13 @@ export default function MealSnap() {
                   onChange={handleImageUpload}
                   className="hidden"
                   disabled={isLoading}
+                  id="camera-input"
                 />
                 <div className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-8 py-5 font-bold text-lg cursor-pointer transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 min-h-[56px]">
                   {isLoading ? (
                     <>
                       <Loader2 className="w-6 h-6 animate-spin" />
-                      <span>Analyzing ingredients...</span>
+                      <span>🔍 Looking for ingredients...</span>
                     </>
                   ) : (
                     <>
@@ -1202,10 +1223,10 @@ export default function MealSnap() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => setCurrentView('home')}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-base"
           >
-            <Camera className="w-4 h-4" />
-            <span className="hidden sm:inline">New Scan</span>
+            <Camera className="w-5 h-5" />
+            <span>New Scan</span>
           </button>
           <button
             onClick={() => setCurrentView('ingredients')}
@@ -1231,7 +1252,8 @@ export default function MealSnap() {
           ))}
         </div>
 
-        {shoppingList.length > 0 && (
+        {/* Shopping List - Show if there are missing ingredients OR if user has items to buy */}
+        {(shoppingList.length > 0 || recipes.some(r => r.youNeedToBuy && r.youNeedToBuy.length > 0)) && (
           <div className="mt-8 bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] shadow-xl p-6 sm:p-8">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl flex items-center justify-center shadow-md border border-blue-500/30">
@@ -1239,30 +1261,65 @@ export default function MealSnap() {
               </div>
             <div>
                 <h3 className="text-2xl font-bold text-[#E6FFFF]">Shopping List</h3>
-                <p className="text-[#B8D4D4]">Missing {shoppingList.length} ingredient{shoppingList.length !== 1 ? 's' : ''}</p>
+                <p className="text-[#B8D4D4]">
+                  Missing {shoppingList.length > 0 
+                    ? `${shoppingList.length} ingredient${shoppingList.length !== 1 ? 's' : ''}`
+                    : `${recipes.flatMap(r => r.youNeedToBuy || []).filter((item, index, self) => item && self.indexOf(item) === index).length} ingredient${recipes.flatMap(r => r.youNeedToBuy || []).filter((item, index, self) => item && self.indexOf(item) === index).length !== 1 ? 's' : ''}`
+                  }
+                </p>
               </div>
       </div>
 
             <div className="bg-[#1F2332] rounded-2xl p-6 mb-6 border border-[#2A2F45]">
               <ul className="space-y-3">
-                {shoppingList.map((item, i) => (
-                  <li key={i} className="flex items-center gap-3">
-                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm"></div>
-                    <span className="font-semibold text-[#E6FFFF] capitalize text-base">{item.name}</span>
-                  </li>
-                ))}
+                {shoppingList.length > 0 ? (
+                  shoppingList.map((item, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm"></div>
+                      <span className="font-semibold text-[#E6FFFF] capitalize text-base">{item.name}</span>
+                    </li>
+                  ))
+                ) : (
+                  // Fallback: show missing ingredients from recipes
+                  recipes
+                    .flatMap(r => r.youNeedToBuy || [])
+                    .filter((item, index, self) => item && self.indexOf(item) === index)
+                    .map((item, i) => (
+                      <li key={i} className="flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-sm"></div>
+                        <span className="font-semibold text-[#E6FFFF] capitalize text-base">{item}</span>
+                      </li>
+                    ))
+                )}
               </ul>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-3">
               <button 
-                onClick={copyShoppingList}
+                onClick={() => {
+                  const listToCopy = shoppingList.length > 0
+                    ? shoppingList.map((item, i) => `${i + 1}. ${item.name}`).join('\n')
+                    : recipes
+                        .flatMap(r => r.youNeedToBuy || [])
+                        .filter((item, index, self) => item && self.indexOf(item) === index)
+                        .map((item, i) => `${i + 1}. ${item}`)
+                        .join('\n')
+                  navigator.clipboard.writeText(listToCopy).then(() => {
+                    alert('Shopping list copied to clipboard!')
+                  }).catch((err) => {
+                    console.error('Failed to copy:', err)
+                  })
+                }}
                 className="w-full bg-[#1F2332] hover:bg-[#2A2F45] text-[#E6FFFF] rounded-2xl px-6 py-4 font-bold transition-all duration-300 border-2 border-[#2A2F45] hover:border-[#3A3F55] hover:shadow-md"
               >
                 Copy List
               </button>
               <a
-                href={`https://www.instacart.com/store?search=${encodeURIComponent(shoppingList.map(item => item.name).join(' '))}`}
+                href={`https://www.instacart.com/store?search=${encodeURIComponent(
+                  shoppingList.length > 0 
+                    ? shoppingList.map(item => item.name).join(' ')
+                    : recipes.flatMap(r => r.youNeedToBuy || []).filter((item, index, self) => item && self.indexOf(item) === index).join(' ')
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-center block"
@@ -1486,9 +1543,13 @@ export default function MealSnap() {
           onClick={(e) => {
             // Close modal when clicking backdrop
             if (e.target === e.currentTarget) {
+              console.log('[MealSnap] Closing pricing modal via backdrop click')
               setShowPricingModal(false)
             }
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pricing-modal-title"
         >
           <div 
             className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 relative z-[71] max-h-[90vh] overflow-y-auto"
