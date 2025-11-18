@@ -2,11 +2,34 @@
 
 import { useState, useEffect } from 'react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
-import { Check, X, RefreshCw, TrendingUp, Loader2 } from 'lucide-react'
+import { Check, X, RefreshCw, TrendingUp, Loader2, BarChart3, Users, Camera, ChefHat, ArrowUpRight } from 'lucide-react'
 
 type IngredientStat = {
   ingredient: string
   count: number
+}
+
+type StatsData = {
+  totalScans: number
+  successfulScans: number
+  failedScans: number
+  scanSuccessRate: number
+  totalRecipeGenerations: number
+  successfulRecipeGenerations: number
+  failedRecipeGenerations: number
+  recipeSuccessRate: number
+  totalRecipesGenerated: number
+  avgRecipesPerGeneration: number
+  uniqueUsers: number
+  conversionRate: number
+  scansToday: number
+  recipesToday: number
+  avgIngredientsPerScan: number
+  dailyScans: { [key: string]: number }
+  dailyRecipes: { [key: string]: number }
+  hourlyScans: { [key: string]: number }
+  ingredientCountDistribution: { [key: string]: number }
+  recipeCountDistribution: { [key: string]: number }
 }
 
 export default function AdminPage() {
@@ -21,6 +44,8 @@ export default function AdminPage() {
   const [ingredients, setIngredients] = useState<IngredientStat[]>([])
   const [ingredientsLoading, setIngredientsLoading] = useState(true)
   const [totalManualAdds, setTotalManualAdds] = useState(0)
+  const [stats, setStats] = useState<StatsData | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -57,8 +82,30 @@ export default function AdminPage() {
       setUserPlan(plan || 'free')
     }
     
-    // Load ingredient stats
+    // Load ingredient stats and general stats
     fetchIngredientStats()
+    fetchStats()
+  }
+
+  const fetchStats = async () => {
+    try {
+      setStatsLoading(true)
+      const res = await fetch('/api/admin/stats')
+      
+      if (res.status === 401) {
+        setIsAuthenticated(false)
+        return
+      }
+      
+      const data = await res.json()
+      if (data.ok) {
+        setStats(data.stats)
+      }
+    } catch (err) {
+      console.error('Failed to fetch stats:', err)
+    } finally {
+      setStatsLoading(false)
+    }
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -265,6 +312,189 @@ export default function AdminPage() {
                   <span className="font-bold text-gray-900">{scanCount}/3</span>
                 </div>
               </div>
+            </div>
+
+            {/* Statistics Dashboard */}
+            <div className="bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 rounded-2xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-emerald-600" />
+                  Statistics Dashboard
+                </h2>
+                <button
+                  onClick={fetchStats}
+                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                  title="Refresh stats"
+                >
+                  <RefreshCw className={`w-5 h-5 text-emerald-600 ${statsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {statsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+                </div>
+              ) : stats ? (
+                <div className="space-y-6">
+                  {/* Key Metrics */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Camera className="w-5 h-5 text-emerald-600" />
+                        <span className="text-sm text-gray-600">Total Scans</span>
+                      </div>
+                      <div className="text-2xl font-extrabold text-gray-900">{stats.totalScans.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {stats.scansToday} today
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <ChefHat className="w-5 h-5 text-purple-600" />
+                        <span className="text-sm text-gray-600">Recipe Gens</span>
+                      </div>
+                      <div className="text-2xl font-extrabold text-gray-900">{stats.totalRecipeGenerations.toLocaleString()}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        {stats.recipesToday} today
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                        <span className="text-sm text-gray-600">Conversion</span>
+                      </div>
+                      <div className="text-2xl font-extrabold text-gray-900">{stats.conversionRate.toFixed(1)}%</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Scans → Recipes
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border border-emerald-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="w-5 h-5 text-orange-600" />
+                        <span className="text-sm text-gray-600">Unique Users</span>
+                      </div>
+                      <div className="text-2xl font-extrabold text-gray-900">{stats.uniqueUsers.toLocaleString()}</div>
+                    </div>
+                  </div>
+
+                  {/* Success Rates */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-xl p-4 border border-gray-100">
+                      <div className="text-sm text-gray-600 mb-1">Scan Success Rate</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-extrabold text-gray-900">{stats.scanSuccessRate.toFixed(1)}%</span>
+                        <span className="text-sm text-gray-500">
+                          ({stats.successfulScans}/{stats.totalScans})
+                        </span>
+                      </div>
+                      {stats.failedScans > 0 && (
+                        <div className="text-xs text-red-600 mt-1">
+                          {stats.failedScans} failed
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border border-gray-100">
+                      <div className="text-sm text-gray-600 mb-1">Recipe Gen Success Rate</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-extrabold text-gray-900">{stats.recipeSuccessRate.toFixed(1)}%</span>
+                        <span className="text-sm text-gray-500">
+                          ({stats.successfulRecipeGenerations}/{stats.totalRecipeGenerations})
+                        </span>
+                      </div>
+                      {stats.failedRecipeGenerations > 0 && (
+                        <div className="text-xs text-red-600 mt-1">
+                          {stats.failedRecipeGenerations} failed
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recipe Stats */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-700 mb-3">Recipe Statistics</div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-xs text-gray-500">Total Recipes Generated</div>
+                        <div className="text-xl font-bold text-gray-900">{stats.totalRecipesGenerated.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500">Avg Recipes per Gen</div>
+                        <div className="text-xl font-bold text-gray-900">{stats.avgRecipesPerGeneration.toFixed(1)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ingredient Stats */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-700 mb-3">Ingredient Statistics</div>
+                    <div>
+                      <div className="text-xs text-gray-500">Avg Ingredients per Scan</div>
+                      <div className="text-xl font-bold text-gray-900">{stats.avgIngredientsPerScan.toFixed(1)}</div>
+                    </div>
+                  </div>
+
+                  {/* Daily Trend (Last 7 Days) */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-100">
+                    <div className="text-sm font-semibold text-gray-700 mb-3">Daily Activity (Last 7 Days)</div>
+                    <div className="space-y-2">
+                      {Object.entries(stats.dailyScans)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([date, count]) => (
+                        <div key={date} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">
+                            {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </span>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <Camera className="w-4 h-4 text-emerald-600" />
+                              <span className="font-semibold text-gray-900">{count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <ChefHat className="w-4 h-4 text-purple-600" />
+                              <span className="font-semibold text-gray-900">{stats.dailyRecipes[date] || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Distributions */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white rounded-xl p-4 border border-gray-100">
+                      <div className="text-sm font-semibold text-gray-700 mb-3">Ingredient Count Distribution</div>
+                      <div className="space-y-2">
+                        {Object.entries(stats.ingredientCountDistribution).map(([range, count]) => (
+                          <div key={range} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">{range}</span>
+                            <span className="font-semibold text-gray-900">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl p-4 border border-gray-100">
+                      <div className="text-sm font-semibold text-gray-700 mb-3">Recipe Count Distribution</div>
+                      <div className="space-y-2">
+                        {Object.entries(stats.recipeCountDistribution).map(([range, count]) => (
+                          <div key={range} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">{range}</span>
+                            <span className="font-semibold text-gray-900">{count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  No statistics available yet
+                </div>
+              )}
             </div>
 
             {/* Founder Mode Controls */}

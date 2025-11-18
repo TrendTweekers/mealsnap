@@ -423,7 +423,10 @@ export default function MealSnap() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageBase64: base64Image }),
+        body: JSON.stringify({ 
+          imageBase64: base64Image,
+          userId: userId || 'anonymous',
+        }),
       })
 
       console.log('[MealSnap] Response status:', response.status, response.ok)
@@ -505,7 +508,10 @@ export default function MealSnap() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ ingredients }),
+        body: JSON.stringify({ 
+          ingredients,
+          userId: userId || 'anonymous',
+        }),
       })
 
       if (!response.ok) {

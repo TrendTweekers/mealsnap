@@ -24,6 +24,7 @@ export async function POST(req: NextRequest) {
     });
 
     const rawIngredients = body?.ingredients;
+    const userId = body?.userId;
 
     const ingredients: string[] | null =
       Array.isArray(rawIngredients)
@@ -173,6 +174,20 @@ RULES:
       console.error("[generate-recipes] JSON.parse failed:", err, {
         cleaned,
       });
+      // Track failed recipe generation (non-blocking)
+      try {
+        fetch(`${req.nextUrl.origin}/api/track-recipe-generation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            recipeCount: 0,
+            ingredientCount: ingredients.length,
+            success: false,
+          }),
+        }).catch(() => {}) // Silent fail
+      } catch {}
+      
       return NextResponse.json(
         { ok: false, error: "LLM JSON parse error" },
         { status: 500 }
@@ -188,10 +203,43 @@ RULES:
         "[generate-recipes] Unexpected JSON shape from model:",
         parsed
       );
+      // Track failed recipe generation (non-blocking)
+      try {
+        fetch(`${req.nextUrl.origin}/api/track-recipe-generation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            recipeCount: 0,
+            ingredientCount: ingredients.length,
+            success: false,
+          }),
+        }).catch(() => {}) // Silent fail
+      } catch {}
+      
       return NextResponse.json(
         { ok: false, error: "LLM JSON shape error" },
         { status: 500 }
       );
+    }
+
+    // Track recipe generation statistics (non-blocking)
+    try {
+      fetch(`${req.nextUrl.origin}/api/track-recipe-generation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId || 'anonymous',
+          recipeCount: parsed.recipes?.length || 0,
+          ingredientCount: ingredients.length,
+          success: true,
+        }),
+      }).catch(err => {
+        // Silent fail - tracking shouldn't block response
+        console.warn('Failed to track recipe generation:', err)
+      })
+    } catch (trackErr) {
+      // Silent fail
     }
 
     // --- 5. Return normalized payload -------------------------------------

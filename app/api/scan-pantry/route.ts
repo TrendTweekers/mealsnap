@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { kv } from '@vercel/kv'
 
 const apiKey = process.env.OPENAI_API_KEY;
 
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { imageBase64 } = await req.json();
+    const body = await req.json();
+    const { imageBase64, userId } = body;
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
       return NextResponse.json(
@@ -120,6 +122,20 @@ Rules for output:
     if (!response.ok) {
       const errText = await response.text();
       console.error("scan-pantry OpenAI error:", response.status, errText);
+      
+      // Track failed scan (non-blocking)
+      try {
+        fetch(`${req.nextUrl.origin}/api/track-scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            ingredientCount: 0,
+            success: false,
+          }),
+        }).catch(() => {}) // Silent fail
+      } catch {}
+      
       return NextResponse.json(
         {
           ok: false,
@@ -134,6 +150,19 @@ Rules for output:
     const rawText = data.choices?.[0]?.message?.content || "";
 
     if (!rawText) {
+      // Track failed scan (non-blocking)
+      try {
+        fetch(`${req.nextUrl.origin}/api/track-scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            ingredientCount: 0,
+            success: false,
+          }),
+        }).catch(() => {}) // Silent fail
+      } catch {}
+      
       return NextResponse.json(
         { ok: false, error: "No response from OpenAI" },
         { status: 500 }
@@ -149,6 +178,20 @@ Rules for output:
       parsed = JSON.parse(cleanedText);
     } catch (err) {
       console.error("scan-pantry JSON parse failed. Raw model output:", cleanedText);
+      
+      // Track failed scan (non-blocking)
+      try {
+        fetch(`${req.nextUrl.origin}/api/track-scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            ingredientCount: 0,
+            success: false,
+          }),
+        }).catch(() => {}) // Silent fail
+      } catch {}
+      
       return NextResponse.json(
         { ok: false, error: "Unable to parse model response.", raw: cleanedText },
         { status: 500 }
@@ -161,15 +204,60 @@ Rules for output:
     } else if (parsed && Array.isArray(parsed.ingredients)) {
       items = parsed.ingredients;
     } else {
+      // Track failed scan (non-blocking)
+      try {
+        fetch(`${req.nextUrl.origin}/api/track-scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: userId || 'anonymous',
+            ingredientCount: 0,
+            success: false,
+          }),
+        }).catch(() => {}) // Silent fail
+      } catch {}
+      
       return NextResponse.json(
         { ok: false, error: "Model response is not in expected format.", raw: parsed },
         { status: 500 }
       );
     }
 
+    // Track scan statistics (non-blocking)
+    try {
+      fetch(`${req.nextUrl.origin}/api/track-scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId || 'anonymous',
+          ingredientCount: items.length,
+          success: true,
+        }),
+      }).catch(err => {
+        // Silent fail - tracking shouldn't block response
+        console.warn('Failed to track scan:', err)
+      })
+    } catch (trackErr) {
+      // Silent fail
+    }
+
     return NextResponse.json({ ok: true, items });
   } catch (err: any) {
     console.error("scan-pantry unexpected error:", err);
+    
+    // Track failed scan (non-blocking) - userId already extracted above
+    try {
+      fetch(`${req.nextUrl.origin}/api/track-scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId || 'anonymous',
+          ingredientCount: 0,
+          success: false,
+        }),
+      }).catch(() => {}) // Silent fail
+    } catch {}
+    
     return NextResponse.json(
       {
         ok: false,
