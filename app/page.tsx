@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail } from 'lucide-react'
+import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List } from 'lucide-react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
 import { Button } from '@/components/ui/button'
 
@@ -576,96 +576,81 @@ export default function MealSnap() {
     })
   }
 
-  // Sticky Header Component
+  // Sticky Header Component - Matching Lovable Navbar
   const StickyHeader = () => {
     const scansRemaining = userPlan === 'free' ? Math.max(0, 3 - scanCount) : '∞'
     
     return (
-      <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <button
-              onClick={() => setCurrentView('home')}
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity group"
-            >
-              <div className="transform transition-transform duration-300 group-hover:scale-110">
-                <MealSnapLogo className="w-12 h-12" />
+      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <button
+            onClick={() => setCurrentView('home')}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-cyan to-teal rounded-xl flex items-center justify-center shadow-lg">
+              <Camera className="w-6 h-6 text-white" />
         </div>
-              <span className="text-xl font-bold text-foreground tracking-tight hidden sm:inline">
-                Meal<span className="text-primary">Snap</span>
-              </span>
-            </button>
+            <span className="text-xl font-bold text-gradient">MealSnap</span>
+          </button>
 
-            <div className="flex items-center gap-2 sm:gap-3">
-              {userPlan === 'free' && (
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-lg">
-                  <span className="text-xs font-semibold text-primary">
-                    {scansRemaining}/3 scans remaining
-                  </span>
-                </div>
-              )}
-              
-              {userPlan === 'free' && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setShowPricingModal(true)
-                  }}
-                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg text-xs sm:text-sm font-bold transition-all duration-300 shadow-lg hover:shadow-xl active:scale-95 min-h-[40px] touch-manipulation"
-                  type="button"
-                >
-                  <span className="hidden sm:inline">Upgrade to Pro</span>
-                  <span className="sm:hidden">Pro</span>
-                </button>
-              )}
-
-              <nav className="flex items-center gap-2 sm:gap-4">
-            <button
+          <div className="hidden md:flex items-center gap-6">
+            {userPlan === 'free' && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/20 border border-primary/30 rounded-lg">
+                <span className="text-xs font-semibold text-primary">
+                  {scansRemaining}/3 scans
+                </span>
+      </div>
+            )}
+            
+            {userPlan === 'free' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setShowPricingModal(true)
+                }}
+              >
+                Upgrade to Pro
+              </Button>
+            )}
+            
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setCurrentView('home')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                currentView === 'home'
-                  ? 'bg-primary/20 text-primary border border-primary/30'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-card/40'
-              }`}
             >
-              <span className="hidden sm:inline">New Scan</span>
-              <Camera className="w-4 h-4 sm:hidden" />
-            </button>
-            <button
+              New Scan
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setCurrentView('favorites')}
-              className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                currentView === 'favorites'
-                  ? 'bg-primary/20 text-primary border border-primary/30'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-card/40'
-              }`}
+              className="relative"
             >
-              <span className="hidden sm:inline">Favorites</span>
-              <Heart className={`w-4 h-4 sm:hidden ${currentView === 'favorites' ? 'fill-current' : ''}`} />
+              Favorites
               {favorites.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
                   {favorites.length}
                 </span>
               )}
-            </button>
-            <a
-              href="/waitlist"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/40 transition-colors"
-            >
-              <span className="hidden sm:inline">Waitlist</span>
-              <Mail className="w-4 h-4 sm:hidden" />
-            </a>
-            <button
-              className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/40 transition-colors"
-            >
-              <span className="hidden sm:inline">Profile</span>
-              <User className="w-4 h-4 sm:hidden" />
-            </button>
-          </nav>
-            </div>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/waitlist">Waitlist</a>
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="glass" size="icon" className="md:hidden">
+              <List className="w-5 h-5" />
+            </Button>
+            <Button variant="glass" size="icon">
+              <User className="w-5 h-5" />
+            </Button>
           </div>
         </div>
-      </header>
+      </nav>
     )
   }
 
@@ -717,9 +702,9 @@ export default function MealSnap() {
       <div className="min-h-screen bg-background">
         <StickyHeader />
         
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
           {/* Hero Section - Matching Lovable Design */}
-          <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+          <section className="relative min-h-[calc(100vh-5rem)] flex items-center justify-center overflow-hidden">
             {/* Background gradient glow */}
             <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
             <div 
@@ -1037,7 +1022,7 @@ export default function MealSnap() {
       <div className="min-h-screen bg-[#0B0E1E]">
         <StickyHeader />
         
-        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <div className="mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-[#E6FFFF] mb-2">My Favorites</h1>
             <p className="text-[#B8D4D4]">
@@ -1081,7 +1066,7 @@ export default function MealSnap() {
       <div className="min-h-screen bg-[#0B0E1E]">
         <StickyHeader />
         
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
           <BreadcrumbNav />
           
           <div className="mb-6">
@@ -1188,7 +1173,7 @@ export default function MealSnap() {
     <div className="min-h-screen bg-[#0B0E1E] pb-20">
       <StickyHeader />
       
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <BreadcrumbNav />
         
         <div className="flex items-center gap-3 mb-6">
