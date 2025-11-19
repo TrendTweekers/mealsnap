@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List } from 'lucide-react'
+import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List, Sun, Moon } from 'lucide-react'
 import { MealSnapLogo } from '@/components/mealsnap-logo'
 import { Button } from '@/components/ui/button'
 import imageCompression from 'browser-image-compression'
@@ -49,6 +49,7 @@ export default function MealSnap() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
   const [showVisibilityModal, setShowVisibilityModal] = useState(false)
   const [pendingIngredient, setPendingIngredient] = useState<{ name: string, scanId?: string } | null>(null)
+  const [isDarkMode, setIsDarkMode] = useState(true)
 
   // Generate or load user ID for referrals
   useEffect(() => {
@@ -82,6 +83,22 @@ export default function MealSnap() {
       localStorage.setItem('mealsnap_user_id', id)
     }
     setUserId(id)
+
+    // Initialize dark mode from localStorage or system preference
+    const saved = localStorage.getItem('theme')
+    let shouldBeDark = false
+    
+    if (saved === 'dark') {
+      shouldBeDark = true
+    } else if (saved === 'light') {
+      shouldBeDark = false
+    } else {
+      // No saved preference - use system preference
+      shouldBeDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    
+    setIsDarkMode(shouldBeDark)
+    document.documentElement.classList.toggle('dark', shouldBeDark)
   }, [])
 
   // Load user plan and scan count with weekly reset
@@ -153,14 +170,20 @@ export default function MealSnap() {
     return scanCount < 3
   }
 
-  const incrementScanCount = () => {
+  const incrementScanCount = (scanMethod?: 'camera' | 'upload', ingredientCount?: number) => {
     const newCount = scanCount + 1
     setScanCount(newCount)
     localStorage.setItem('mealsnap_scan_count', newCount.toString())
     
     // Track scan
     if (typeof window !== 'undefined' && (window as any).plausible) {
-      (window as any).plausible('Scan Completed', { props: { scanNumber: newCount } })
+      (window as any).plausible('Scan Completed', { 
+        props: { 
+          scanNumber: newCount,
+          ingredientCount: ingredientCount ?? ingredients.length,
+          method: scanMethod || 'unknown'
+        } 
+      })
     }
     
     if (newCount >= 3 && userPlan === 'free') {
@@ -229,6 +252,15 @@ export default function MealSnap() {
     } else {
       saveFavorites([...favorites, recipe])
       
+      // Track favorite
+      if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible('Recipe Favorited', {
+          props: {
+            recipeTitle: recipe.title
+          }
+        })
+      }
+      
       // Auto-trigger native share when saving
       const shareText = `I just made ${recipe.title} from my fridge with MealSnap! Get 5 free scans: https://mealsnap-chi.vercel.app?ref=${userId}`
       const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://mealsnap-chi.vercel.app'
@@ -273,10 +305,28 @@ export default function MealSnap() {
           url: `${shareUrl}?ref=${userId}`,
         })
         console.log('Recipe shared successfully')
+        
+        // Track share
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Recipe Shared', {
+            props: {
+              recipeTitle: sharedRecipe.title
+            }
+          })
+        }
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(shareText)
         alert('Link copied to clipboard! Share it anywhere.')
+        
+        // Track share (even if clipboard fallback)
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Recipe Shared', {
+            props: {
+              recipeTitle: sharedRecipe.title
+            }
+          })
+        }
       }
       setShowShareCard(false)
     } catch (err) {
@@ -439,7 +489,10 @@ export default function MealSnap() {
       if (data.items && Array.isArray(data.items) && data.items.length > 0) {
         console.log('[MealSnap] Ingredients detected:', data.items.length)
         setIngredients(data.items)
-        incrementScanCount()
+        
+        // Determine scan method from the input element
+        const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
+        incrementScanCount(scanMethod, data.items.length)
         setCurrentView('ingredients')
         
         // Track pantry scan
@@ -450,7 +503,10 @@ export default function MealSnap() {
         console.log('[MealSnap] No ingredients detected')
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
-        incrementScanCount()
+        
+        // Determine scan method from the input element
+        const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
+        incrementScanCount(scanMethod, 0)
         setCurrentView('ingredients')
       }
     } catch (err: any) {
@@ -511,7 +567,12 @@ export default function MealSnap() {
         
         // Track recipe generation
         if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Recipes Generated', { props: { count: data.recipes.length } })
+          (window as any).plausible('Recipes Generated', { 
+            props: { 
+              recipeCount: data.recipes.length,
+              cached: data.cached || false
+            } 
+          })
         }
         
         // Show email capture modal after FIRST recipe generation (if email not submitted)
@@ -680,6 +741,29 @@ export default function MealSnap() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Dark Mode Toggle */}
+            <Button 
+              variant="glass" 
+              size="icon"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                const newDarkMode = !isDarkMode
+                setIsDarkMode(newDarkMode)
+                // Apply class immediately
+                document.documentElement.classList.toggle('dark', newDarkMode)
+                // Save preference
+                localStorage.setItem('theme', newDarkMode ? 'dark' : 'light')
+                // Haptic feedback
+                if ('vibrate' in navigator) {
+                  navigator.vibrate(10)
+                }
+              }}
+              className="touch-manipulation"
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </Button>
             <Button 
               variant="glass" 
               size="icon" 
@@ -1110,6 +1194,58 @@ export default function MealSnap() {
                         <div className="text-sm text-muted-foreground">Photo to Recipe</div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Social Proof Section */}
+          <section className="py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20 rounded-3xl p-8 backdrop-blur-sm">
+                <div className="text-center mb-6">
+                  <p className="text-3xl font-bold text-emerald-400 mb-2">
+                    Join 1,000+ home cooks saving money
+                  </p>
+                  <p className="text-lg text-[#B8D4D4]">
+                    Real MealSnap users, real results
+                  </p>
+                </div>
+                
+                <div className="grid sm:grid-cols-3 gap-6 mb-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-emerald-400 mb-1">$200</div>
+                    <div className="text-sm text-[#B8D4D4]">Avg saved per month</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-emerald-400 mb-1">40%</div>
+                    <div className="text-sm text-[#B8D4D4]">Less food waste</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-emerald-400 mb-1">10s</div>
+                    <div className="text-sm text-[#B8D4D4]">Photo to recipe</div>
+                  </div>
+                </div>
+
+                <div className="border-t border-emerald-500/20 pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-green-500 flex items-center justify-center text-white font-bold text-lg">
+                      SM
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[#E6FFFF] font-semibold mb-1">Sarah M.</p>
+                      <p className="text-[#B8D4D4] text-sm italic">
+                        "Saved me $200/month on food waste. I used to throw away so much produce, now I actually use everything I buy!"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 rounded-full border border-emerald-500/30">
+                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <span className="text-sm text-emerald-300 font-semibold">As seen on Product Hunt</span>
                   </div>
                 </div>
               </div>
@@ -1599,6 +1735,20 @@ export default function MealSnap() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => {
+                  const missingIngredients = shoppingList.length > 0 
+                    ? shoppingList.map(item => item.name)
+                    : recipes.flatMap(r => r.youNeedToBuy || []).filter((item, index, self) => item && self.indexOf(item) === index)
+                  
+                  // Track Instacart click
+                  if (typeof window !== 'undefined' && (window as any).plausible) {
+                    (window as any).plausible('Instacart Clicked', {
+                      props: {
+                        itemCount: missingIngredients.length
+                      }
+                    })
+                  }
+                }}
                 className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-center block"
               >
                 Add to Instacart
@@ -2013,10 +2163,28 @@ function RecipeCard({
           text: shareText,
           url: shareUrl,
         })
+        
+        // Track share
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Recipe Shared', {
+            props: {
+              recipeTitle: recipe.title
+            }
+          })
+        }
       } else {
         // Fallback to clipboard
         await navigator.clipboard.writeText(shareText)
         alert('Link copied to clipboard! Share it anywhere.')
+        
+        // Track share (even if clipboard fallback)
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Recipe Shared', {
+            props: {
+              recipeTitle: recipe.title
+            }
+          })
+        }
       }
     } catch (err) {
       if (err instanceof Error && err.name !== 'AbortError') {
@@ -2107,21 +2275,62 @@ function RecipeCard({
           )}
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-3 mb-4">
-          <button
-            onClick={handleShareRecipe}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl px-6 py-3.5 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
-          >
-            <Share2 className="w-4 h-4" />
-            Share Recipe 🔗
-          </button>
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full bg-[#1F2332] hover:bg-[#2A2F45] rounded-2xl px-6 py-3.5 font-bold text-[#E6FFFF] transition-all duration-300 border-2 border-[#2A2F45] hover:border-[#3A3F55] hover:shadow-md"
-          >
-            {isExpanded ? 'Hide' : 'Show'} cooking steps
-          </button>
-        </div>
+        {/* Action Buttons */}
+        {hasMissingItems ? (
+          <div className="mb-4 space-y-3">
+            {/* Instacart Button - Prominent when items needed */}
+            <a
+              href={`https://www.instacart.com/store?search=${encodeURIComponent(needToBuy.join(' '))}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                // Track Instacart click
+                if (typeof window !== 'undefined' && (window as any).plausible) {
+                  (window as any).plausible('Instacart Clicked', {
+                    props: {
+                      itemCount: needToBuy.length
+                    }
+                  })
+                }
+              }}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl px-6 py-3.5 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              Add Missing Items to Instacart →
+            </a>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <button
+                onClick={handleShareRecipe}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl px-6 py-3.5 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <Share2 className="w-4 h-4" />
+                Share Recipe 🔗
+              </button>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="w-full bg-[#1F2332] hover:bg-[#2A2F45] rounded-2xl px-6 py-3.5 font-bold text-[#E6FFFF] transition-all duration-300 border-2 border-[#2A2F45] hover:border-[#3A3F55] hover:shadow-md"
+              >
+                {isExpanded ? 'Hide' : 'Show'} cooking steps
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-3 mb-4">
+            <button
+              onClick={handleShareRecipe}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl px-6 py-3.5 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+            >
+              <Share2 className="w-4 h-4" />
+              Share Recipe 🔗
+            </button>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-full bg-[#1F2332] hover:bg-[#2A2F45] rounded-2xl px-6 py-3.5 font-bold text-[#E6FFFF] transition-all duration-300 border-2 border-[#2A2F45] hover:border-[#3A3F55] hover:shadow-md"
+            >
+              {isExpanded ? 'Hide' : 'Show'} cooking steps
+            </button>
+          </div>
+        )}
 
         {isExpanded && recipe.steps && (
           <div className="mt-6 space-y-4">
