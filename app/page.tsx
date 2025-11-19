@@ -159,6 +159,19 @@ export default function MealSnap() {
     if (emailSubmitted) {
       setEmailSubmitted(true)
     }
+    
+    // Track PWA installation
+    if (typeof window !== 'undefined') {
+      window.addEventListener('appinstalled', () => {
+        try {
+          if ((window as any).plausible) {
+            (window as any).plausible('PWA Installed')
+          }
+        } catch (err) {
+          console.error('Failed to track PWA Installed:', err)
+        }
+      })
+    }
   }, [])
 
   const checkScanLimit = (): boolean => {
@@ -217,8 +230,18 @@ export default function MealSnap() {
       })
       
       // Track email capture
-      if (typeof window !== 'undefined' && (window as any).plausible) {
-        (window as any).plausible('Email Captured', { props: { source } })
+      try {
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Email Captured', { 
+            props: { 
+              source,
+              plan: userPlan,
+              scanCount: scanCount
+            } 
+          })
+        }
+      } catch (err) {
+        console.error('Failed to track Email Captured:', err)
       }
       
       // Close modals
@@ -253,12 +276,16 @@ export default function MealSnap() {
       saveFavorites([...favorites, recipe])
       
       // Track favorite
-      if (typeof window !== 'undefined' && (window as any).plausible) {
-        (window as any).plausible('Recipe Favorited', {
-          props: {
-            recipeTitle: recipe.title
-          }
-        })
+      try {
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Recipe Favorited', {
+            props: {
+              recipeTitle: recipe.title
+            }
+          })
+        }
+      } catch (err) {
+        console.error('Failed to track Recipe Favorited:', err)
       }
       
       // Auto-trigger native share when saving
@@ -307,12 +334,17 @@ export default function MealSnap() {
         console.log('Recipe shared successfully')
         
         // Track share
-        if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Recipe Shared', {
-            props: {
-              recipeTitle: sharedRecipe.title
-            }
-          })
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Recipe Shared', {
+              props: {
+                recipeTitle: sharedRecipe.title,
+                method: 'native-share'
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track Recipe Shared:', err)
         }
       } else {
         // Fallback: copy to clipboard
@@ -320,12 +352,17 @@ export default function MealSnap() {
         alert('Link copied to clipboard! Share it anywhere.')
         
         // Track share (even if clipboard fallback)
-        if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Recipe Shared', {
-            props: {
-              recipeTitle: sharedRecipe.title
-            }
-          })
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Recipe Shared', {
+              props: {
+                recipeTitle: sharedRecipe.title,
+                method: 'clipboard'
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track Recipe Shared:', err)
         }
       }
       setShowShareCard(false)
@@ -416,6 +453,18 @@ export default function MealSnap() {
     // Reset file input
     e.target.value = ''
 
+    // Determine scan method
+    const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
+    
+    // Track scan started
+    try {
+      if (typeof window !== 'undefined' && (window as any).plausible) {
+        (window as any).plausible('Scan Started', { props: { method: scanMethod } })
+      }
+    } catch (err) {
+      console.error('Failed to track Scan Started:', err)
+    }
+
     // Check scan limit
     const canScan = checkScanLimit()
     console.log('[MealSnap] Scan limit check:', canScan, 'scanCount:', scanCount, 'userPlan:', userPlan)
@@ -428,6 +477,7 @@ export default function MealSnap() {
 
     setIsLoading(true)
     setError('')
+    const scanStartTime = Date.now()
     
     try {
       console.log('[MealSnap] Starting image compression...')
@@ -486,6 +536,8 @@ export default function MealSnap() {
         return
       }
 
+      const processingTime = Date.now() - scanStartTime
+      
       if (data.items && Array.isArray(data.items) && data.items.length > 0) {
         console.log('[MealSnap] Ingredients detected:', data.items.length)
         setIngredients(data.items)
@@ -495,9 +547,19 @@ export default function MealSnap() {
         incrementScanCount(scanMethod, data.items.length)
         setCurrentView('ingredients')
         
-        // Track pantry scan
-        if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Pantry Scanned', { props: { ingredientCount: data.items.length } })
+        // Track scan completed with processing time
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Scan Completed', { 
+              props: { 
+                ingredientCount: data.items.length,
+                method: scanMethod,
+                processingTime: Math.round(processingTime / 1000) + 's'
+              } 
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track Scan Completed:', err)
         }
       } else {
         console.log('[MealSnap] No ingredients detected')
@@ -508,10 +570,38 @@ export default function MealSnap() {
         const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
         incrementScanCount(scanMethod, 0)
         setCurrentView('ingredients')
+        
+        // Track error
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Error Occurred', {
+              props: {
+                type: 'no_ingredients_detected',
+                location: 'scan'
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track error:', err)
+        }
       }
     } catch (err: any) {
       console.error('[MealSnap] Scan error:', err)
       setError(err.message || 'Failed to scan image. Please try again.')
+      
+      // Track error
+      try {
+        if (typeof window !== 'undefined' && (window as any).plausible) {
+          (window as any).plausible('Error Occurred', {
+            props: {
+              type: err.message || 'scan_failed',
+              location: 'scan'
+            }
+          })
+        }
+      } catch (trackErr) {
+        console.error('Failed to track error:', trackErr)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -566,13 +656,18 @@ export default function MealSnap() {
         setCurrentView('recipes')
         
         // Track recipe generation
-        if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Recipes Generated', { 
-            props: { 
-              recipeCount: data.recipes.length,
-              cached: data.cached || false
-            } 
-          })
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Recipes Generated', { 
+              props: { 
+                recipeCount: data.recipes.length,
+                cached: data.cached || false,
+                ingredientCount: ingredients.length
+              } 
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track Recipes Generated:', err)
         }
         
         // Show email capture modal after FIRST recipe generation (if email not submitted)
@@ -705,6 +800,21 @@ export default function MealSnap() {
                 e.preventDefault()
                 e.stopPropagation()
                 console.log('[MealSnap] Upgrade to Pro clicked, showing pricing modal')
+                
+                // Track upgrade click
+                try {
+                  if (typeof window !== 'undefined' && (window as any).plausible) {
+                    (window as any).plausible('Upgrade Clicked', {
+                      props: {
+                        location: 'menu',
+                        currentPlan: userPlan
+                      }
+                    })
+                  }
+                } catch (err) {
+                  console.error('Failed to track Upgrade Clicked:', err)
+                }
+                
                 setShowPricingModal(true)
               }}
               className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-lg"
@@ -891,6 +1001,21 @@ export default function MealSnap() {
                     e.preventDefault()
                     e.stopPropagation()
                     setShowMobileMenu(false)
+                    
+                    // Track upgrade click
+                    try {
+                      if (typeof window !== 'undefined' && (window as any).plausible) {
+                        (window as any).plausible('Upgrade Clicked', {
+                          props: {
+                            location: 'menu',
+                            currentPlan: userPlan
+                          }
+                        })
+                      }
+                    } catch (err) {
+                      console.error('Failed to track Upgrade Clicked:', err)
+                    }
+                    
                     setShowPricingModal(true)
                   }}
                   className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl px-4 py-3 font-bold transition-all shadow-lg hover:shadow-xl touch-manipulation"
@@ -921,6 +1046,20 @@ export default function MealSnap() {
       { id: 'profile', label: 'Profile', icon: User, view: 'home' as View, action: () => {
         // For now, just show pricing or scroll to top
         if (userPlan === 'free') {
+          // Track upgrade click
+          try {
+            if (typeof window !== 'undefined' && (window as any).plausible) {
+              (window as any).plausible('Upgrade Clicked', {
+                props: {
+                  location: 'menu',
+                  currentPlan: userPlan
+                }
+              })
+            }
+          } catch (err) {
+            console.error('Failed to track Upgrade Clicked:', err)
+          }
+          
           setShowPricingModal(true)
         } else {
           window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -1741,12 +1880,16 @@ export default function MealSnap() {
                     : recipes.flatMap(r => r.youNeedToBuy || []).filter((item, index, self) => item && self.indexOf(item) === index)
                   
                   // Track Instacart click
-                  if (typeof window !== 'undefined' && (window as any).plausible) {
-                    (window as any).plausible('Instacart Clicked', {
-                      props: {
-                        itemCount: missingIngredients.length
-                      }
-                    })
+                  try {
+                    if (typeof window !== 'undefined' && (window as any).plausible) {
+                      (window as any).plausible('Instacart Clicked', {
+                        props: {
+                          itemCount: missingIngredients.length
+                        }
+                      })
+                    }
+                  } catch (err) {
+                    console.error('Failed to track Instacart Clicked:', err)
                   }
                 }}
                 className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-center block"
@@ -1927,6 +2070,21 @@ export default function MealSnap() {
                 onClick={(e) => {
                   e.stopPropagation()
                   setShowEmailGate(false)
+                  
+                  // Track upgrade click
+                  try {
+                    if (typeof window !== 'undefined' && (window as any).plausible) {
+                      (window as any).plausible('Upgrade Clicked', {
+                        props: {
+                          location: 'gate',
+                          currentPlan: userPlan
+                        }
+                      })
+                    }
+                  } catch (err) {
+                    console.error('Failed to track Upgrade Clicked:', err)
+                  }
+                  
                   setShowPricingModal(true)
                 }}
                 className="w-full text-gray-600 hover:text-gray-700 text-sm font-medium z-[72] relative"
@@ -2165,12 +2323,17 @@ function RecipeCard({
         })
         
         // Track share
-        if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Recipe Shared', {
-            props: {
-              recipeTitle: recipe.title
-            }
-          })
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Recipe Shared', {
+              props: {
+                recipeTitle: recipe.title,
+                method: 'native-share'
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track Recipe Shared:', err)
         }
       } else {
         // Fallback to clipboard
@@ -2178,12 +2341,17 @@ function RecipeCard({
         alert('Link copied to clipboard! Share it anywhere.')
         
         // Track share (even if clipboard fallback)
-        if (typeof window !== 'undefined' && (window as any).plausible) {
-          (window as any).plausible('Recipe Shared', {
-            props: {
-              recipeTitle: recipe.title
-            }
-          })
+        try {
+          if (typeof window !== 'undefined' && (window as any).plausible) {
+            (window as any).plausible('Recipe Shared', {
+              props: {
+                recipeTitle: recipe.title,
+                method: 'clipboard'
+              }
+            })
+          }
+        } catch (err) {
+          console.error('Failed to track Recipe Shared:', err)
         }
       }
     } catch (err) {
@@ -2285,12 +2453,16 @@ function RecipeCard({
               rel="noopener noreferrer"
               onClick={() => {
                 // Track Instacart click
-                if (typeof window !== 'undefined' && (window as any).plausible) {
-                  (window as any).plausible('Instacart Clicked', {
-                    props: {
-                      itemCount: needToBuy.length
-                    }
-                  })
+                try {
+                  if (typeof window !== 'undefined' && (window as any).plausible) {
+                    (window as any).plausible('Instacart Clicked', {
+                      props: {
+                        itemCount: needToBuy.length
+                      }
+                    })
+                  }
+                } catch (err) {
+                  console.error('Failed to track Instacart Clicked:', err)
                 }
               }}
               className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl px-6 py-3.5 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
