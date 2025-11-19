@@ -401,15 +401,25 @@ export default function MealSnap() {
 
     try {
       // Use browser-image-compression for efficient compression
+      // Try with web worker first, fallback to no web worker on mobile if it fails
       const options = {
         maxSizeMB: isMobile ? 0.8 : 1, // Max 1MB (smaller for mobile)
         maxWidthOrHeight: isMobile ? 1200 : 1400, // Max dimension (smaller for mobile)
-        useWebWorker: true, // Use web worker for better performance
+        useWebWorker: !isMobile, // Disable web worker on mobile to avoid issues
         fileType: 'image/jpeg', // Force JPEG for smaller size
       }
 
       console.log('[MealSnap] Compressing with options:', options)
-      const compressedFile = await imageCompression(file, options)
+      let compressedFile
+      
+      try {
+        compressedFile = await imageCompression(file, options)
+      } catch (webWorkerError) {
+        // Fallback: try without web worker if it fails
+        console.warn('[MealSnap] Web worker compression failed, trying without web worker:', webWorkerError)
+        const fallbackOptions = { ...options, useWebWorker: false }
+        compressedFile = await imageCompression(file, fallbackOptions)
+      }
       
       console.log('[MealSnap] Compression complete:', {
         original: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
@@ -422,8 +432,16 @@ export default function MealSnap() {
         const reader = new FileReader()
         reader.onload = (e) => {
           const result = e.target?.result as string
+          if (!result) {
+            reject(new Error('Failed to read file - empty result'))
+            return
+          }
           // Remove data:image/jpeg;base64, prefix
           const base64Data = result.split(',')[1]
+          if (!base64Data) {
+            reject(new Error('Failed to extract base64 data'))
+            return
+          }
           console.log('[MealSnap] Compression successful, base64 length:', base64Data.length)
           resolve(base64Data)
         }
@@ -435,7 +453,11 @@ export default function MealSnap() {
       })
     } catch (error: any) {
       console.error('[MealSnap] Image compression error:', error)
-      throw new Error(error.message || 'Failed to compress image')
+      // Provide more helpful error message
+      if (error.message && error.message.includes('Web Worker')) {
+        throw new Error('Image processing failed. Please try a smaller image or different format.')
+      }
+      throw new Error(error.message || 'Failed to compress image. Please try again.')
     }
   }
 
@@ -448,12 +470,9 @@ export default function MealSnap() {
       return
     }
 
-    console.log('[MealSnap] File selected:', file.name, file.size, 'bytes')
+    console.log('[MealSnap] File selected:', file.name, file.size, 'bytes', 'type:', file.type)
 
-    // Reset file input
-    e.target.value = ''
-
-    // Determine scan method
+    // Determine scan method BEFORE resetting input
     const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
     
     // Track scan started
@@ -471,6 +490,8 @@ export default function MealSnap() {
     
     if (!canScan) {
       console.log('[MealSnap] Scan limit reached, showing pricing modal')
+      // Reset input AFTER checking limit
+      e.target.value = ''
       setShowPricingModal(true)
       return
     }
@@ -479,11 +500,17 @@ export default function MealSnap() {
     setError('')
     const scanStartTime = Date.now()
     
+    // Store input reference for reset later
+    const inputElement = e.target
+    
     try {
       console.log('[MealSnap] Starting image compression...')
       // Compress image before sending
       const base64Image = await compressImage(file)
       console.log('[MealSnap] Image compressed, size:', base64Image.length, 'chars')
+      
+      // Reset file input AFTER we've successfully read the file
+      inputElement.value = ''
       
       console.log('[MealSnap] Sending to /api/scan-pantry...')
       const response = await fetch('/api/scan-pantry', {
@@ -587,7 +614,13 @@ export default function MealSnap() {
       }
     } catch (err: any) {
       console.error('[MealSnap] Scan error:', err)
-      setError(err.message || 'Failed to scan image. Please try again.')
+      const errorMessage = err.message || 'Failed to scan image. Please try again.'
+      setError(errorMessage)
+      
+      // Reset input on error
+      if (e.target) {
+        e.target.value = ''
+      }
       
       // Track error
       try {
@@ -595,7 +628,8 @@ export default function MealSnap() {
           (window as any).plausible('Error Occurred', {
             props: {
               type: err.message || 'scan_failed',
-              location: 'scan'
+              location: 'scan',
+              method: scanMethod
             }
           })
         }
@@ -1259,14 +1293,14 @@ export default function MealSnap() {
                   </div>
                   
                   <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                    Stop wasting food.{" "}
-                    <span className="text-gradient">Start cooking</span>{" "}
-                    what you have.
+                    MealSnap – AI Recipe Generator{" "}
+                    <span className="text-gradient">from Your Pantry</span>
                   </h1>
                   
                   <p className="text-lg text-muted-foreground max-w-xl">
-                    Snap your fridge, get <span className="text-primary font-semibold">6-8 recipes</span> you can make tonight.{" "}
-                    Missing something? Add to cart in <span className="text-accent font-semibold">1 tap</span>.
+                    Snap a photo of your fridge, get instant recipe ideas, and never wonder "what's for dinner" again.{" "}
+                    <span className="text-primary font-semibold">6-8 recipes</span> in seconds.{" "}
+                    Missing ingredients? Add to Instacart in <span className="text-accent font-semibold">1 tap</span>.
                   </p>
                   
                   <div className="grid sm:grid-cols-2 gap-4">
@@ -1295,7 +1329,7 @@ export default function MealSnap() {
                         scanCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                       }}
                     >
-                      Get Started
+                      Start Free – 3 Scans
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                     <Button 
