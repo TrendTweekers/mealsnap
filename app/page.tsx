@@ -569,10 +569,11 @@ export default function MealSnap() {
         console.log('[MealSnap] Ingredients detected:', data.items.length)
         setIngredients(data.items)
         
-        // Determine scan method from the input element
-        const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
-        incrementScanCount(scanMethod, data.items.length)
+        // Set view FIRST to ensure it persists even if modals appear
         setCurrentView('ingredients')
+        
+        // Use scanMethod determined at the start of the function (e.target might be stale on mobile)
+        incrementScanCount(scanMethod, data.items.length)
         
         // Track scan completed with processing time
         try {
@@ -593,10 +594,11 @@ export default function MealSnap() {
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
         
-        // Determine scan method from the input element
-        const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
-        incrementScanCount(scanMethod, 0)
+        // Set view FIRST to ensure it persists even if modals appear
         setCurrentView('ingredients')
+        
+        // Use scanMethod determined at the start of the function (e.target might be stale on mobile)
+        incrementScanCount(scanMethod, 0)
         
         // Track error
         try {
