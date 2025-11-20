@@ -30,7 +30,6 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/favicon.svg', type: 'image/svg+xml' },
       { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
@@ -49,7 +48,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className="dark">
       <head>
         <meta name="theme-color" content="#0B1629" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/icon-192x192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -59,7 +58,6 @@ export default function RootLayout({
         {/* PWA install prompt */}
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
-        <link rel="icon" href="/logo-chefai.png" type="image/png" />
         {/* Hide Safari UI on scroll */}
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
       </head>
