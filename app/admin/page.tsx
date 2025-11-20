@@ -440,6 +440,55 @@ ${healthCheck.checks.map((check: any) =>
     setTimeout(() => setMessage(''), 3000)
   }
 
+  const fetchCostData = async () => {
+    try {
+      setCostLoading(true)
+      const res = await fetch('/api/admin/costs?localAuth=true')
+      
+      if (res.status === 401) {
+        // Clear localStorage on 401
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('admin_authenticated')
+        }
+        setIsAuthenticated(false)
+        return
+      }
+      
+      if (!res.ok) {
+        throw new Error(`Cost data fetch failed: ${res.status}`)
+      }
+      
+      const data = await res.json()
+      
+      if (data.ok) {
+        setCostData(data)
+      } else {
+        throw new Error(data.error || 'Failed to fetch cost data')
+      }
+    } catch (err: any) {
+      console.error('Cost data error:', err)
+      // Set fallback data instead of crashing
+      setCostData({
+        costs: {
+          today: { openai_scan: 0, openai_recipes: 0, openai_images: 0, infrastructure: 3.23, total: 3.23 },
+          week: { openai_scan: 0, openai_recipes: 0, openai_images: 0, infrastructure: 22.61, total: 22.61 },
+          month: { openai_scan: 0, openai_recipes: 0, openai_images: 0, infrastructure: 96.9, total: 96.9 },
+          alltime: { openai_scan: 0, openai_recipes: 0, openai_images: 0, infrastructure: 0, total: 0 }
+        },
+        imageStats: {
+          generated: 0,
+          cached: 0,
+          cacheHitRate: 0,
+          estimatedSavings: 0
+        }
+      })
+      setMessage('Cost data unavailable - showing placeholder data')
+      setTimeout(() => setMessage(''), 3000)
+    } finally {
+      setCostLoading(false)
+    }
+  }
+
   // Password protection screen
   if (authLoading) {
     return (
