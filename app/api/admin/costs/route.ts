@@ -61,10 +61,15 @@ export async function GET(req: NextRequest) {
       console.warn('Failed to count images:', err)
     }
 
-    // Infrastructure cost (fixed)
+    // Infrastructure cost (fixed) - based on profit-calculator breakdown
     const INFRASTRUCTURE_DAILY = 3.23 // Vercel Pro + KV + other services
     const INFRASTRUCTURE_WEEKLY = INFRASTRUCTURE_DAILY * 7
-    const INFRASTRUCTURE_MONTHLY = INFRASTRUCTURE_DAILY * 30
+    
+    // Calculate monthly infrastructure based on days elapsed in current month
+    const now = new Date()
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+    const currentDayOfMonth = now.getDate()
+    const INFRASTRUCTURE_MONTHLY = INFRASTRUCTURE_DAILY * currentDayOfMonth // Only count days elapsed
 
     // Calculate totals
     const todayTotal = {

@@ -58,6 +58,12 @@ export default function AdminPage() {
   const [profitPeriod, setProfitPeriod] = useState<'today' | 'week' | 'month' | 'alltime'>('today')
   const [costData, setCostData] = useState<any>(null)
   const [costLoading, setCostLoading] = useState(false)
+  const [userAnalytics, setUserAnalytics] = useState<any>(null)
+  const [userAnalyticsLoading, setUserAnalyticsLoading] = useState(false)
+  const [recipePerformance, setRecipePerformance] = useState<any>(null)
+  const [recipePerformanceLoading, setRecipePerformanceLoading] = useState(false)
+  const [errorData, setErrorData] = useState<any>(null)
+  const [errorDataLoading, setErrorDataLoading] = useState(false)
 
   useEffect(() => {
     // Only check localStorage on mount - no API call to avoid race condition
@@ -88,6 +94,9 @@ export default function AdminPage() {
     fetchStats()
     fetchProfitData('today')
     fetchCostData()
+    fetchUserAnalytics()
+    fetchRecipePerformance()
+    fetchErrorData()
   }
 
   const fetchStats = async () => {

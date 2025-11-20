@@ -318,6 +318,16 @@ export default function ChefAI() {
             }
           })
         }
+        // Also track in KV for admin panel
+        fetch('/api/track-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event: 'recipe_favorited',
+            recipeTitle: recipe.title,
+            userId: userId || 'anonymous'
+          })
+        }).catch(() => {}) // Silent fail
       } catch (err) {
         console.error('Failed to track Recipe Favorited:', err)
       }
@@ -377,6 +387,17 @@ export default function ChefAI() {
               }
             })
           }
+          // Also track in KV for admin panel
+          fetch('/api/track-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'recipe_shared',
+              recipeTitle: sharedRecipe.title,
+              method: 'native-share',
+              userId: userId || 'anonymous'
+            })
+          }).catch(() => {}) // Silent fail
         } catch (err) {
           console.error('Failed to track Recipe Shared:', err)
         }
@@ -395,6 +416,17 @@ export default function ChefAI() {
               }
             })
           }
+          // Also track in KV for admin panel
+          fetch('/api/track-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'recipe_shared',
+              recipeTitle: sharedRecipe.title,
+              method: 'clipboard',
+              userId: userId || 'anonymous'
+            })
+          }).catch(() => {}) // Silent fail
         } catch (err) {
           console.error('Failed to track Recipe Shared:', err)
         }
@@ -644,6 +676,17 @@ export default function ChefAI() {
               }
             })
           }
+          // Also track in KV for admin panel
+          fetch('/api/track-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'error_occurred',
+              type: 'no_ingredients_detected',
+              location: 'scan',
+              userId: userId || 'anonymous'
+            })
+          }).catch(() => {}) // Silent fail
         } catch (err) {
           console.error('Failed to track error:', err)
         }
@@ -927,6 +970,17 @@ export default function ChefAI() {
                         currentPlan: userPlan
                       }
                     })
+                    // Also track in KV for admin panel
+                    fetch('/api/track-event', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        event: 'upgrade_clicked',
+                        location: 'menu',
+                        currentPlan: userPlan,
+                        userId: userId || 'anonymous'
+                      })
+                    }).catch(() => {}) // Silent fail
                   }
                 } catch (err) {
                   console.error('Failed to track Upgrade Clicked:', err)
@@ -2067,6 +2121,16 @@ export default function ChefAI() {
                         }
                       })
                     }
+                    // Also track in KV for admin panel
+                    fetch('/api/track-event', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        event: 'instacart_clicked',
+                        itemCount: missingIngredients.length,
+                        userId: userId || 'anonymous'
+                      })
+                    }).catch(() => {}) // Silent fail
                   } catch (err) {
                     console.error('Failed to track Instacart Clicked:', err)
                   }
