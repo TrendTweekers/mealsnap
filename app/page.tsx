@@ -968,29 +968,6 @@ export default function ChefAI() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Dark Mode Toggle */}
-            <Button 
-              variant="glass" 
-              size="icon"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                const newDarkMode = !isDarkMode
-                setIsDarkMode(newDarkMode)
-                // Apply class immediately
-                document.documentElement.classList.toggle('dark', newDarkMode)
-                // Save preference
-                localStorage.setItem('theme', newDarkMode ? 'dark' : 'light')
-                // Haptic feedback
-                if ('vibrate' in navigator) {
-                  navigator.vibrate(10)
-                }
-              }}
-              className="touch-manipulation"
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
-            </Button>
             <Button 
               variant="glass" 
               size="icon" 
