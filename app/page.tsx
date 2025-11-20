@@ -1477,8 +1477,9 @@ export default function ChefAI() {
               <div className="grid lg:grid-cols-2 gap-12 items-center">
                 {/* Left content */}
                 <div className="space-y-8 animate-fade-in">
-                  <div className="inline-block glass px-4 py-2 rounded-full text-sm text-primary animate-glow-pulse">
-                    ✨ Powered by AI
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-3 py-1 text-xs font-medium text-emerald-300">
+                    <BrandLogo size="sm" className="bg-transparent border-none shadow-none p-0" />
+                    <span>Powered by AI</span>
                   </div>
                   
                   <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
