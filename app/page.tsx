@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List, Sun, Moon } from 'lucide-react'
+import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List, Sun, Moon, ChefHat, UtensilsCrossed } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import { Button } from '@/components/ui/button'
 import imageCompression from 'browser-image-compression'
@@ -1073,7 +1073,7 @@ export default function ChefAI() {
               variant="hero"
               size="sm"
               onClick={() => setCurrentView('home')}
-              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold shadow-lg"
+              className="bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white font-bold shadow-lg hover:scale-[1.03] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               <Camera className="w-4 h-4 mr-1" />
               New Scan
@@ -1479,13 +1479,16 @@ export default function ChefAI() {
                 <div className="space-y-8 animate-fade-in">
                   <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/5 px-3 py-1 text-xs font-medium text-emerald-300">
                     <BrandLogo size="sm" className="bg-transparent border-none shadow-none p-0" />
-                    <span>Powered by AI</span>
+                    <span>Made with AI • Powered by GPT-5.1</span>
                   </div>
                   
-                  <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                    ChefAI – Your AI Chef{" "}
-                    <span className="text-gradient">for Instant Recipes</span>
-                  </h1>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/50 to-transparent -z-10 rounded-lg"></div>
+                    <h1 className="text-5xl lg:text-7xl font-bold leading-tight relative z-10">
+                      ChefAI – Your AI Chef{" "}
+                      <span className="text-gradient">for Instant Recipes</span>
+                    </h1>
+                  </div>
                   
                   <p className="text-lg text-muted-foreground max-w-xl">
                     Snap a photo of your fridge, get instant recipe ideas powered by AI. Your personal chef that turns ingredients into delicious meals.{" "}
@@ -1541,7 +1544,7 @@ export default function ChefAI() {
                     <img 
                       src="https://futuro-meal-muse.lovable.app/assets/hero-image-BzJPPt3O.jpg" 
                       alt="Fresh colorful ingredients in space"
-                      className="w-full h-auto"
+                      className="w-full h-auto drop-shadow-2xl"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-background/50 to-transparent" />
                   </div>
@@ -1711,7 +1714,9 @@ export default function ChefAI() {
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-8 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-2 group">
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">01</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
-                    <Camera className="w-8 h-8 text-white" />
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
                   </div>
                   <h3 className="text-2xl font-bold text-[#E6FFFF] mb-3 tracking-tight">Snap Your Pantry</h3>
                   <p className="text-[#B8D4D4] leading-relaxed font-medium">
@@ -1723,7 +1728,9 @@ export default function ChefAI() {
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-8 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-2 group">
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">02</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
-                    <Sparkles className="w-8 h-8 text-white" />
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15">
+                      <Sparkles className="w-6 h-6 text-white" />
+                    </div>
                   </div>
                   <h3 className="text-2xl font-bold text-[#E6FFFF] mb-3 tracking-tight">AI Detection</h3>
                   <p className="text-[#B8D4D4] leading-relaxed font-medium">
@@ -1736,7 +1743,7 @@ export default function ChefAI() {
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">03</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
                     <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15">
-                      <BrandLogo size="sm" />
+                      <UtensilsCrossed className="w-6 h-6 text-white" />
                     </div>
                   </div>
                   <h3 className="text-2xl font-bold text-[#E6FFFF] mb-3 tracking-tight">Get Recipes</h3>

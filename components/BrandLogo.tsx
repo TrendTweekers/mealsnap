@@ -20,8 +20,8 @@ export function BrandLogo({
   return (
     <div
       className={[
-        'inline-flex items-center justify-center rounded-2xl bg-slate-950/80 border border-emerald-400/60',
-        withGlow ? 'shadow-[0_0_18px_rgba(45,212,191,0.45)]' : '',
+        'inline-flex items-center justify-center rounded-2xl bg-slate-950/90 border border-emerald-400/60',
+        withGlow ? 'shadow-[0_0_11px_rgba(45,212,191,0.27)]' : '',
         'p-[3px]',
         className,
       ]
