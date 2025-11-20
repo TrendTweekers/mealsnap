@@ -56,7 +56,6 @@ export default function ChefAI() {
   const [newPantryItem, setNewPantryItem] = useState('')
   const [dietaryFilters, setDietaryFilters] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
-  const [optimisticRecipes, setOptimisticRecipes] = useState<Recipe[]>([])
   const [loadingMessage, setLoadingMessage] = useState('Analyzing your ingredients...')
   const [showCookieNotice, setShowCookieNotice] = useState(false)
 
@@ -691,19 +690,7 @@ export default function ChefAI() {
     setIsLoading(true)
     setError('')
     
-    // Show optimistic placeholder recipes immediately
-    const placeholders: Recipe[] = [
-      { id: 'loading-1', title: 'Generating...', mealType: 'breakfast', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
-      { id: 'loading-2', title: 'Generating...', mealType: 'lunch', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
-      { id: 'loading-3', title: 'Generating...', mealType: 'dinner', timeMinutes: 0, difficulty: 'medium', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
-      { id: 'loading-4', title: 'Generating...', mealType: 'snack', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
-      { id: 'loading-5', title: 'Generating...', mealType: 'breakfast', timeMinutes: 0, difficulty: 'medium', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
-      { id: 'loading-6', title: 'Generating...', mealType: 'dinner', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
-    ]
-    setOptimisticRecipes(placeholders)
-    setCurrentView('recipes')
-    
-    // Rotate loading messages
+    // Rotate loading messages while generating
     const loadingMessages = [
       'Analyzing your ingredients...',
       'Finding perfect flavor combinations...',
@@ -745,7 +732,6 @@ export default function ChefAI() {
       clearInterval(messageInterval)
       
       if (data.recipes && Array.isArray(data.recipes) && data.recipes.length > 0) {
-        setOptimisticRecipes([]) // Clear placeholders
         setRecipes(data.recipes)
         
         const allNeededItems = data.recipes
@@ -792,10 +778,8 @@ export default function ChefAI() {
       }
     } catch (err: any) {
       clearInterval(messageInterval)
-      setOptimisticRecipes([]) // Clear placeholders on error
       console.error('Recipe generation error:', err)
       setError(err.message || 'Failed to generate recipes. Please try again.')
-      setCurrentView('ingredients') // Go back to ingredients view on error
     } finally {
       setIsLoading(false)
       setIsGenerating(false)
@@ -2007,27 +1991,12 @@ export default function ChefAI() {
         </div>
         
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#E6FFFF] mb-2">
-            {isGenerating ? (
-              <>
-                <div className="text-lg font-semibold text-white mb-2">
-                  🧑‍🍳 ChefAI is cooking up your recipes...
-                </div>
-                <div className="text-sm text-[#B8D4D4]">
-                  {loadingMessage}
-                </div>
-              </>
-            ) : (
-              'Your Recipes'
-            )}
-          </h1>
-          {!isGenerating && (
-            <p className="text-[#B8D4D4] text-lg">Found {recipes.length} delicious recipe{recipes.length !== 1 ? 's' : ''} you can make</p>
-          )}
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#E6FFFF] mb-2">Your Recipes</h1>
+          <p className="text-[#B8D4D4] text-lg">Found {recipes.length} delicious recipe{recipes.length !== 1 ? 's' : ''} you can make</p>
         </div>
 
         <div className="space-y-6">
-          {(isGenerating && optimisticRecipes.length > 0 ? optimisticRecipes : recipes).map((recipe, index) => (
+          {recipes.map((recipe, index) => (
             <RecipeCard
               key={index}
               recipe={recipe}
