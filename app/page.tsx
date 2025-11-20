@@ -51,6 +51,14 @@ export default function ChefAI() {
   const [showVisibilityModal, setShowVisibilityModal] = useState(false)
   const [pendingIngredient, setPendingIngredient] = useState<{ name: string, scanId?: string } | null>(null)
   const [isDarkMode, setIsDarkMode] = useState(true)
+  const [pantryItems, setPantryItems] = useState<string[]>([])
+  const [showPantryManager, setShowPantryManager] = useState(false)
+  const [newPantryItem, setNewPantryItem] = useState('')
+  const [dietaryFilters, setDietaryFilters] = useState<string[]>([])
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [optimisticRecipes, setOptimisticRecipes] = useState<Recipe[]>([])
+  const [loadingMessage, setLoadingMessage] = useState('Analyzing your ingredients...')
+  const [showCookieNotice, setShowCookieNotice] = useState(false)
 
   // Generate or load user ID for referrals
   useEffect(() => {
@@ -100,6 +108,32 @@ export default function ChefAI() {
     
     setIsDarkMode(shouldBeDark)
     document.documentElement.classList.toggle('dark', shouldBeDark)
+    
+    // Load pantry items
+    const savedPantry = localStorage.getItem('chefai_pantry')
+    if (savedPantry) {
+      try {
+        setPantryItems(JSON.parse(savedPantry))
+      } catch (e) {
+        console.error('Failed to load pantry:', e)
+      }
+    }
+    
+    // Load dietary filters
+    const savedDietary = localStorage.getItem('chefai_dietary')
+    if (savedDietary) {
+      try {
+        setDietaryFilters(JSON.parse(savedDietary))
+      } catch (e) {
+        console.error('Failed to load dietary filters:', e)
+      }
+    }
+    
+    // Show cookie notice if not dismissed
+    const cookieConsent = localStorage.getItem('chefai_cookie_consent')
+    if (!cookieConsent) {
+      setShowCookieNotice(true)
+    }
   }, [])
 
   // Load user plan and scan count with weekly reset
@@ -645,13 +679,43 @@ export default function ChefAI() {
   }
 
   const handleGenerateRecipes = async () => {
-    if (ingredients.length === 0) {
+    // Combine detected ingredients with pantry items
+    const allIngredients = Array.from(new Set([...ingredients, ...pantryItems]))
+    
+    if (allIngredients.length === 0) {
       setError('Please add at least one ingredient first.')
       return
     }
 
+    setIsGenerating(true)
     setIsLoading(true)
     setError('')
+    
+    // Show optimistic placeholder recipes immediately
+    const placeholders: Recipe[] = [
+      { id: 'loading-1', title: 'Generating...', mealType: 'breakfast', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
+      { id: 'loading-2', title: 'Generating...', mealType: 'lunch', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
+      { id: 'loading-3', title: 'Generating...', mealType: 'dinner', timeMinutes: 0, difficulty: 'medium', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
+      { id: 'loading-4', title: 'Generating...', mealType: 'snack', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
+      { id: 'loading-5', title: 'Generating...', mealType: 'breakfast', timeMinutes: 0, difficulty: 'medium', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
+      { id: 'loading-6', title: 'Generating...', mealType: 'dinner', timeMinutes: 0, difficulty: 'easy', servings: 2, youAlreadyHave: [], youNeedToBuy: [], steps: [] },
+    ]
+    setOptimisticRecipes(placeholders)
+    setCurrentView('recipes')
+    
+    // Rotate loading messages
+    const loadingMessages = [
+      'Analyzing your ingredients...',
+      'Finding perfect flavor combinations...',
+      'Calculating cook times...',
+      'Generating beautiful images...',
+      'Almost ready!'
+    ]
+    let messageIndex = 0
+    const messageInterval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % loadingMessages.length
+      setLoadingMessage(loadingMessages[messageIndex])
+    }, 2000)
     
     try {
       const response = await fetch('/api/generate-recipes', {
@@ -660,7 +724,8 @@ export default function ChefAI() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          ingredients,
+          ingredients: allIngredients,
+          dietaryFilters,
           userId: userId || 'anonymous',
         }),
       })
@@ -677,7 +742,10 @@ export default function ChefAI() {
         return
       }
 
+      clearInterval(messageInterval)
+      
       if (data.recipes && Array.isArray(data.recipes) && data.recipes.length > 0) {
+        setOptimisticRecipes([]) // Clear placeholders
         setRecipes(data.recipes)
         
         const allNeededItems = data.recipes
@@ -723,11 +791,39 @@ export default function ChefAI() {
         setError('No recipes generated. Try adding more ingredients.')
       }
     } catch (err: any) {
+      clearInterval(messageInterval)
+      setOptimisticRecipes([]) // Clear placeholders on error
       console.error('Recipe generation error:', err)
       setError(err.message || 'Failed to generate recipes. Please try again.')
+      setCurrentView('ingredients') // Go back to ingredients view on error
     } finally {
       setIsLoading(false)
+      setIsGenerating(false)
     }
+  }
+  
+  // Pantry management functions
+  const addPantryItem = (item: string) => {
+    const cleanItem = item.trim().toLowerCase()
+    if (cleanItem && !pantryItems.includes(cleanItem)) {
+      const updated = [...pantryItems, cleanItem]
+      setPantryItems(updated)
+      localStorage.setItem('chefai_pantry', JSON.stringify(updated))
+    }
+  }
+  
+  const removePantryItem = (item: string) => {
+    const updated = pantryItems.filter(i => i !== item)
+    setPantryItems(updated)
+    localStorage.setItem('chefai_pantry', JSON.stringify(updated))
+  }
+  
+  const toggleDietaryFilter = (filter: string) => {
+    const updated = dietaryFilters.includes(filter)
+      ? dietaryFilters.filter(f => f !== filter)
+      : [...dietaryFilters, filter]
+    setDietaryFilters(updated)
+    localStorage.setItem('chefai_dietary', JSON.stringify(updated))
   }
 
   const addIngredient = async (wasVisible?: boolean, reason?: string) => {
@@ -1724,6 +1820,91 @@ export default function ChefAI() {
         </div>
           )}
 
+          {/* Dietary Filters */}
+          <div className="bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] shadow-xl p-6 mb-6">
+            <h3 className="text-lg font-semibold text-[#E6FFFF] mb-4 flex items-center gap-2">
+              🥗 Dietary Preferences
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: 'vegetarian', label: 'Vegetarian', icon: '🥬' },
+                { id: 'vegan', label: 'Vegan', icon: '🌱' },
+                { id: 'gluten-free', label: 'Gluten-Free', icon: '🌾' },
+                { id: 'dairy-free', label: 'Dairy-Free', icon: '🥛' },
+                { id: 'keto', label: 'Keto', icon: '🥑' },
+                { id: 'paleo', label: 'Paleo', icon: '🍖' },
+              ].map(diet => (
+                <button
+                  key={diet.id}
+                  onClick={() => toggleDietaryFilter(diet.id)}
+                  className={`px-4 py-2 rounded-lg border transition-colors ${
+                    dietaryFilters.includes(diet.id)
+                      ? 'bg-emerald-600 border-emerald-500 text-white'
+                      : 'bg-[#1F2332] border-[#2A2F45] text-[#B8D4D4] hover:border-emerald-500/50'
+                  }`}
+                >
+                  {diet.icon} {diet.label}
+                </button>
+              ))}
+            </div>
+            {dietaryFilters.length > 0 && (
+              <div className="mt-3 text-sm text-emerald-400">
+                ✓ Recipes will match your preferences
+              </div>
+            )}
+          </div>
+
+          {/* Persistent Pantry */}
+          <div className="bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] shadow-xl p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[#E6FFFF] flex items-center gap-2">
+                🏠 My Pantry
+              </h3>
+              <button
+                onClick={() => setShowPantryManager(true)}
+                className="text-emerald-400 text-sm hover:text-emerald-300"
+              >
+                Manage
+              </button>
+            </div>
+            {pantryItems.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {pantryItems.map(item => (
+                  <div
+                    key={item}
+                    className="px-3 py-1.5 bg-emerald-900/30 border border-emerald-700 rounded-full text-sm text-emerald-400 flex items-center gap-2"
+                  >
+                    {item}
+                    <button
+                      onClick={() => removePantryItem(item)}
+                      className="text-emerald-600 hover:text-emerald-400"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[#B8D4D4] text-sm mb-3">
+                Add ingredients you always have at home (chicken, eggs, rice, etc)
+              </div>
+            )}
+            <button
+              onClick={() => {
+                const item = prompt('Add pantry item:')
+                if (item) addPantryItem(item)
+              }}
+              className="text-sm text-emerald-400 hover:text-emerald-300"
+            >
+              + Add pantry item
+            </button>
+            {pantryItems.length > 0 && (
+              <div className="mt-2 text-xs text-[#B8D4D4]">
+                + {pantryItems.length} item{pantryItems.length !== 1 ? 's' : ''} will be included in recipes
+              </div>
+            )}
+          </div>
+
           <div className="bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] shadow-xl p-6 sm:p-10">
             <div className="flex items-center gap-4 mb-8">
               <div className="w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-green-500/20 rounded-2xl flex items-center justify-center shadow-md border border-emerald-500/30">
@@ -1826,12 +2007,27 @@ export default function ChefAI() {
         </div>
         
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-[#E6FFFF] mb-2">Your Recipes</h1>
-          <p className="text-[#B8D4D4] text-lg">Found {recipes.length} delicious recipe{recipes.length !== 1 ? 's' : ''} you can make</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-[#E6FFFF] mb-2">
+            {isGenerating ? (
+              <>
+                <div className="text-lg font-semibold text-white mb-2">
+                  🧑‍🍳 ChefAI is cooking up your recipes...
+                </div>
+                <div className="text-sm text-[#B8D4D4]">
+                  {loadingMessage}
+                </div>
+              </>
+            ) : (
+              'Your Recipes'
+            )}
+          </h1>
+          {!isGenerating && (
+            <p className="text-[#B8D4D4] text-lg">Found {recipes.length} delicious recipe{recipes.length !== 1 ? 's' : ''} you can make</p>
+          )}
         </div>
 
         <div className="space-y-6">
-          {recipes.map((recipe, index) => (
+          {(isGenerating && optimisticRecipes.length > 0 ? optimisticRecipes : recipes).map((recipe, index) => (
             <RecipeCard
               key={index}
               recipe={recipe}

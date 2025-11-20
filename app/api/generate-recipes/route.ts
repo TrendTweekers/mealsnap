@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
 
     const rawIngredients = body?.ingredients;
     const userId = body?.userId;
+    const dietaryFilters = body?.dietaryFilters || [];
 
     const ingredients: string[] | null =
       Array.isArray(rawIngredients)
@@ -259,6 +260,24 @@ You are an expert chef creating simple, practical recipes.
 
 AVAILABLE INGREDIENTS:
 ${ingredients.join(", ")}
+
+${dietaryFilters.length > 0 ? `
+
+DIETARY RESTRICTIONS (CRITICAL - MUST BE FOLLOWED):
+${dietaryFilters.map((f: string) => {
+  switch(f) {
+    case 'vegetarian': return '- NO meat, fish, or poultry. Eggs and dairy OK.';
+    case 'vegan': return '- NO animal products (meat, dairy, eggs, honey).';
+    case 'gluten-free': return '- NO wheat, barley, rye, or gluten-containing ingredients.';
+    case 'dairy-free': return '- NO milk, cheese, butter, cream, or dairy products.';
+    case 'keto': return '- LOW CARB (under 10g net carbs per serving). High fat, moderate protein.';
+    case 'paleo': return '- NO grains, legumes, dairy, or processed foods. Meat, fish, vegetables, fruits, nuts OK.';
+    default: return '';
+  }
+}).filter(Boolean).join('\n')}
+
+ALL recipes MUST follow these restrictions. This is non-negotiable.
+` : ''}
 
 TASK:
 Create EXACTLY 6 recipes using ONLY the available ingredients plus common pantry staples.
