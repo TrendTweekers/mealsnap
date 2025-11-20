@@ -757,6 +757,7 @@ export default function ChefAI() {
           ingredients: allIngredients,
           dietaryFilters,
           userId: userId || 'anonymous',
+          userPlan: userPlan || 'free',
         }),
       })
 

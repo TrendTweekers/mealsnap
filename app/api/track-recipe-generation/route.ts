@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { userId, recipeCount, ingredientCount, success, cached } = await req.json()
+    const { userId, recipeCount, ingredientCount, success, cached, userPlan } = await req.json()
 
     const timestamp = new Date().toISOString()
     const dateKey = new Date().toISOString().split('T')[0] // YYYY-MM-DD

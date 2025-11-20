@@ -64,6 +64,8 @@ export default function AdminPage() {
   const [recipePerformanceLoading, setRecipePerformanceLoading] = useState(false)
   const [errorData, setErrorData] = useState<any>(null)
   const [errorDataLoading, setErrorDataLoading] = useState(false)
+  const [customerData, setCustomerData] = useState<any>(null)
+  const [customerDataLoading, setCustomerDataLoading] = useState(false)
 
   useEffect(() => {
     // Only check localStorage on mount - no API call to avoid race condition
@@ -97,6 +99,7 @@ export default function AdminPage() {
     fetchUserAnalytics()
     fetchRecipePerformance()
     fetchErrorData()
+    fetchCustomerData()
   }
 
   const fetchStats = async () => {

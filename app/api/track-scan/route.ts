@@ -57,6 +57,13 @@ export async function POST(req: NextRequest) {
       // Track unique users (if userId provided)
       if (userId && userId !== 'anonymous') {
         await kv.sadd('stats:users:unique', userId)
+        
+        // Track customer usage if they're a paying customer
+        const userPlan = await kv.get<string>(`user:${userId}:plan`)
+        if (userPlan === 'pro' || userPlan === 'family') {
+          await kv.incr(`customer:${userId}:scans`)
+          await kv.set(`customer:${userId}:last_active`, timestamp)
+        }
       }
 
       console.log('[Scan Tracking]', { userId, ingredientCount, success, timestamp })
