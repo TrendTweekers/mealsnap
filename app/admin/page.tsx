@@ -557,6 +557,25 @@ ${healthCheck.checks.map((check: any) =>
       setErrorDataLoading(false)
     }
   }
+  
+  const fetchCustomerData = async () => {
+    try {
+      setCustomerDataLoading(true)
+      const res = await fetch('/api/admin/customers?localAuth=true')
+      if (!res.ok) throw new Error(`Customer data fetch failed: ${res.status}`)
+      const data = await res.json()
+      if (data.ok) {
+        setCustomerData(data.customers)
+      } else {
+        throw new Error(data.error || 'Failed to fetch customer data')
+      }
+    } catch (err) {
+      console.error('Customer data error:', err)
+      setCustomerData(null)
+    } finally {
+      setCustomerDataLoading(false)
+    }
+  }
 
   // Password protection screen
   if (authLoading) {
