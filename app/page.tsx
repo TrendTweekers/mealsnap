@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Camera, Upload, X, Plus, ShoppingCart, Loader2, Clock, TrendingUp, AlertCircle, Check, Home, ArrowRight, Heart, User, Share2, Sparkles, Mail, List, Sun, Moon } from 'lucide-react'
-import { MealSnapLogo } from '@/components/mealsnap-logo'
 import { Button } from '@/components/ui/button'
 import imageCompression from 'browser-image-compression'
 
@@ -1013,7 +1012,7 @@ export default function ChefAI() {
             className="flex items-center gap-2 hover:opacity-90 transition-all duration-200 hover:scale-[1.02]"
           >
             <img
-              src="/apple-icon.png"
+              src="/logo-chefai.png"
               alt="ChefAI logo"
               className="h-8 w-8 rounded-2xl border border-emerald-400/70 bg-slate-950/80 p-[2px] shadow-[0_0_16px_rgba(45,212,191,0.4)]"
             />
@@ -1738,7 +1737,7 @@ export default function ChefAI() {
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
                     <div className="inline-flex items-center justify-center rounded-2xl bg-emerald-500/15 p-2">
                       <img
-                        src="/apple-icon.png"
+                        src="/logo-chefai.png"
                         alt="ChefAI logo"
                         className="h-8 w-8"
                       />
@@ -1860,7 +1859,7 @@ export default function ChefAI() {
           {favorites.length === 0 ? (
             <div className="bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] shadow-xl p-12 text-center">
               <div className="inline-flex items-center justify-center mb-6">
-                <MealSnapLogo className="w-20 h-20 opacity-50" />
+                <img src="/logo-chefai.png" alt="ChefAI logo" className="w-20 h-20 opacity-50" />
               </div>
               <Heart className="w-16 h-16 text-[#B8D4D4] mx-auto mb-4" />
               <h3 className="text-2xl font-bold text-[#E6FFFF] mb-2">No favorites yet</h3>
@@ -2482,7 +2481,7 @@ export default function ChefAI() {
             
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                <MealSnapLogo className="w-10 h-10" />
+                <img src="/logo-chefai.png" alt="ChefAI logo" className="w-10 h-10" />
               </div>
               <h3 className="text-2xl font-extrabold text-gray-900 mb-2">Upgrade to Pro</h3>
               <p className="text-gray-700">You've used your 3 free scans this week</p>
