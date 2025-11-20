@@ -1654,6 +1654,136 @@ ${healthCheck.checks.map((check: any) =>
             )}
           </div>
 
+          {/* Customer & Revenue Dashboard */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <DollarSign className="w-6 h-6 text-emerald-400" />
+                Customers & Revenue
+              </h2>
+              <button
+                onClick={fetchCustomerData}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                title="Refresh customer data"
+              >
+                <RefreshCw className={`w-5 h-5 text-emerald-400 ${customerDataLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            {customerDataLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+              </div>
+            ) : customerData ? (
+              <div className="space-y-6">
+                {/* Revenue Overview */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Customers</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{customerData.total}</div>
+                    <div className="text-xs text-slate-400 mt-1">
+                      {customerData.pro} Pro + {customerData.family} Family
+                    </div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Monthly Revenue</div>
+                    <div className="text-2xl font-mono font-bold text-emerald-400">${customerData.revenue.monthly.toFixed(2)}</div>
+                    <div className="text-xs text-slate-400 mt-1">${customerData.revenue.annual.toFixed(2)}/year</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg Revenue/Customer</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">${customerData.revenue.perCustomer.toFixed(2)}</div>
+                    <div className="text-xs text-slate-400 mt-1">per month</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Conversion Rate</div>
+                    <div className="text-2xl font-mono font-bold text-blue-400">{customerData.metrics.conversionRate}%</div>
+                    <div className="text-xs text-slate-400 mt-1">{customerData.total} / {customerData.metrics.totalUsers} users</div>
+                  </div>
+                </div>
+
+                {/* Customer Usage */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Paying Customer Usage</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scans</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{customerData.usage.scans.toLocaleString()}</div>
+                      <div className="text-xs text-slate-400 mt-1">{customerData.usage.avgScansPerCustomer.toFixed(1)} avg/customer</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipes</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{customerData.usage.recipes.toLocaleString()}</div>
+                      <div className="text-xs text-slate-400 mt-1">{customerData.usage.avgRecipesPerCustomer.toFixed(1)} avg/customer</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Favorites</div>
+                      <div className="text-xl font-mono font-bold text-emerald-400">{customerData.usage.favorites.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Shares</div>
+                      <div className="text-xl font-mono font-bold text-blue-400">{customerData.usage.shares.toLocaleString()}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Top Customers */}
+                {customerData.sample && customerData.sample.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Top Customers (Sample)</div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {customerData.sample
+                        .sort((a: any, b: any) => (b.scans + b.recipes) - (a.scans + a.recipes))
+                        .slice(0, 10)
+                        .map((customer: any, index: number) => (
+                        <div key={index} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                              index === 1 ? 'bg-gray-300 text-gray-700' :
+                              index === 2 ? 'bg-orange-300 text-orange-900' :
+                              'bg-gray-200 text-gray-600'
+                            }`}>
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="font-semibold text-[#F1F5F9]">
+                                {customer.id.substring(0, 8)}...
+                                <span className={`ml-2 text-xs px-2 py-0.5 rounded ${
+                                  customer.plan === 'pro' ? 'bg-blue-500 bg-opacity-20 text-blue-400' : 'bg-purple-500 bg-opacity-20 text-purple-400'
+                                }`}>
+                                  {customer.plan.toUpperCase()}
+                                </span>
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                {customer.scans} scans • {customer.recipes} recipes
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-bold text-emerald-400">${customer.revenue.toFixed(2)}/mo</div>
+                            {customer.lastActive && (
+                              <div className="text-xs text-slate-400">
+                                Active {new Date(customer.lastActive).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400">
+                <div className="mb-2">No paying customers yet</div>
+                <div className="text-xs text-slate-500">
+                  Revenue dashboard will appear once customers upgrade to Pro or Family plans
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Quick Links */}
           <div className="bg-emerald-900 bg-opacity-20 rounded-lg p-6 border border-emerald-800">
             <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
