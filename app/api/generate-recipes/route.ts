@@ -233,6 +233,7 @@ export async function POST(req: NextRequest) {
               ingredientCount: ingredients.length,
               success: true,
               cached: true,
+              userPlan: body?.userPlan || 'free'
             }),
           }).catch(() => {}) // Silent fail
         } catch {}
@@ -451,6 +452,7 @@ RULES:
             recipeCount: 0,
             ingredientCount: ingredients.length,
             success: false,
+            userPlan: body?.userPlan || 'free'
           }),
         }).catch(() => {}) // Silent fail
       } catch {}
@@ -480,6 +482,7 @@ RULES:
             recipeCount: 0,
             ingredientCount: ingredients.length,
             success: false,
+            userPlan: body?.userPlan || 'free'
           }),
         }).catch(() => {}) // Silent fail
       } catch {}
@@ -582,6 +585,7 @@ RULES:
             ingredientCount: ingredients.length,
             success: true,
             cached: false, // This is a fresh generation, not cached
+            userPlan: body?.userPlan || 'free'
           }),
       }).catch(err => {
         // Silent fail - tracking shouldn't block response
