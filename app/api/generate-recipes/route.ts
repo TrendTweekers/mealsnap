@@ -223,31 +223,59 @@ export async function POST(req: NextRequest) {
 
     // --- 3. Build very explicit JSON-only prompt --------------------------
     const prompt = `
-You are a cooking assistant.
+You are an expert chef creating simple, practical recipes.
 
-User gives you a list of ingredients currently in their fridge/pantry.
-
-INGREDIENTS:
+AVAILABLE INGREDIENTS:
 ${ingredients.join(", ")}
 
 TASK:
-1. Create EXACTLY 6 recipes (no more, no less). Ensure variety across meal types (breakfast, lunch, dinner, snack). Use ONLY these ingredients plus very basic pantry staples:
-   - Allowed extra staples: salt, pepper, oil, water, sugar, basic dried herbs.
-   - DO NOT invent ingredients that are clearly not available (no "Silesian dumplings" etc.).
-   - Aim for variety: include breakfast, lunch, dinner, and snack options when possible.
+Create EXACTLY 6 recipes using ONLY the available ingredients plus common pantry staples.
 
-2. Each recipe should:
-   - Have: title, mealType ("breakfast" | "lunch" | "dinner" | "snack"),
-           timeMinutes (approx total time),
-           difficulty ("easy" | "medium"),
-           youAlreadyHave (list of ingredients from the fridge list),
-           youNeedToBuy (small list of extra ingredients, can be empty),
-           steps (5–8 short numbered steps).
+ALLOWED STAPLES (assume user has these):
+- Seasonings: salt, pepper, common dried herbs/spices (oregano, basil, thyme, etc.)
+- Oils & fats: olive oil, vegetable oil, butter
+- Basics: flour, sugar, garlic, onions
+- Grains: rice, pasta (if not already in ingredients list)
+- Baking: baking powder, baking soda, vanilla extract (for baked goods only)
+- Vinegar: white vinegar, balsamic vinegar (for dressings/marinades)
 
-3. Also create a shopping list that merges and deduplicates all "youNeedToBuy" items across recipes.
+DO NOT ASSUME:
+- Fresh produce not listed
+- Proteins not listed
+- Specialty ingredients
+- Expensive or exotic items
+- Items that require special equipment
+
+RECIPE REQUIREMENTS:
+1. EXACTLY 6 recipes (no more, no less)
+2. Variety across meal types:
+   - 1-2 breakfast recipes
+   - 2-3 lunch/dinner recipes
+   - 1-2 snack recipes
+3. Variety in difficulty:
+   - 3 easy recipes (10-20 min, simple techniques)
+   - 2 medium recipes (20-40 min, moderate techniques)
+   - 1 can be challenging (40+ min, advanced techniques)
+4. Each recipe MUST use at least 3 ingredients from the available list
+5. Be creative but realistic - actual recipes people would make
+6. Steps should be clear, actionable, and in logical order
+
+RECIPE STRUCTURE:
+Each recipe must have:
+- title: Descriptive, appetizing name
+- mealType: "breakfast" | "lunch" | "dinner" | "snack"
+- timeMinutes: Realistic total time (prep + cook)
+- difficulty: "easy" | "medium" | "hard"
+- servings: Number of servings (typically 2-4)
+- youAlreadyHave: Array of ingredients from the available list used in this recipe
+- youNeedToBuy: Array of additional ingredients needed (can be empty [])
+- steps: Array of 5-8 clear, numbered cooking instructions
+
+SHOPPING LIST:
+Create a deduplicated list of ALL items needed across all recipes (items that appear in youNeedToBuy for any recipe).
 
 RESPONSE FORMAT:
-Return ONLY valid JSON in this exact structure (no comments, no prose):
+Return ONLY valid JSON in this exact structure (no comments, no markdown, no explanations):
 
 {
   "recipes": [
@@ -255,22 +283,30 @@ Return ONLY valid JSON in this exact structure (no comments, no prose):
       "title": "string",
       "mealType": "breakfast" | "lunch" | "dinner" | "snack",
       "timeMinutes": number,
-      "difficulty": "easy" | "medium",
-      "youAlreadyHave": ["string", "..."],
-      "youNeedToBuy": ["string", "..."],
-      "steps": ["Step 1...", "Step 2...", "..."]
+      "difficulty": "easy" | "medium" | "hard",
+      "servings": number,
+      "youAlreadyHave": ["ingredient1", "ingredient2"],
+      "youNeedToBuy": ["ingredient1"],
+      "steps": ["Step 1: Clear instruction", "Step 2: ..."]
     }
   ],
-  "shoppingList": [
-    "item 1",
-    "item 2"
-  ]
+  "shoppingList": ["item1", "item2"]
 }
+
+QUALITY CHECKS:
+- All recipes use available ingredients ✓
+- Recipe count is EXACTLY 6 ✓
+- Steps are clear and actionable ✓
+- Cooking times are realistic ✓
+- No invented ingredients ✓
+- Meal type variety (breakfast, lunch, dinner, snack) ✓
+- Difficulty variety (easy, medium, hard) ✓
 
 RULES:
 - Response MUST be valid JSON that can be parsed by JSON.parse in JavaScript.
 - Do NOT wrap the JSON in backticks or a \`\`\`json code block.
 - Do NOT include any additional text before or after the JSON.
+- Each recipe must have all required fields.
 `;
 
     // --- 4. Call OpenAI ---------------------------------------------------

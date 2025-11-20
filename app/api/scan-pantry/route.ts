@@ -56,30 +56,54 @@ export async function POST(req: NextRequest) {
     }
 
     const prompt = `
-You are helping with pantry / fridge inventory from a photo.
+You are an expert at identifying food items in fridge/pantry photos.
 
-Your job:
-1. Look ONLY at what is clearly visible in the photo.
-2. List simple, everyday ingredient names (English, singular form).
-3. It is better to miss a borderline item than to guess.
-4. Do NOT invent ingredients that are not obviously in the image.
-5. Do NOT infer hidden items (inside boxes, drawers, behind packaging).
-6. Avoid brand names. Use generic names like "yogurt", "ketchup", "mustard".
-7. If you are unsure what something is, skip it.
+TASK:
+Analyze the image and list ALL visible food ingredients with high confidence (80%+).
 
-Special rules:
-- Do NOT output donuts, dumplings, or other baked goods unless they are clearly and unmistakably visible as that item.
-- If a package could contain many things (e.g. a closed box, bag, jar with unreadable label), ignore it or describe it generically (e.g. "cereal", "pasta") ONLY if the label or shape makes it very obvious.
-- Do NOT add extra staples like salt, pepper, oil, sugar unless they are clearly visible in the image.
+RULES:
+1. Include items you can clearly see or identify from packaging/labels
+2. Use simple, generic names (English, singular unless naturally plural)
+3. Avoid brand names → use generic terms:
+   - "Heinz Ketchup" → "ketchup"
+   - "Hellmann's Mayo" → "mayonnaise"
+   - "Chobani Yogurt" → "yogurt"
+4. For unclear items:
+   - If 80%+ confident → include it
+   - If less than 80% → skip it
+5. DO NOT infer hidden contents (closed boxes, drawers, cabinets)
+6. DO NOT add staples not visible (salt, pepper, oil, sugar unless clearly visible)
+
+SPECIAL CASES:
+- Eggs, olives, berries, chips → keep plural (naturally plural items)
+- Partial bottles/containers → include if you can identify them (80%+ confidence)
+- Multiple of same item → list once (e.g., "3 eggs" → "eggs")
+- Condiments in standard bottles → include if identifiable
+- Clear containers → include if contents are visible
+
+WHAT TO SKIP:
+- Blurry/obscured items
+- Unclear packages with no visible labels
+- Items you're less than 80% confident about
+- Non-food items (dishes, containers, decorations)
+- Hidden items (inside drawers, behind other items)
+
+COMMON ITEMS TO WATCH FOR:
+- Eggs (often in cartons, white shells visible)
+- Butter (rectangular package, yellow wrapper)
+- Milk (white container, carton or bottle)
+- Cheese (packaged blocks, slices, or shredded)
+- Yogurt (small containers, often white/colored)
+- Condiments (ketchup, mustard, mayo in standard bottles)
 
 Output format:
 Return a single JSON object with this exact shape and nothing else:
 
 {
   "ingredients": [
-    "ingredient 1",
-    "ingredient 2",
-    "ingredient 3"
+    "ingredient1",
+    "ingredient2",
+    "ingredient3"
   ]
 }
 
@@ -87,6 +111,7 @@ Rules for output:
 - Always return valid JSON.
 - No comments, no explanations, no trailing commas.
 - "ingredients" must be an array of strings.
+- Use singular form unless naturally plural (eggs, olives, berries).
 `;
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
