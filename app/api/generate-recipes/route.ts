@@ -160,6 +160,38 @@ export async function POST(req: NextRequest) {
           console.log(`[generate-recipes] Limited cached recipes from ${cached.recipes.length} to 7`)
         }
         
+        // Filter staples from cached recipes (in case old cache has them)
+        const STAPLES = [
+          'salt', 'pepper', 'oregano', 'basil', 'thyme', 'rosemary', 'paprika', 'cumin', 
+          'garlic powder', 'onion powder', 'cayenne', 'chili powder', 'curry powder',
+          'olive oil', 'vegetable oil', 'canola oil', 'cooking oil', 'oil', 'butter', 
+          'cooking spray', 'flour', 'sugar', 'brown sugar', 'garlic', 'onion', 'onions',
+          'vinegar', 'white vinegar', 'balsamic vinegar', 'apple cider vinegar',
+          'rice', 'pasta', 'bread', 'baking powder', 'baking soda', 'vanilla extract', 
+          'vanilla', 'cornstarch', 'milk', 'cream', 'heavy cream', 'half and half',
+          'black pepper', 'white pepper', 'sea salt', 'kosher salt', 'table salt'
+        ]
+        
+        const isStaple = (item: string): boolean => {
+          const normalized = item.toLowerCase().trim()
+          return STAPLES.some(staple => normalized === staple || normalized.includes(staple))
+        }
+
+        // Filter staples from cached recipes
+        cachedRecipes = cachedRecipes.map((recipe: any) => {
+          if (Array.isArray(recipe.youNeedToBuy)) {
+            recipe.youNeedToBuy = recipe.youNeedToBuy.filter((item: string) => !isStaple(item))
+          }
+          return recipe
+        })
+
+        // Filter staples from cached shopping list
+        if (cached.shoppingList && Array.isArray(cached.shoppingList)) {
+          cached.shoppingList = [...new Set(
+            cached.shoppingList.filter((item: string) => !isStaple(item))
+          )]
+        }
+        
         // Ensure cached recipes have images (generate if missing)
         const cachedRecipesWithImages = await Promise.all(
           cachedRecipes.map(async (recipe: any) => {
