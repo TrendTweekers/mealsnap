@@ -56,6 +56,8 @@ export default function AdminPage() {
   const [profitData, setProfitData] = useState<any>(null)
   const [profitLoading, setProfitLoading] = useState(false)
   const [profitPeriod, setProfitPeriod] = useState<'today' | 'week' | 'month' | 'alltime'>('today')
+  const [costData, setCostData] = useState<any>(null)
+  const [costLoading, setCostLoading] = useState(false)
 
   useEffect(() => {
     // Only check localStorage on mount - no API call to avoid race condition
@@ -81,10 +83,11 @@ export default function AdminPage() {
       setUserPlan(plan || 'free')
     }
     
-    // Load ingredient stats, general stats, and profit data
+    // Load ingredient stats, general stats, profit data, and cost data
     fetchIngredientStats()
     fetchStats()
     fetchProfitData('today')
+    fetchCostData()
   }
 
   const fetchStats = async () => {
@@ -579,14 +582,151 @@ ${healthCheck.checks.map((check: any) =>
             </div>
           )}
 
-          {/* Financial Snapshot - TEMPORARILY DISABLED */}
-          <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-4">
-              💰 Financial Dashboard
-            </h2>
-            <p className="text-gray-400">
-              Coming soon - Dashboard under maintenance
-            </p>
+          {/* Cost Tracking Dashboard */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <DollarSign className="w-6 h-6 text-emerald-400" />
+                Cost Tracking
+              </h2>
+              <button
+                onClick={fetchCostData}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                title="Refresh cost data"
+              >
+                <RefreshCw className={`w-5 h-5 text-emerald-400 ${costLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            {costLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+              </div>
+            ) : costData ? (
+              <div className="space-y-6">
+                {/* Today's Costs */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Today's Costs</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scans (GPT-4 Vision)</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.today.openai_scan.toFixed(4)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipes (GPT-4o)</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.today.openai_recipes.toFixed(4)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images (DALL-E)</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.today.openai_images.toFixed(4)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Infrastructure</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.today.infrastructure.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-300">Total Today</span>
+                      <span className="text-2xl font-mono font-bold text-emerald-400">${costData.costs.today.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* This Month's Costs */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">This Month's Costs</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scans</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.openai_scan.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipes</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.openai_recipes.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.openai_images.toFixed(2)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Infrastructure</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.infrastructure.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-slate-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-slate-300">Total This Month</span>
+                      <span className="text-2xl font-mono font-bold text-emerald-400">${costData.costs.month.total.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DALL-E Image Stats */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3 flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    DALL-E Image Generation Stats
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images Generated</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{costData.imageStats.generated}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images Cached</div>
+                      <div className="text-xl font-mono font-bold text-emerald-400">{costData.imageStats.cached}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Cache Hit Rate</div>
+                      <div className="text-xl font-mono font-bold text-emerald-400">{costData.imageStats.cacheHitRate.toFixed(0)}%</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Est. Savings</div>
+                      <div className="text-xl font-mono font-bold text-emerald-400">${costData.imageStats.estimatedSavings.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-3 text-xs text-slate-400">
+                    💡 All generated images are cached, so subsequent requests use cached images (saving $0.04 per reuse)
+                  </div>
+                </div>
+
+                {/* Cost Breakdown */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Cost Breakdown</div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">OpenAI API (Scans + Recipes + Images):</span>
+                      <span className="font-mono font-bold text-[#F1F5F9]">
+                        ${(costData.costs.month.openai_scan + costData.costs.month.openai_recipes + costData.costs.month.openai_images).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="pl-4 space-y-1 text-xs text-slate-500">
+                      <div className="flex justify-between">
+                        <span>Scans (GPT-4 Vision):</span>
+                        <span className="font-mono">${costData.costs.month.openai_scan.toFixed(4)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Recipes (GPT-4o):</span>
+                        <span className="font-mono">${costData.costs.month.openai_recipes.toFixed(4)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Images (DALL-E 3):</span>
+                        <span className="font-mono">${costData.costs.month.openai_images.toFixed(4)}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-700">
+                      <span className="text-slate-400">Infrastructure (Vercel Pro + KV):</span>
+                      <span className="font-mono font-bold text-[#F1F5F9]">${costData.costs.month.infrastructure.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400">
+                No cost data available yet
+              </div>
+            )}
           </div>
 
           {/* Statistics Dashboard */}
