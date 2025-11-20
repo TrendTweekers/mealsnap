@@ -16,6 +16,7 @@ type Recipe = {
   youAlreadyHave: string[]
   youNeedToBuy: string[]
   steps: string[]
+  imageUrl?: string // DALL-E generated image URL
 }
 
 type ShoppingItem = {
@@ -1301,7 +1302,7 @@ export default function MealSnap() {
                   
                   <p className="text-lg text-muted-foreground max-w-xl">
                     Snap a photo of your fridge, get instant recipe ideas, and never wonder "what's for dinner" again.{" "}
-                    <span className="text-primary font-semibold">6-8 recipes</span> in seconds.{" "}
+                    <span className="text-primary font-semibold">5-7 recipes</span> in seconds.{" "}
                     Missing ingredients? Add to Instacart in <span className="text-accent font-semibold">1 tap</span>.
                   </p>
                   
@@ -1549,7 +1550,7 @@ export default function MealSnap() {
                   </div>
                   <h3 className="text-2xl font-bold text-[#E6FFFF] mb-3 tracking-tight">Get Recipes</h3>
                   <p className="text-[#B8D4D4] leading-relaxed font-medium">
-                    Receive 6-8 personalized recipes you can make right now with what you have
+                    Receive 5-7 personalized recipes you can make right now with what you have
                   </p>
                 </div>
               </div>
@@ -1587,7 +1588,7 @@ export default function MealSnap() {
                   </div>
                   <h3 className="font-bold text-[#E6FFFF] text-xl mb-3 tracking-tight">AI Recipe Generation</h3>
                   <p className="text-base text-[#B8D4D4] leading-relaxed font-medium">
-                    Get 6-8 personalized recipes based on your available ingredients in seconds.
+                    Get 5-7 personalized recipes based on your available ingredients in seconds.
                   </p>
                 </div>
 
@@ -2412,39 +2413,66 @@ function RecipeCard({
 
   const needToBuy = recipe.youNeedToBuy || []
   const hasMissingItems = needToBuy.length > 0
+  
+  // Fallback image if recipe doesn't have one
+  const getFallbackImage = (mealType: string): string => {
+    const fallbacks: Record<string, string> = {
+      breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&q=80',
+      lunch: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+      dinner: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',
+      snack: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=800&q=80',
+    }
+    return fallbacks[mealType.toLowerCase()] || fallbacks.lunch
+  }
+
+  const imageUrl = recipe.imageUrl || getFallbackImage(recipe.mealType)
 
   return (
-    <div className="bg-[#151828]/40 backdrop-blur-sm rounded-3xl border border-[#1F2332] shadow-xl overflow-hidden hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-1">
-      <div className={`bg-gradient-to-r ${mealColors[recipe.mealType] || mealColors.lunch} p-6 sm:p-8 text-white relative`}>
-        {/* Subtle pattern overlay */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-          backgroundSize: '24px 24px'
-        }}></div>
+    <div className="group relative overflow-hidden rounded-3xl bg-[#151828]/40 backdrop-blur-sm border border-[#1F2332] shadow-xl hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-1">
+      {/* Recipe Image */}
+      <div className="relative h-64 overflow-hidden">
+        <img 
+          src={imageUrl}
+          alt={recipe.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+        />
         
-        <button
-          onClick={() => onToggleFavorite(recipe)}
-          className="absolute top-4 right-4 w-11 h-11 bg-white/25 hover:bg-white/35 backdrop-blur-sm rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 z-10"
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        >
-          <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''} transition-all duration-300`} />
-        </button>
+        {/* Overlay gradient for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
         
-        <div className="mb-4 relative z-10">
-          <span className="inline-block px-4 py-1.5 bg-white/30 backdrop-blur-sm rounded-full text-xs font-bold uppercase tracking-wide mb-4 border border-white/40 shadow-sm">
+        {/* Meal type badge */}
+        <div className="absolute top-4 left-4">
+          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide bg-white/90 text-gray-800 backdrop-blur-sm border border-white/50 shadow-md">
             {recipe.mealType}
           </span>
-          <h3 className="text-2xl sm:text-3xl font-bold leading-tight">{recipe.title}</h3>
         </div>
         
-        <div className="flex items-center gap-4 flex-wrap relative z-10">
-          <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/30 shadow-sm">
-            <Clock className="w-4 h-4" />
-            <span className="text-sm font-bold">{recipe.timeMinutes} min</span>
-          </div>
-          <div className="flex items-center gap-2 bg-white/25 backdrop-blur-sm px-4 py-2.5 rounded-xl border border-white/30 shadow-sm">
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-sm font-bold capitalize">{recipe.difficulty}</span>
+        {/* Favorite button */}
+        <button 
+          onClick={() => onToggleFavorite(recipe)}
+          className="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-300 hover:scale-110 shadow-md z-10"
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Heart className={`w-5 h-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+        </button>
+        
+        {/* Title overlay at bottom of image */}
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <h3 className="text-2xl sm:text-3xl font-bold text-white line-clamp-2 leading-tight drop-shadow-lg">
+            {recipe.title}
+          </h3>
+          
+          {/* Time and difficulty badges */}
+          <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/30">
+              <Clock className="w-4 h-4 text-white" />
+              <span className="text-sm font-semibold text-white">{recipe.timeMinutes} min</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-lg border border-white/30">
+              <TrendingUp className="w-4 h-4 text-white" />
+              <span className="text-sm font-semibold text-white capitalize">{recipe.difficulty}</span>
+            </div>
           </div>
         </div>
       </div>

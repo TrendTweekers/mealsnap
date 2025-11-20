@@ -4,6 +4,78 @@ import { createHash } from 'crypto';
 
 const apiKey = process.env.OPENAI_API_KEY;
 
+// Generate recipe image using DALL-E 3
+async function generateRecipeImage(recipeName: string, mealType: string): Promise<string | null> {
+  if (!apiKey) {
+    console.warn('[generate-recipes] No OpenAI API key for image generation')
+    return null
+  }
+
+  const prompt = `A professional, appetizing photograph of ${recipeName}. The dish should be beautifully plated on a clean white plate, with natural lighting, shallow depth of field, and vibrant colors. Top-down view, food photography style, magazine quality.`
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+      }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('[generate-recipes] DALL-E API error:', response.status, errorText)
+      return null
+    }
+
+    const data = await response.json()
+    const imageUrl = data.data?.[0]?.url
+
+    if (imageUrl) {
+      // Track image generation cost (non-blocking)
+      try {
+        // DALL-E 3 standard: $0.040 per image
+        const cost = 0.040
+        const timestamp = new Date().toISOString()
+        const dateKey = timestamp.split('T')[0]
+        const monthKey = timestamp.substring(0, 7)
+        
+        await kv.hincrbyfloat(`costs:daily:${dateKey}`, 'openai_images', cost)
+        await kv.hincrbyfloat(`costs:monthly:${monthKey}`, 'openai_images', cost)
+        await kv.hincrbyfloat('costs:alltime', 'openai_images', cost)
+        
+        console.log(`[Cost Tracking] Image gen cost: $${cost.toFixed(4)} for: ${recipeName}`)
+      } catch (costErr) {
+        console.warn('[Cost Tracking] Failed to track image cost:', costErr)
+      }
+    }
+
+    return imageUrl || null
+  } catch (error) {
+    console.error('[generate-recipes] Image generation error:', error)
+    return null
+  }
+}
+
+// Fallback images if DALL-E generation fails
+function getFallbackImage(mealType: string): string {
+  const fallbacks: Record<string, string> = {
+    breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?w=800&q=80',
+    lunch: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&q=80',
+    dinner: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&q=80',
+    snack: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=800&q=80',
+  }
+  
+  return fallbacks[mealType.toLowerCase()] || fallbacks.lunch
+}
+
 if (!apiKey) {
   console.error("[generate-recipes] Missing OPENAI_API_KEY in env.");
 }
@@ -81,6 +153,42 @@ export async function POST(req: NextRequest) {
         isCached = true
         console.log(`[generate-recipes] Cache HIT for key: ${cacheKey.substring(0, 8)}...`)
         
+        // Limit cached recipes to 7 max (in case old cache has more)
+        let cachedRecipes = cached.recipes || []
+        if (cachedRecipes.length > 7) {
+          cachedRecipes = cachedRecipes.slice(0, 7)
+          console.log(`[generate-recipes] Limited cached recipes from ${cached.recipes.length} to 7`)
+        }
+        
+        // Ensure cached recipes have images (generate if missing)
+        const cachedRecipesWithImages = await Promise.all(
+          cachedRecipes.map(async (recipe: any) => {
+            if (recipe.imageUrl) {
+              return recipe // Already has image
+            }
+            
+            // Generate image for cached recipe without one
+            const imageCacheKey = `recipe-image:${recipe.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+            try {
+              const cachedImage = await kv.get(imageCacheKey)
+              if (cachedImage) {
+                return { ...recipe, imageUrl: cachedImage }
+              }
+              
+              // Generate new image
+              const imageUrl = await generateRecipeImage(recipe.title, recipe.mealType)
+              if (imageUrl) {
+                await kv.set(imageCacheKey, imageUrl, { ex: 7776000 })
+                return { ...recipe, imageUrl }
+              }
+            } catch (err) {
+              console.warn(`[generate-recipes] Failed to get image for cached recipe ${recipe.title}:`, err)
+            }
+            
+            return { ...recipe, imageUrl: getFallbackImage(recipe.mealType) }
+          })
+        )
+        
         // Track cache hit (non-blocking)
         try {
           fetch(`${req.nextUrl.origin}/api/track-recipe-generation`, {
@@ -88,7 +196,7 @@ export async function POST(req: NextRequest) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               userId: userId || 'anonymous',
-              recipeCount: cached.recipes?.length || 0,
+              recipeCount: cachedRecipesWithImages.length,
               ingredientCount: ingredients.length,
               success: true,
               cached: true,
@@ -99,7 +207,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
           {
             ok: true,
-            recipes: cached.recipes || [],
+            recipes: cachedRecipesWithImages,
             shoppingList: cached.shoppingList || [],
             cached: true, // Indicate this was from cache
           },
@@ -123,7 +231,7 @@ INGREDIENTS:
 ${ingredients.join(", ")}
 
 TASK:
-1. Create 6–8 very simple, realistic recipes using ONLY these ingredients plus very basic pantry staples:
+1. Create EXACTLY 6 recipes (no more, no less). Ensure variety across meal types (breakfast, lunch, dinner, snack). Use ONLY these ingredients plus very basic pantry staples:
    - Allowed extra staples: salt, pepper, oil, water, sugar, basic dried herbs.
    - DO NOT invent ingredients that are clearly not available (no "Silesian dumplings" etc.).
    - Aim for variety: include breakfast, lunch, dinner, and snack options when possible.
@@ -275,6 +383,12 @@ RULES:
       );
     }
 
+    // Limit recipes to maximum 7 (in case LLM generates more)
+    if (parsed.recipes.length > 7) {
+      console.warn(`[generate-recipes] LLM generated ${parsed.recipes.length} recipes, limiting to 7`)
+      parsed.recipes = parsed.recipes.slice(0, 7)
+    }
+
     // Track OpenAI costs (non-blocking) - only if not cached
     if (!isCached) {
       try {
@@ -338,26 +452,66 @@ RULES:
       // Silent fail
     }
 
-    // --- 6. Cache the results for 7 days ----------------------------------
+    // --- 6. Generate images for recipes (with caching) -------------------
+    const recipesWithImages = await Promise.all(
+      parsed.recipes.map(async (recipe: any) => {
+        // Check cache first
+        const imageCacheKey = `recipe-image:${recipe.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+        
+        try {
+          const cachedImage = await kv.get(imageCacheKey)
+          if (cachedImage) {
+            console.log(`[generate-recipes] Image cache HIT for: ${recipe.title}`)
+            return { ...recipe, imageUrl: cachedImage }
+          }
+        } catch (cacheErr) {
+          console.warn('[generate-recipes] Image cache check failed:', cacheErr)
+        }
+
+        // Generate new image
+        try {
+          const imageUrl = await generateRecipeImage(recipe.title, recipe.mealType)
+          
+          if (imageUrl) {
+            // Cache for 90 days
+            try {
+              await kv.set(imageCacheKey, imageUrl, { ex: 7776000 })
+              console.log(`[generate-recipes] Generated and cached image for: ${recipe.title}`)
+            } catch (cacheErr) {
+              console.warn('[generate-recipes] Failed to cache image:', cacheErr)
+            }
+            
+            return { ...recipe, imageUrl }
+          }
+        } catch (imageErr) {
+          console.error(`[generate-recipes] Failed to generate image for ${recipe.title}:`, imageErr)
+        }
+
+        // Fallback to placeholder
+        return { ...recipe, imageUrl: getFallbackImage(recipe.mealType) }
+      })
+    )
+
+    // --- 8. Cache the results for 7 days ----------------------------------
     try {
       await kv.set(cacheRedisKey, {
-        recipes: parsed.recipes,
+        recipes: recipesWithImages,
         shoppingList: parsed.shoppingList,
         ingredients: sortedIngredients,
         createdAt: new Date().toISOString(),
       }, { ex: 604800 }) // Expire after 7 days (604800 seconds)
       
-      console.log(`[generate-recipes] Cached recipes for key: ${cacheKey.substring(0, 8)}...`)
+      console.log(`[generate-recipes] Cached ${recipesWithImages.length} recipes for key: ${cacheKey.substring(0, 8)}...`)
     } catch (cacheError) {
       // If caching fails, still return results (graceful degradation)
       console.warn('[generate-recipes] Failed to cache results:', cacheError)
     }
 
-    // --- 7. Return normalized payload -------------------------------------
+    // --- 9. Return normalized payload -------------------------------------
     return NextResponse.json(
       {
         ok: true,
-        recipes: parsed.recipes,
+        recipes: recipesWithImages,
         shoppingList: parsed.shoppingList,
         cached: false, // Indicate this was freshly generated
       },

@@ -14,6 +14,8 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '10mb',
     },
+    // Disable Turbopack - use Webpack instead (fixes admin panel JSX parsing issues)
+    turbo: false,
   },
   // Security headers
   async headers() {
