@@ -1012,7 +1012,7 @@ export default function ChefAI() {
             }}
             className="flex items-center gap-2 hover:opacity-90 transition-all duration-200 hover:scale-[1.02]"
           >
-            <BrandLogo size="md" withGlow />
+            <BrandLogo size="sm" withGlow />
             <span className="text-xl font-semibold tracking-tight text-white">
               ChefAI
             </span>
@@ -1073,7 +1073,7 @@ export default function ChefAI() {
               variant="hero"
               size="sm"
               onClick={() => setCurrentView('home')}
-              className="bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white font-bold shadow-lg hover:scale-[1.03] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white font-bold shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] transition-all duration-150 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               <Camera className="w-4 h-4 mr-1" />
               New Scan
@@ -1429,7 +1429,7 @@ export default function ChefAI() {
               <div className="flex gap-2">
                 <button
                   onClick={handleInstall}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl px-4 py-2 font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-[1.03] duration-150 touch-manipulation text-sm focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl px-4 py-2 font-semibold transition-all shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] duration-150 touch-manipulation text-sm focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Install
                 </button>
@@ -1484,7 +1484,7 @@ export default function ChefAI() {
                   
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-slate-900/50 to-transparent -z-10 rounded-lg"></div>
-                    <h1 className="text-5xl lg:text-7xl font-bold leading-tight relative z-10">
+                    <h1 className="text-5xl lg:text-7xl font-bold leading-tight relative z-10" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.4)" }}>
                       ChefAI – Your AI Chef{" "}
                       <span className="text-gradient">for Instant Recipes</span>
                     </h1>
@@ -1714,7 +1714,7 @@ export default function ChefAI() {
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-8 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-2 group">
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">01</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
                       <Camera className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -1728,7 +1728,7 @@ export default function ChefAI() {
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-8 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-2 group">
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">02</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
                       <Sparkles className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -1742,7 +1742,7 @@ export default function ChefAI() {
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-8 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-2 group">
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">03</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
-                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/15">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20">
                       <UtensilsCrossed className="w-6 h-6 text-white" />
                     </div>
                   </div>
@@ -1869,7 +1869,7 @@ export default function ChefAI() {
               <p className="text-[#B8D4D4] mb-6 text-lg">Save recipes you love!</p>
               <button
                 onClick={() => setCurrentView('home')}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-2xl font-bold transition-all duration-150 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 <Camera className="w-5 h-5" />
                 Start Scanning
@@ -2062,7 +2062,7 @@ export default function ChefAI() {
             <button
               onClick={handleGenerateRecipes}
               disabled={isLoading || ingredients.length === 0}
-              className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3 shadow-xl hover:shadow-2xl hover:scale-[1.02] active:scale-[0.98] min-h-[56px]"
+              className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white rounded-2xl px-6 py-4 font-bold text-lg transition-all duration-150 flex items-center justify-center gap-3 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] active:scale-[0.98] min-h-[56px] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               {isLoading ? (
                 <>
@@ -2095,7 +2095,7 @@ export default function ChefAI() {
         <div className="flex items-center gap-3 mb-6">
           <button
             onClick={() => setCurrentView('home')}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-base"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl font-bold transition-all duration-150 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] text-base focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
           >
             <Camera className="w-5 h-5" />
             <span>New Scan</span>
@@ -2222,7 +2222,7 @@ export default function ChefAI() {
                     console.error('Failed to track Instacart Clicked:', err)
                   }
                 }}
-                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 text-center block"
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-2xl px-6 py-4 font-bold transition-all duration-150 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] text-center block focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 Add to Instacart
               </a>
@@ -2234,7 +2234,7 @@ export default function ChefAI() {
       {/* Floating Action Button */}
       <button
         onClick={() => setCurrentView('home')}
-        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 z-50"
+        className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-full shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] flex items-center justify-center transition-all duration-150 hover:scale-110 active:scale-95 z-50 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
         aria-label="New Scan"
       >
         <Camera className="w-7 h-7" />
@@ -2267,7 +2267,7 @@ export default function ChefAI() {
             <div className="space-y-3">
               <button
                 onClick={handleShare}
-                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-2xl px-6 py-4 font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-2xl px-6 py-4 font-bold text-lg transition-all duration-150 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] flex items-center justify-center gap-2 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 <span>Share Recipe</span>
               </button>
@@ -2318,7 +2318,7 @@ export default function ChefAI() {
               />
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl px-6 py-3 font-bold transition-all duration-150 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 Get Recipes Emailed
               </button>
@@ -2391,7 +2391,7 @@ export default function ChefAI() {
               />
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-6 py-3 font-bold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 z-[72] relative"
+                className="w-full bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl px-6 py-3 font-bold transition-all duration-150 shadow-[0_2px_8px_rgba(16,185,129,0.25)] hover:shadow-[0_3px_12px_rgba(16,185,129,0.35)] hover:scale-[1.03] z-[72] relative focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
               >
                 Get 2 More Scans
               </button>
