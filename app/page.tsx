@@ -1012,13 +1012,12 @@ export default function ChefAI() {
             }}
             className="flex items-center gap-2 hover:opacity-90 transition-all duration-200 hover:scale-[1.02]"
           >
-            <img 
-              src="/apple-icon.png" 
-              alt="ChefAI Logo" 
-              className="h-7 w-7 object-contain"
-              style={{ minWidth: '28px', minHeight: '28px' }}
+            <img
+              src="/apple-icon.png"
+              alt="ChefAI logo"
+              className="h-8 w-8 rounded-2xl border border-emerald-400/70 bg-slate-950/80 p-[2px] shadow-[0_0_16px_rgba(45,212,191,0.4)]"
             />
-            <span className="text-xl font-bold text-gradient" style={{ fontWeight: 700 }}>ChefAI</span>
+            <span className="text-xl font-bold text-gradient">ChefAI</span>
           </a>
 
           <div className="hidden md:flex items-center gap-6">
@@ -1737,7 +1736,13 @@ export default function ChefAI() {
                 <div className="bg-[#151828]/40 backdrop-blur-sm rounded-2xl p-8 border border-[#1F2332] hover:border-[#2A2F45] transition-all duration-300 hover:-translate-y-2 group">
                   <div className="text-6xl font-black bg-gradient-to-r from-emerald-400 to-green-400 bg-clip-text text-transparent mb-4">03</div>
                   <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-500 rounded-2xl flex items-center justify-center mb-6 transform transition-transform duration-300 group-hover:scale-110 shadow-md">
-                    <MealSnapLogo className="w-8 h-8" />
+                    <div className="inline-flex items-center justify-center rounded-2xl bg-emerald-500/15 p-2">
+                      <img
+                        src="/apple-icon.png"
+                        alt="ChefAI logo"
+                        className="h-8 w-8"
+                      />
+                    </div>
                   </div>
                   <h3 className="text-2xl font-bold text-[#E6FFFF] mb-3 tracking-tight">Get Recipes</h3>
                   <p className="text-[#B8D4D4] leading-relaxed font-medium">
