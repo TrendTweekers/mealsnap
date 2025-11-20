@@ -497,6 +497,63 @@ ${healthCheck.checks.map((check: any) =>
       setCostLoading(false)
     }
   }
+  
+  const fetchUserAnalytics = async () => {
+    try {
+      setUserAnalyticsLoading(true)
+      const res = await fetch('/api/admin/user-analytics?localAuth=true')
+      if (!res.ok) throw new Error(`User analytics fetch failed: ${res.status}`)
+      const data = await res.json()
+      if (data.ok) {
+        setUserAnalytics(data.analytics)
+      } else {
+        throw new Error(data.error || 'Failed to fetch user analytics')
+      }
+    } catch (err) {
+      console.error('User analytics error:', err)
+      setUserAnalytics(null)
+    } finally {
+      setUserAnalyticsLoading(false)
+    }
+  }
+  
+  const fetchRecipePerformance = async () => {
+    try {
+      setRecipePerformanceLoading(true)
+      const res = await fetch('/api/admin/recipe-performance?localAuth=true')
+      if (!res.ok) throw new Error(`Recipe performance fetch failed: ${res.status}`)
+      const data = await res.json()
+      if (data.ok) {
+        setRecipePerformance(data.performance)
+      } else {
+        throw new Error(data.error || 'Failed to fetch recipe performance')
+      }
+    } catch (err) {
+      console.error('Recipe performance error:', err)
+      setRecipePerformance(null)
+    } finally {
+      setRecipePerformanceLoading(false)
+    }
+  }
+  
+  const fetchErrorData = async () => {
+    try {
+      setErrorDataLoading(true)
+      const res = await fetch('/api/admin/errors?localAuth=true')
+      if (!res.ok) throw new Error(`Error data fetch failed: ${res.status}`)
+      const data = await res.json()
+      if (data.ok) {
+        setErrorData(data.errors)
+      } else {
+        throw new Error(data.error || 'Failed to fetch error data')
+      }
+    } catch (err) {
+      console.error('Error data error:', err)
+      setErrorData(null)
+    } finally {
+      setErrorDataLoading(false)
+    }
+  }
 
   // Password protection screen
   if (authLoading) {
@@ -1385,6 +1442,193 @@ ${healthCheck.checks.map((check: any) =>
                 <Brain className="w-5 h-5" />
                 Load Training Data
               </button>
+            )}
+          </div>
+
+          {/* User Behavior Analytics */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <Activity className="w-6 h-6 text-blue-400" />
+                User Behavior Analytics
+              </h2>
+              <button
+                onClick={fetchUserAnalytics}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                title="Refresh analytics"
+              >
+                <RefreshCw className={`w-5 h-5 text-blue-400 ${userAnalyticsLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            {userAnalyticsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-400" />
+              </div>
+            ) : userAnalytics ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Favorites</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{userAnalytics.favorites.total}</div>
+                  <div className="text-xs text-slate-400 mt-1">{userAnalytics.favorites.today} today ({userAnalytics.favorites.rate}%)</div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Shares</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{userAnalytics.shares.total}</div>
+                  <div className="text-xs text-slate-400 mt-1">{userAnalytics.shares.today} today ({userAnalytics.shares.rate}%)</div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Instacart</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{userAnalytics.instacart.total}</div>
+                  <div className="text-xs text-slate-400 mt-1">{userAnalytics.instacart.today} today ({userAnalytics.instacart.rate}%)</div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Emails</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{userAnalytics.emails.total}</div>
+                  <div className="text-xs text-slate-400 mt-1">{userAnalytics.emails.today} today ({userAnalytics.emails.captureRate}%)</div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">PWA Installs</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{userAnalytics.pwa.total}</div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Upgrade Clicks</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{userAnalytics.upgrades.total}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400">
+                No analytics data available yet
+              </div>
+            )}
+          </div>
+
+          {/* Recipe Performance */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <TrendingUp className="w-6 h-6 text-purple-400" />
+                Recipe Performance
+              </h2>
+              <button
+                onClick={fetchRecipePerformance}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                title="Refresh performance"
+              >
+                <RefreshCw className={`w-5 h-5 text-purple-400 ${recipePerformanceLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            {recipePerformanceLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+              </div>
+            ) : recipePerformance ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Cache Hits</div>
+                    <div className="text-2xl font-mono font-bold text-emerald-400">{recipePerformance.totalCacheHits}</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Unique Recipes</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{recipePerformance.totalUniqueRecipes}</div>
+                  </div>
+                </div>
+                
+                {recipePerformance.mostFavorited && recipePerformance.mostFavorited.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold text-slate-300 mb-3">Most Favorited Recipes</div>
+                    <div className="space-y-2">
+                      {recipePerformance.mostFavorited.slice(0, 5).map((recipe: any, index: number) => (
+                        <div key={index} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between">
+                          <span className="text-[#F1F5F9] capitalize">{recipe.title}</span>
+                          <span className="text-emerald-400 font-mono font-bold">{recipe.favorites} ❤️</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {recipePerformance.mostShared && recipePerformance.mostShared.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold text-slate-300 mb-3 mt-4">Most Shared Recipes</div>
+                    <div className="space-y-2">
+                      {recipePerformance.mostShared.slice(0, 5).map((recipe: any, index: number) => (
+                        <div key={index} className="bg-slate-800 border border-slate-700 rounded-lg p-3 flex items-center justify-between">
+                          <span className="text-[#F1F5F9] capitalize">{recipe.title}</span>
+                          <span className="text-blue-400 font-mono font-bold">{recipe.shares} 🔗</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400">
+                No recipe performance data available yet
+              </div>
+            )}
+          </div>
+
+          {/* Error Tracking */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <AlertCircle className="w-6 h-6 text-red-400" />
+                Error Tracking
+              </h2>
+              <button
+                onClick={fetchErrorData}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                title="Refresh errors"
+              >
+                <RefreshCw className={`w-5 h-5 text-red-400 ${errorDataLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            {errorDataLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-red-400" />
+              </div>
+            ) : errorData ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Errors</div>
+                    <div className="text-2xl font-mono font-bold text-red-400">{errorData.total}</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scan Errors</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{errorData.scan}</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipe Errors</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{errorData.recipes}</div>
+                  </div>
+                </div>
+                
+                {errorData.recent && errorData.recent.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold text-slate-300 mb-3">Recent Errors</div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {errorData.recent.map((error: any, index: number) => (
+                        <div key={index} className="bg-slate-800 border border-slate-700 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-red-400 font-semibold text-sm">{error.type || 'Unknown'}</span>
+                            <span className="text-xs text-slate-400">{new Date(error.timestamp).toLocaleString()}</span>
+                          </div>
+                          <div className="text-xs text-slate-400">Location: {error.location || 'unknown'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400">
+                No errors tracked yet
+              </div>
             )}
           </div>
 
