@@ -162,15 +162,18 @@ export async function GET(req: NextRequest) {
         } else if (endpoint.name === 'generate-recipes') {
           const total = await kv.get<number>('stats:recipes:total') || 0
           const successful = await kv.get<number>('stats:recipes:success') || 0
+          const cached = await kv.get<number>('stats:recipes:cached') || 0
           const todayCount = await kv.get<number>(`stats:recipes:daily:${todayDate}`) || 0
           totalToday = todayCount
           successRate = total > 0 ? `${Math.round((successful / total) * 100)}%` : 'N/A'
           
-          // Get cache hit rate
-          const cached = await kv.get<number>('stats:recipes:cached') || 0
-          if (total > 0) {
-            const cacheRate = Math.round((cached / total) * 100)
+          // Get cache hit rate (cached requests / total requests including cached)
+          const totalRequests = total + cached // Total includes both new and cached
+          if (totalRequests > 0) {
+            const cacheRate = Math.round((cached / totalRequests) * 100)
             successRate += ` | Cache: ${cacheRate}%`
+          } else {
+            successRate += ` | Cache: 0%`
           }
         }
       } catch {
@@ -245,7 +248,7 @@ export async function GET(req: NextRequest) {
     const todayDate = new Date().toISOString().split('T')[0]
     const totalScans = await kv.get<number>('stats:scans:total') || 0
     const totalRecipes = await kv.get<number>('stats:recipes:total') || 0
-    const uniqueUsers = await kv.get<number>('stats:unique_users') || 0
+    const uniqueUsers = await kv.scard('stats:users:unique') || 0 // Use scard for set count
     const todayScans = await kv.get<number>(`stats:scans:daily:${todayDate}`) || 0
     const todayRecipes = await kv.get<number>(`stats:recipes:daily:${todayDate}`) || 0
     

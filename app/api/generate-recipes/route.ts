@@ -231,20 +231,23 @@ ${ingredients.join(", ")}
 TASK:
 Create EXACTLY 6 recipes using ONLY the available ingredients plus common pantry staples.
 
-ALLOWED STAPLES (assume user has these):
-- Seasonings: salt, pepper, common dried herbs/spices (oregano, basil, thyme, etc.)
-- Oils & fats: olive oil, vegetable oil, butter
-- Basics: flour, sugar, garlic, onions
-- Grains: rice, pasta (if not already in ingredients list)
-- Baking: baking powder, baking soda, vanilla extract (for baked goods only)
-- Vinegar: white vinegar, balsamic vinegar (for dressings/marinades)
+ALLOWED STAPLES (assume user has these - NEVER include these in youNeedToBuy):
+- Seasonings: salt, pepper, ALL common dried herbs/spices (oregano, basil, thyme, rosemary, paprika, cumin, etc.)
+- Oils & fats: olive oil, vegetable oil, butter, cooking spray
+- Basics: flour, sugar, garlic, onions, vinegar (white, balsamic, apple cider)
+- Grains: rice, pasta, bread (if not already in ingredients list)
+- Baking: baking powder, baking soda, vanilla extract, cornstarch (for baked goods only)
+- Dairy basics: milk (if not in ingredients), cream (for cooking)
 
-DO NOT ASSUME:
+CRITICAL RULE: These staples MUST NEVER appear in "youNeedToBuy" - they are assumed available!
+
+DO NOT ASSUME (include in youNeedToBuy if needed):
 - Fresh produce not listed
-- Proteins not listed
-- Specialty ingredients
+- Proteins not listed (meat, fish, tofu)
+- Specialty ingredients (exotic spices, specialty cheeses)
 - Expensive or exotic items
 - Items that require special equipment
+- Fresh herbs (use dried herbs instead)
 
 RECIPE REQUIREMENTS:
 1. EXACTLY 6 recipes (no more, no less)
@@ -269,10 +272,27 @@ Each recipe must have:
 - servings: Number of servings (typically 2-4)
 - youAlreadyHave: Array of ingredients from the available list used in this recipe
 - youNeedToBuy: Array of additional ingredients needed (can be empty [])
+  CRITICAL: NEVER include staples in youNeedToBuy! Staples listed above are assumed available.
+  Only include: fresh produce, proteins, specialty items NOT in the available ingredients list.
 - steps: Array of 5-8 clear, numbered cooking instructions
 
 SHOPPING LIST:
 Create a deduplicated list of ALL items needed across all recipes (items that appear in youNeedToBuy for any recipe).
+
+IMPORTANT - STAPLES FILTERING:
+Before creating the shopping list, REMOVE any staples from youNeedToBuy arrays:
+- Remove: salt, pepper, oregano, basil, thyme, rosemary, paprika, cumin, and ALL spices/herbs
+- Remove: olive oil, vegetable oil, butter, cooking spray
+- Remove: flour, sugar, garlic, onions, vinegar
+- Remove: rice, pasta, bread (unless specifically needed and not in ingredients)
+- Remove: baking powder, baking soda, vanilla extract, cornstarch
+- Remove: milk, cream (unless specifically needed for recipe)
+
+Only include in shopping list:
+- Fresh produce not in available ingredients
+- Proteins not in available ingredients (meat, fish, tofu, etc.)
+- Specialty items (exotic cheeses, specialty sauces, etc.)
+- Items that are clearly NOT common pantry staples
 
 RESPONSE FORMAT:
 Return ONLY valid JSON in this exact structure (no comments, no markdown, no explanations):
@@ -423,6 +443,38 @@ RULES:
     if (parsed.recipes.length > 7) {
       console.warn(`[generate-recipes] LLM generated ${parsed.recipes.length} recipes, limiting to 7`)
       parsed.recipes = parsed.recipes.slice(0, 7)
+    }
+
+    // Filter staples from youNeedToBuy and shopping list
+    const STAPLES = [
+      'salt', 'pepper', 'oregano', 'basil', 'thyme', 'rosemary', 'paprika', 'cumin', 
+      'garlic powder', 'onion powder', 'cayenne', 'chili powder', 'curry powder',
+      'olive oil', 'vegetable oil', 'canola oil', 'cooking oil', 'oil', 'butter', 
+      'cooking spray', 'flour', 'sugar', 'brown sugar', 'garlic', 'onion', 'onions',
+      'vinegar', 'white vinegar', 'balsamic vinegar', 'apple cider vinegar',
+      'rice', 'pasta', 'bread', 'baking powder', 'baking soda', 'vanilla extract', 
+      'vanilla', 'cornstarch', 'milk', 'cream', 'heavy cream', 'half and half',
+      'black pepper', 'white pepper', 'sea salt', 'kosher salt', 'table salt'
+    ]
+    
+    const isStaple = (item: string): boolean => {
+      const normalized = item.toLowerCase().trim()
+      return STAPLES.some(staple => normalized === staple || normalized.includes(staple))
+    }
+
+    // Filter staples from each recipe's youNeedToBuy
+    parsed.recipes = parsed.recipes.map((recipe: any) => {
+      if (Array.isArray(recipe.youNeedToBuy)) {
+        recipe.youNeedToBuy = recipe.youNeedToBuy.filter((item: string) => !isStaple(item))
+      }
+      return recipe
+    })
+
+    // Filter staples from shopping list and deduplicate
+    if (Array.isArray(parsed.shoppingList)) {
+      parsed.shoppingList = [...new Set(
+        parsed.shoppingList.filter((item: string) => !isStaple(item))
+      )]
     }
 
     // Track OpenAI costs (non-blocking) - only if not cached

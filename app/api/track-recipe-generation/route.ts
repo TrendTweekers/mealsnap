@@ -18,26 +18,26 @@ export async function POST(req: NextRequest) {
     const dateKey = new Date().toISOString().split('T')[0] // YYYY-MM-DD
 
     try {
-      // Only increment total count if not cached (to avoid double counting)
-      if (!cached) {
-        await kv.incr('stats:recipes:total')
-      }
-      
-      // Increment daily recipe generation count (always, even if cached - it's still a request)
+      // Track all recipe requests (both cached and new)
+      // Increment daily recipe generation count (always - it's still a request)
       await kv.incr(`stats:recipes:daily:${dateKey}`)
 
       // Track successful recipe generations
       if (success) {
-        // Only count as new generation if not cached
-        if (!cached) {
+        if (cached) {
+          // Track cache hits
+          await kv.incr('stats:recipes:cached')
+        } else {
+          // Track new generations (not cached)
+          await kv.incr('stats:recipes:total')
           await kv.incr('stats:recipes:success')
         }
-        // Track cache hits separately
-        if (cached) {
-          await kv.incr('stats:recipes:cached')
-        }
       } else {
-        await kv.incr('stats:recipes:failed')
+        // Track failures (only for new generations, cached ones shouldn't fail)
+        if (!cached) {
+          await kv.incr('stats:recipes:total')
+          await kv.incr('stats:recipes:failed')
+        }
       }
 
       // Track recipe count distribution (only for non-cached, to avoid double counting)
