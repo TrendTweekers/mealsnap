@@ -53,6 +53,7 @@ export default function AdminPage() {
   const [trainingDataLoading, setTrainingDataLoading] = useState(false)
   const [improvedPrompt, setImprovedPrompt] = useState<any>(null)
   const [promptLoading, setPromptLoading] = useState(false)
+  const [promptGeneratorLoading, setPromptGeneratorLoading] = useState(false)
   const [profitData, setProfitData] = useState<any>(null)
   const [profitLoading, setProfitLoading] = useState(false)
   const [profitPeriod, setProfitPeriod] = useState<'today' | 'week' | 'month' | 'alltime'>('today')
@@ -66,6 +67,12 @@ export default function AdminPage() {
   const [errorDataLoading, setErrorDataLoading] = useState(false)
   const [customerData, setCustomerData] = useState<any>(null)
   const [customerDataLoading, setCustomerDataLoading] = useState(false)
+  const [incorrectDetections, setIncorrectDetections] = useState<any>(null)
+  const [incorrectDetectionsLoading, setIncorrectDetectionsLoading] = useState(false)
+  const [promptVersions, setPromptVersions] = useState<any[]>([])
+  const [promptVersionsLoading, setPromptVersionsLoading] = useState(false)
+  const [activePromptVersion, setActivePromptVersion] = useState<string | null>(null)
+  const [selectedPromptVersion, setSelectedPromptVersion] = useState<string | null>(null)
 
   useEffect(() => {
     // Only check localStorage on mount - no API call to avoid race condition
@@ -100,6 +107,8 @@ export default function AdminPage() {
     fetchRecipePerformance()
     fetchErrorData()
     fetchCustomerData()
+    fetchIncorrectDetections()
+    fetchPromptVersions()
   }
 
   const fetchStats = async () => {
@@ -576,6 +585,143 @@ ${healthCheck.checks.map((check: any) =>
       setCustomerDataLoading(false)
     }
   }
+  
+  const fetchIncorrectDetections = async () => {
+    try {
+      setIncorrectDetectionsLoading(true)
+      const res = await fetch('/api/admin/incorrect-detections?localAuth=true')
+      if (!res.ok) throw new Error(`Incorrect detections fetch failed: ${res.status}`)
+      const data = await res.json()
+      if (data.ok) {
+        setIncorrectDetections(data)
+      } else {
+        throw new Error(data.error || 'Failed to fetch incorrect detections')
+      }
+    } catch (err) {
+      console.error('Incorrect detections error:', err)
+      setIncorrectDetections(null)
+    } finally {
+      setIncorrectDetectionsLoading(false)
+    }
+  }
+
+  const fetchPromptVersions = async () => {
+    try {
+      setPromptVersionsLoading(true)
+      const res = await fetch('/api/admin/prompts?localAuth=true')
+      if (!res.ok) throw new Error(`Prompt versions fetch failed: ${res.status}`)
+      const data = await res.json()
+      if (data.ok) {
+        setPromptVersions(data.versions || [])
+        setActivePromptVersion(data.activeVersion || null)
+      }
+    } catch (err) {
+      console.error('Prompt versions error:', err)
+      setPromptVersions([])
+    } finally {
+      setPromptVersionsLoading(false)
+    }
+  }
+
+  const generateAndSavePrompt = async () => {
+    try {
+      setPromptGeneratorLoading(true)
+      // First generate improved prompt
+      const generateRes = await fetch('/api/admin/generate-prompt-improvement?localAuth=true', {
+        method: 'POST',
+      })
+      if (!generateRes.ok) throw new Error('Failed to generate prompt')
+      const generateData = await generateRes.json()
+      
+      if (!generateData.ok) throw new Error(generateData.error || 'Failed to generate prompt')
+      
+      // Then save as new version
+      const saveRes = await fetch('/api/admin/prompts?localAuth=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: generateData.improvedPrompt,
+          telemetry: generateData.telemetry,
+          source: 'ai-generated',
+          notes: `Generated from FP/FN telemetry: FP ${generateData.telemetry?.fpRate}%, FN ${generateData.telemetry?.fnRate}%`,
+        }),
+      })
+      
+      if (!saveRes.ok) throw new Error('Failed to save prompt version')
+      const saveData = await saveRes.json()
+      
+      if (saveData.ok) {
+        setImprovedPrompt({
+          improvedPrompt: generateData.improvedPrompt,
+          telemetry: generateData.telemetry,
+          version: saveData.version,
+        })
+        setSelectedPromptVersion(saveData.version)
+        await fetchPromptVersions()
+        setMessage('✅ Improved prompt generated and saved as new version!')
+        setTimeout(() => setMessage(''), 5000)
+      }
+    } catch (err: any) {
+      console.error('Prompt generation error:', err)
+      setMessage('Failed to generate prompt: ' + (err.message || 'Unknown error'))
+      setTimeout(() => setMessage(''), 5000)
+    } finally {
+      setPromptGeneratorLoading(false)
+    }
+  }
+
+  const activatePromptVersion = async (version: string) => {
+    try {
+      const res = await fetch('/api/admin/prompts?localAuth=true', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version }),
+      })
+      
+      if (!res.ok) throw new Error('Failed to activate prompt')
+      const data = await res.json()
+      
+      if (data.ok) {
+        setActivePromptVersion(version)
+        await fetchPromptVersions()
+        setMessage(`✅ Prompt version ${version} activated!`)
+        setTimeout(() => setMessage(''), 5000)
+      }
+    } catch (err: any) {
+      console.error('Activate prompt error:', err)
+      setMessage('Failed to activate prompt: ' + (err.message || 'Unknown error'))
+      setTimeout(() => setMessage(''), 5000)
+    }
+  }
+
+  const deployPromptVersion = async (version: string) => {
+    try {
+      const res = await fetch('/api/admin/deploy-prompt?localAuth=true', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ version, autoActivate: true }),
+      })
+      
+      if (!res.ok) throw new Error('Failed to deploy prompt')
+      const data = await res.json()
+      
+      if (data.ok) {
+        setMessage(`✅ Prompt version ${version} deployed! Copy the prompt and update app/api/scan-pantry/route.ts`)
+        setTimeout(() => setMessage(''), 10000)
+        // Copy prompt to clipboard
+        if (data.prompt) {
+          navigator.clipboard.writeText(data.prompt).then(() => {
+            setMessage(`✅ Prompt copied to clipboard! Update app/api/scan-pantry/route.ts and deploy.`)
+            setTimeout(() => setMessage(''), 10000)
+          })
+        }
+      }
+    } catch (err: any) {
+      console.error('Deploy prompt error:', err)
+      setMessage('Failed to deploy prompt: ' + (err.message || 'Unknown error'))
+      setTimeout(() => setMessage(''), 5000)
+    }
+  }
 
   // Password protection screen
   if (authLoading) {
@@ -667,82 +813,82 @@ ${healthCheck.checks.map((check: any) =>
           </div>
         </div>
 
-        {message && (
-          <div className={`mb-6 p-4 rounded-xl border ${
-            message.includes('✅') 
+          {message && (
+            <div className={`mb-6 p-4 rounded-xl border ${
+              message.includes('✅') 
               ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-30 text-emerald-400' 
-              : 'bg-slate-800 border-slate-700 text-slate-300'
-          }`}>
-            {message}
-          </div>
-        )}
-
-        <div className="space-y-6">
-          {/* Key Metrics Grid */}
-          {stats && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Camera className="w-5 h-5 text-emerald-400" />
-                  <span className="text-xs uppercase tracking-wide text-slate-400">Scans</span>
-                </div>
-                <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.totalScans.toLocaleString()}</div>
-                <div className="text-xs text-slate-400 mt-1">{stats.scansToday} today</div>
-              </div>
-
-              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <ChefHat className="w-5 h-5 text-purple-400" />
-                  <span className="text-xs uppercase tracking-wide text-slate-400">Recipes</span>
-                </div>
-                <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.totalRecipeGenerations.toLocaleString()}</div>
-                <div className="text-xs text-slate-400 mt-1">{stats.recipesToday} today</div>
-              </div>
-
-              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-5 h-5 text-blue-400" />
-                  <span className="text-xs uppercase tracking-wide text-slate-400">Convert</span>
-                </div>
-                <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.conversionRate.toFixed(1)}%</div>
-                <div className="text-xs text-slate-400 mt-1">Success rate</div>
-              </div>
-
-              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-cyan-400" />
-                  <span className="text-xs uppercase tracking-wide text-slate-400">Users</span>
-                </div>
-                <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.uniqueUsers.toLocaleString()}</div>
-                <div className="text-xs text-slate-400 mt-1">Total unique</div>
-              </div>
+                : 'bg-slate-800 border-slate-700 text-slate-300'
+            }`}>
+              {message}
             </div>
           )}
 
+          <div className="space-y-6">
+            {/* Key Metrics Grid */}
+            {stats && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Camera className="w-5 h-5 text-emerald-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Scans</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.totalScans.toLocaleString()}</div>
+                  <div className="text-xs text-slate-400 mt-1">{stats.scansToday} today</div>
+                </div>
+
+              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <ChefHat className="w-5 h-5 text-purple-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Recipes</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.totalRecipeGenerations.toLocaleString()}</div>
+                  <div className="text-xs text-slate-400 mt-1">{stats.recipesToday} today</div>
+                </div>
+
+              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-5 h-5 text-blue-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Convert</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.conversionRate.toFixed(1)}%</div>
+                  <div className="text-xs text-slate-400 mt-1">Success rate</div>
+                </div>
+
+              <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-4 hover:border-emerald-500 hover:border-opacity-50 transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500 hover:shadow-opacity-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-5 h-5 text-cyan-400" />
+                    <span className="text-xs uppercase tracking-wide text-slate-400">Users</span>
+                  </div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats.uniqueUsers.toLocaleString()}</div>
+                  <div className="text-xs text-slate-400 mt-1">Total unique</div>
+                </div>
+              </div>
+            )}
+
           {/* Cost Tracking Dashboard */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
-                <DollarSign className="w-6 h-6 text-emerald-400" />
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <DollarSign className="w-6 h-6 text-emerald-400" />
                 Cost Tracking
-              </h2>
-              <button
+                </h2>
+                <button
                 onClick={fetchCostData}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
                 title="Refresh cost data"
-              >
+                >
                 <RefreshCw className={`w-5 h-5 text-emerald-400 ${costLoading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
+                </button>
+              </div>
 
             {costLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
-              </div>
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+                </div>
             ) : costData ? (
               <div className="space-y-6">
                 {/* Today's Costs */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
                   <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Today's Costs</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div>
@@ -756,19 +902,19 @@ ${healthCheck.checks.map((check: any) =>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images (DALL-E)</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.today.openai_images.toFixed(4)}</div>
-                    </div>
+                      </div>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Infrastructure</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.today.infrastructure.toFixed(2)}</div>
                     </div>
                   </div>
                   <div className="mt-4 pt-4 border-t border-slate-700">
-                    <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-slate-300">Total Today</span>
                       <span className="text-2xl font-mono font-bold text-emerald-400">${costData.costs.today.total.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </div>
+                      </div>
+                        </div>
+                        </div>
 
                 {/* This Month's Costs */}
                 <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
@@ -777,56 +923,56 @@ ${healthCheck.checks.map((check: any) =>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scans</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.openai_scan.toFixed(2)}</div>
-                    </div>
+                        </div>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipes</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.openai_recipes.toFixed(2)}</div>
-                    </div>
+                      </div>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.openai_images.toFixed(2)}</div>
-                    </div>
+                      </div>
                     <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Infrastructure</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">${costData.costs.month.infrastructure.toFixed(2)}</div>
-                    </div>
-                  </div>
+                        </div>
+                        </div>
                   <div className="mt-4 pt-4 border-t border-slate-700">
-                    <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-slate-300">Total This Month</span>
                       <span className="text-2xl font-mono font-bold text-emerald-400">${costData.costs.month.total.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
 
                 {/* DALL-E Image Stats */}
                 <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
                   <div className="text-sm font-semibold text-[#F1F5F9] mb-3 flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-purple-400" />
                     DALL-E Image Generation Stats
-                  </div>
+                      </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div>
+                      <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images Generated</div>
                       <div className="text-xl font-mono font-bold text-[#F1F5F9]">{costData.imageStats.generated}</div>
-                    </div>
-                    <div>
+                      </div>
+                      <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Images Cached</div>
                       <div className="text-xl font-mono font-bold text-emerald-400">{costData.imageStats.cached}</div>
-                    </div>
-                    <div>
+                        </div>
+                      <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Cache Hit Rate</div>
                       <div className="text-xl font-mono font-bold text-emerald-400">{costData.imageStats.cacheHitRate.toFixed(0)}%</div>
-                    </div>
-                    <div>
+                      </div>
+                      <div>
                       <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Est. Savings</div>
                       <div className="text-xl font-mono font-bold text-emerald-400">${costData.imageStats.estimatedSavings.toFixed(2)}</div>
-                    </div>
-                  </div>
+                      </div>
+                        </div>
                   <div className="mt-3 text-xs text-slate-400">
                     💡 All generated images are cached, so subsequent requests use cached images (saving $0.04 per reuse)
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
                 {/* Cost Breakdown */}
                 <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
@@ -842,629 +988,656 @@ ${healthCheck.checks.map((check: any) =>
                       <div className="flex justify-between">
                         <span>Scans (GPT-4 Vision):</span>
                         <span className="font-mono">${costData.costs.month.openai_scan.toFixed(4)}</span>
-                      </div>
+                  </div>
                       <div className="flex justify-between">
                         <span>Recipes (GPT-4o):</span>
                         <span className="font-mono">${costData.costs.month.openai_recipes.toFixed(4)}</span>
-                      </div>
+                              </div>
                       <div className="flex justify-between">
                         <span>Images (DALL-E 3):</span>
                         <span className="font-mono">${costData.costs.month.openai_images.toFixed(4)}</span>
-                      </div>
-                    </div>
+                            </div>
+                          </div>
                     <div className="flex items-center justify-between pt-2 border-t border-slate-700">
                       <span className="text-slate-400">Infrastructure (Vercel Pro + KV):</span>
                       <span className="font-mono font-bold text-[#F1F5F9]">${costData.costs.month.infrastructure.toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-slate-400">
+              ) : (
+                <div className="text-center py-8 text-slate-400">
                 No cost data available yet
-              </div>
-            )}
-          </div>
-
-          {/* Statistics Dashboard */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
-                <BarChart3 className="w-6 h-6 text-emerald-400" />
-                Statistics Dashboard
-              </h2>
-              <button
-                onClick={fetchStats}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
-                title="Refresh stats"
-              >
-                <RefreshCw className={`w-5 h-5 text-emerald-400 ${statsLoading ? 'animate-spin' : ''}`} />
-              </button>
+                </div>
+              )}
             </div>
 
-            {statsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
+            {/* Statistics Dashboard */}
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-emerald-400" />
+                  Statistics Dashboard
+                </h2>
+                <button
+                  onClick={fetchStats}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                  title="Refresh stats"
+                >
+                  <RefreshCw className={`w-5 h-5 text-emerald-400 ${statsLoading ? 'animate-spin' : ''}`} />
+                </button>
               </div>
-            ) : stats ? (
-              <div className="space-y-6">
-                {/* Success Rates */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scan Success Rate</div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-mono font-bold text-emerald-400">{stats.scanSuccessRate.toFixed(1)}%</span>
-                      <span className="text-sm text-slate-400">
-                        ({stats.successfulScans}/{stats.totalScans})
-                      </span>
-                    </div>
-                    {stats.failedScans > 0 && (
-                      <div className="text-xs text-red-400 mt-1">
-                        {stats.failedScans} failed
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipe Gen Success Rate</div>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-2xl font-mono font-bold text-emerald-400">{stats.recipeSuccessRate.toFixed(1)}%</span>
-                      <span className="text-sm text-slate-400">
-                        ({stats.successfulRecipeGenerations}/{stats.totalRecipeGenerations})
-                      </span>
-                    </div>
-                    {stats.failedRecipeGenerations > 0 && (
-                      <div className="text-xs text-red-400 mt-1">
-                        {stats.failedRecipeGenerations} failed
-                      </div>
-                    )}
-                  </div>
+              {statsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-400" />
                 </div>
-
-                {/* Recipe Stats */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Recipe Statistics</div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Generated</div>
-                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.totalRecipesGenerated.toLocaleString()}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg per Gen</div>
-                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.avgRecipesPerGeneration.toFixed(1)}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Ingredient Stats */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Ingredient Statistics</div>
-                  <div>
-                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg per Scan</div>
-                    <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.avgIngredientsPerScan.toFixed(1)}</div>
-                  </div>
-                </div>
-
-                {/* Daily Trend (Last 7 Days) */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                  <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Daily Activity (Last 7 Days)</div>
-                  <div className="space-y-2">
-                    {Object.entries(stats.dailyScans)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([date, count]) => (
-                      <div key={date} className="flex items-center justify-between text-sm py-1 border-b border-slate-700 last:border-0">
-                        <span className="text-slate-400">
-                          {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              ) : stats ? (
+                <div className="space-y-6">
+                  {/* Success Rates */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Scan Success Rate</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-mono font-bold text-emerald-400">{stats.scanSuccessRate.toFixed(1)}%</span>
+                        <span className="text-sm text-slate-400">
+                          ({stats.successfulScans}/{stats.totalScans})
                         </span>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <Camera className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      {stats.failedScans > 0 && (
+                        <div className="text-xs text-red-400 mt-1">
+                          {stats.failedScans} failed
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recipe Gen Success Rate</div>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl font-mono font-bold text-emerald-400">{stats.recipeSuccessRate.toFixed(1)}%</span>
+                        <span className="text-sm text-slate-400">
+                          ({stats.successfulRecipeGenerations}/{stats.totalRecipeGenerations})
+                        </span>
+                      </div>
+                      {stats.failedRecipeGenerations > 0 && (
+                        <div className="text-xs text-red-400 mt-1">
+                          {stats.failedRecipeGenerations} failed
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recipe Stats */}
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Recipe Statistics</div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Generated</div>
+                        <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.totalRecipesGenerated.toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg per Gen</div>
+                        <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.avgRecipesPerGeneration.toFixed(1)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Ingredient Stats */}
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Ingredient Statistics</div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Avg per Scan</div>
+                      <div className="text-xl font-mono font-bold text-[#F1F5F9]">{stats.avgIngredientsPerScan.toFixed(1)}</div>
+                    </div>
+                  </div>
+
+                  {/* Daily Trend (Last 7 Days) */}
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Daily Activity (Last 7 Days)</div>
+                    <div className="space-y-2">
+                      {Object.entries(stats.dailyScans)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([date, count]) => (
+                        <div key={date} className="flex items-center justify-between text-sm py-1 border-b border-slate-700 last:border-0">
+                          <span className="text-slate-400">
+                            {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </span>
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1">
+                              <Camera className="w-4 h-4 text-emerald-400" />
+                              <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <ChefHat className="w-4 h-4 text-purple-400" />
+                              <span className="font-mono font-semibold text-[#F1F5F9]">{stats.dailyRecipes[date] || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Distributions */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Ingredient Count Distribution</div>
+                      <div className="space-y-2">
+                        {Object.entries(stats.ingredientCountDistribution).map(([range, count]) => (
+                          <div key={range} className="flex items-center justify-between text-sm">
+                            <span className="text-slate-400">{range}</span>
                             <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <ChefHat className="w-4 h-4 text-purple-400" />
-                            <span className="font-mono font-semibold text-[#F1F5F9]">{stats.dailyRecipes[date] || 0}</span>
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Distributions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Ingredient Count Distribution</div>
-                    <div className="space-y-2">
-                      {Object.entries(stats.ingredientCountDistribution).map(([range, count]) => (
-                        <div key={range} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-400">{range}</span>
-                          <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
-                        </div>
-                      ))}
                     </div>
-                  </div>
 
-                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Recipe Count Distribution</div>
-                    <div className="space-y-2">
-                      {Object.entries(stats.recipeCountDistribution).map(([range, count]) => (
-                        <div key={range} className="flex items-center justify-between text-sm">
-                          <span className="text-slate-400">{range}</span>
-                          <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
-                        </div>
-                      ))}
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                      <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Recipe Count Distribution</div>
+                      <div className="space-y-2">
+                        {Object.entries(stats.recipeCountDistribution).map(([range, count]) => (
+                          <div key={range} className="flex items-center justify-between text-sm">
+                            <span className="text-slate-400">{range}</span>
+                            <span className="font-mono font-semibold text-[#F1F5F9]">{count}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-slate-400">
-                No statistics available yet
-              </div>
-            )}
-          </div>
-
-          {/* Founder Mode Controls */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Founder Mode</h2>
-            <p className="text-slate-400 mb-4 text-sm">
-              Enable unlimited scans for testing. This bypasses all scan limits.
-            </p>
-            {isFounder ? (
-              <button
-                onClick={disableFounderMode}
-                className="w-full bg-red-500 bg-opacity-20 hover:bg-red-500 hover:bg-opacity-30 border border-red-500 border-opacity-50 text-red-400 rounded-xl px-6 py-3 font-bold transition-all duration-200 flex items-center justify-center gap-2"
-              >
-                <X className="w-5 h-5" />
-                Disable Founder Mode
-              </button>
-            ) : (
-              <button
-                onClick={enableFounderMode}
-                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-6 py-3 font-bold transition-all duration-200 shadow-lg shadow-emerald-500 shadow-opacity-30 hover:shadow-xl hover:shadow-emerald-500 hover:shadow-opacity-40 flex items-center justify-center gap-2"
-              >
-                <Check className="w-5 h-5" />
-                Enable Founder Mode
-              </button>
-            )}
-          </div>
-
-          {/* Reset Scan Count */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Reset Scan Count</h2>
-            <p className="text-slate-400 mb-4 text-sm">
-              Reset your scan count back to 0. Useful for testing the scan limit flow.
-            </p>
-            <button
-              onClick={resetScanCount}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-[#F1F5F9] rounded-xl px-6 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              <RefreshCw className="w-5 h-5" />
-              Reset to 0
-            </button>
-          </div>
-
-          {/* Manually Added Ingredients Stats */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#F1F5F9]">Manual Ingredient Tracking</h2>
-              <button
-                onClick={fetchIngredientStats}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                title="Refresh stats"
-              >
-                <RefreshCw className={`w-5 h-5 text-emerald-400 ${ingredientsLoading ? 'animate-spin' : ''}`} />
-              </button>
+              ) : (
+                <div className="text-center py-8 text-slate-400">
+                  No statistics available yet
+                </div>
+              )}
             </div>
-            <p className="text-slate-400 mb-4">
-              Track which ingredients users manually add most often. This helps improve AI detection over time.
-            </p>
-            
-            {ingredientsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
-                <span className="ml-2 text-slate-400">Loading stats...</span>
-              </div>
-            ) : (
-              <>
-                <div className="mb-4 p-4 bg-gradient-to-br from-emerald-500 from-opacity-10 to-green-500 to-opacity-10 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-300 font-medium">Total Manual Adds:</span>
-                    <span className="text-2xl font-bold text-emerald-400">{totalManualAdds}</span>
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-slate-300 font-medium">Unique Ingredients:</span>
-                    <span className="text-xl font-bold text-[#F1F5F9]">{ingredients.length}</span>
-                  </div>
-                </div>
 
-                {ingredients.length === 0 ? (
-                  <div className="text-center py-8 text-slate-500">
-                    No manually added ingredients tracked yet.
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {ingredients.slice(0, 20).map((item, index) => (
-                      <div
-                        key={item.ingredient}
-                        className="flex items-center justify-between p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                            index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                            index === 1 ? 'bg-gray-300 text-gray-700' :
-                            index === 2 ? 'bg-orange-300 text-orange-900' :
-                            'bg-gray-200 text-gray-600'
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <span className="font-medium text-[#F1F5F9] capitalize">{item.ingredient}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-emerald-400" />
-                          <span className="font-bold text-emerald-400">{item.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* System Health Check */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
-                <Activity className="w-6 h-6 text-emerald-400" />
-                System Health Check
-              </h2>
-              {healthCheck && (
+            {/* Founder Mode Controls */}
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Founder Mode</h2>
+              <p className="text-slate-400 mb-4 text-sm">
+                Enable unlimited scans for testing. This bypasses all scan limits.
+              </p>
+              {isFounder ? (
                 <button
-                  onClick={copyHealthCheckResults}
-                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                  title="Copy results"
+                  onClick={disableFounderMode}
+                className="w-full bg-red-500 bg-opacity-20 hover:bg-red-500 hover:bg-opacity-30 border border-red-500 border-opacity-50 text-red-400 rounded-xl px-6 py-3 font-bold transition-all duration-200 flex items-center justify-center gap-2"
                 >
-                  <Copy className="w-5 h-5 text-emerald-400" />
+                  <X className="w-5 h-5" />
+                  Disable Founder Mode
+                </button>
+              ) : (
+                <button
+                  onClick={enableFounderMode}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-6 py-3 font-bold transition-all duration-200 shadow-lg shadow-emerald-500 shadow-opacity-30 hover:shadow-xl hover:shadow-emerald-500 hover:shadow-opacity-40 flex items-center justify-center gap-2"
+                >
+                  <Check className="w-5 h-5" />
+                  Enable Founder Mode
                 </button>
               )}
             </div>
+
+            {/* Reset Scan Count */}
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] mb-4">Reset Scan Count</h2>
+              <p className="text-slate-400 mb-4 text-sm">
+                Reset your scan count back to 0. Useful for testing the scan limit flow.
+              </p>
+              <button
+                onClick={resetScanCount}
+                className="w-full bg-slate-700 hover:bg-slate-600 text-[#F1F5F9] rounded-xl px-6 py-3 font-semibold transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-5 h-5" />
+                Reset to 0
+              </button>
+            </div>
+
+            {/* Manually Added Ingredients Stats */}
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-[#F1F5F9]">Manual Ingredient Tracking</h2>
+                <button
+                  onClick={fetchIngredientStats}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                  title="Refresh stats"
+                >
+                <RefreshCw className={`w-5 h-5 text-emerald-400 ${ingredientsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
             <p className="text-slate-400 mb-4">
-              Run automated checks to verify all systems are operational. This checks API endpoints, environment variables, and system status.
-            </p>
-            
-            <button
-              onClick={runHealthCheck}
-              disabled={healthCheckLoading}
-              className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-            >
-              {healthCheckLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Running checks...</span>
-                </>
+                Track which ingredients users manually add most often. This helps improve AI detection over time.
+              </p>
+              
+              {ingredientsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                <span className="ml-2 text-slate-400">Loading stats...</span>
+                </div>
               ) : (
                 <>
-                  <RefreshCw className="w-5 h-5" />
-                  <span>Run Health Check Now</span>
+                <div className="mb-4 p-4 bg-gradient-to-br from-emerald-500 from-opacity-10 to-green-500 to-opacity-10 rounded-xl">
+                    <div className="flex items-center justify-between">
+                    <span className="text-slate-300 font-medium">Total Manual Adds:</span>
+                    <span className="text-2xl font-bold text-emerald-400">{totalManualAdds}</span>
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                    <span className="text-slate-300 font-medium">Unique Ingredients:</span>
+                    <span className="text-xl font-bold text-[#F1F5F9]">{ingredients.length}</span>
+                    </div>
+                  </div>
+
+                  {ingredients.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                      No manually added ingredients tracked yet.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {ingredients.slice(0, 20).map((item, index) => (
+                        <div
+                          key={item.ingredient}
+                        className="flex items-center justify-between p-3 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                              index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                              index === 1 ? 'bg-gray-300 text-gray-700' :
+                              index === 2 ? 'bg-orange-300 text-orange-900' :
+                              'bg-gray-200 text-gray-600'
+                            }`}>
+                              {index + 1}
+                            </div>
+                          <span className="font-medium text-[#F1F5F9] capitalize">{item.ingredient}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                          <TrendingUp className="w-4 h-4 text-emerald-400" />
+                          <span className="font-bold text-emerald-400">{item.count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
-            </button>
+            </div>
 
-            {healthCheckError && (
+            {/* System Health Check */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <Activity className="w-6 h-6 text-emerald-400" />
+                  System Health Check
+                </h2>
+                {healthCheck && (
+                  <button
+                    onClick={copyHealthCheckResults}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                    title="Copy results"
+                  >
+                  <Copy className="w-5 h-5 text-emerald-400" />
+                  </button>
+                )}
+              </div>
+            <p className="text-slate-400 mb-4">
+                Run automated checks to verify all systems are operational. This checks API endpoints, environment variables, and system status.
+              </p>
+              
+              <button
+                onClick={runHealthCheck}
+                disabled={healthCheckLoading}
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                {healthCheckLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Running checks...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Run Health Check Now</span>
+                  </>
+                )}
+              </button>
+
+              {healthCheckError && (
               <div className="mt-4 p-4 bg-red-500 bg-opacity-10 border-2 border-red-500 border-opacity-30 rounded-xl">
-                <div className="flex items-start gap-2">
+                  <div className="flex items-start gap-2">
                   <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                  <div>
+                    <div>
                     <div className="font-semibold text-red-400 mb-1">Health Check Failed</div>
                     <div className="text-sm text-red-300">{healthCheckError}</div>
                     <div className="text-xs text-red-400 mt-2">
                       💡 Tip: Run <code className="bg-red-500 bg-opacity-20 px-1 rounded">npm run health-check</code> in terminal for detailed diagnostics
+                      </div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {healthCheck && !healthCheckError && (
+                <div className="mt-6 space-y-4">
+                  {/* Status Summary */}
+                  <div className={`p-4 rounded-xl border-2 ${
+                    healthCheck.status === 'healthy' 
+                    ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-30' 
+                      : healthCheck.status === 'warning'
+                    ? 'bg-yellow-500 bg-opacity-10 border-yellow-500 border-opacity-30'
+                    : 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {healthCheck.status === 'healthy' ? (
+                        <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                        ) : healthCheck.status === 'warning' ? (
+                        <AlertCircle className="w-6 h-6 text-yellow-400" />
+                        ) : (
+                        <X className="w-6 h-6 text-red-400" />
+                        )}
+                        <span className={`text-lg font-bold ${
+                          healthCheck.status === 'healthy' 
+                          ? 'text-emerald-400' 
+                            : healthCheck.status === 'warning'
+                          ? 'text-yellow-400'
+                          : 'text-red-400'
+                        }`}>
+                          Status: {healthCheck.status.toUpperCase()}
+                        </span>
+                      </div>
+                    <div className="text-sm text-slate-400">
+                        {new Date(healthCheck.timestamp).toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-4 gap-2 text-sm">
+                      <div className="text-center">
+                      <div className="font-semibold text-slate-300">Total</div>
+                      <div className="text-xl font-bold text-[#F1F5F9]">{healthCheck.summary.total}</div>
+                      </div>
+                      <div className="text-center">
+                      <div className="font-semibold text-emerald-400">Passed</div>
+                      <div className="text-xl font-bold text-emerald-400">{healthCheck.summary.passed}</div>
+                      </div>
+                      <div className="text-center">
+                      <div className="font-semibold text-red-400">Failed</div>
+                      <div className="text-xl font-bold text-red-400">{healthCheck.summary.failed}</div>
+                      </div>
+                      <div className="text-center">
+                      <div className="font-semibold text-yellow-400">Warnings</div>
+                      <div className="text-xl font-bold text-yellow-400">{healthCheck.summary.warnings}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Check Results */}
+                  <div className="space-y-2">
+                  <div className="text-sm font-semibold text-slate-300 mb-2">Check Details:</div>
+                    {healthCheck.checks.map((check: any, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-4 rounded-xl border-2 ${
+                          check.status === 'pass'
+                          ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-30'
+                            : check.status === 'fail'
+                          ? 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
+                          : 'bg-yellow-500 bg-opacity-10 border-yellow-500 border-opacity-30'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {check.status === 'pass' ? (
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                            ) : check.status === 'fail' ? (
+                            <X className="w-5 h-5 text-red-400" />
+                            ) : (
+                            <AlertCircle className="w-5 h-5 text-yellow-400" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-[#F1F5F9] mb-1">{check.name}</div>
+                            <div className={`text-sm ${
+                              check.status === 'pass'
+                              ? 'text-emerald-300'
+                                : check.status === 'fail'
+                              ? 'text-red-300'
+                              : 'text-yellow-300'
+                            }`}>
+                              {check.message}
+                            </div>
+                            {check.details && (
+                            <div className="mt-2 text-xs text-slate-400 bg-slate-800 bg-opacity-50 rounded px-2 py-1 font-mono">
+                                {check.details}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Refresh Button */}
+                  <button
+                    onClick={runHealthCheck}
+                    disabled={healthCheckLoading}
+                  className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-700 text-[#F1F5F9] rounded-xl px-4 py-2 font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${healthCheckLoading ? 'animate-spin' : ''}`} />
+                    Refresh Results
+                  </button>
+                </div>
+              )}
+            </div>
+
+          {/* AI Improvement Engine - Unified */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <Zap className="w-6 h-6 text-purple-400" />
+                AI Improvement Engine
+                </h2>
+                <button
+                onClick={() => {
+                  fetchIncorrectDetections()
+                  fetchTrainingData()
+                  fetchPromptVersions()
+                }}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                title="Refresh all data"
+              >
+                <RefreshCw className={`w-5 h-5 text-purple-400 ${incorrectDetectionsLoading || trainingDataLoading || promptVersionsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            <p className="text-slate-400 mb-6 text-sm">
+              Unified system to analyze AI accuracy, generate improved prompts, and manage prompt versions with auto-deployment.
+            </p>
+
+            {/* Current Accuracy Metrics */}
+            {incorrectDetections && incorrectDetections.incorrectDetections && (
+              <div className="mb-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Overall Accuracy</div>
+                  <div className={`text-2xl font-mono font-bold ${
+                    (incorrectDetections.incorrectDetections.overallAccuracy || 0) >= 90 ? 'text-emerald-400' :
+                    (incorrectDetections.incorrectDetections.overallAccuracy || 0) >= 80 ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {(incorrectDetections.incorrectDetections.overallAccuracy || 100).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">False Positive Rate</div>
+                  <div className={`text-2xl font-mono font-bold ${
+                    (incorrectDetections.incorrectDetections.overallFalsePositiveRate || 0) < 5 ? 'text-emerald-400' :
+                    (incorrectDetections.incorrectDetections.overallFalsePositiveRate || 0) < 10 ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {(incorrectDetections.incorrectDetections.overallFalsePositiveRate || 0).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">False Negative Rate</div>
+                  <div className={`text-2xl font-mono font-bold ${
+                    (incorrectDetections.incorrectDetections.overallFalseNegativeRate || 0) < 5 ? 'text-emerald-400' :
+                    (incorrectDetections.incorrectDetections.overallFalseNegativeRate || 0) < 10 ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {(incorrectDetections.incorrectDetections.overallFalseNegativeRate || 0).toFixed(1)}%
+                  </div>
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Scans</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">
+                    {stats?.totalScans || 0}
                   </div>
                 </div>
               </div>
             )}
 
-            {healthCheck && !healthCheckError && (
-              <div className="mt-6 space-y-4">
-                {/* Status Summary */}
-                <div className={`p-4 rounded-xl border-2 ${
-                  healthCheck.status === 'healthy' 
-                    ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-30' 
-                    : healthCheck.status === 'warning'
-                    ? 'bg-yellow-500 bg-opacity-10 border-yellow-500 border-opacity-30'
-                    : 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      {healthCheck.status === 'healthy' ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                      ) : healthCheck.status === 'warning' ? (
-                        <AlertCircle className="w-6 h-6 text-yellow-400" />
-                      ) : (
-                        <X className="w-6 h-6 text-red-400" />
-                      )}
-                      <span className={`text-lg font-bold ${
-                        healthCheck.status === 'healthy' 
-                          ? 'text-emerald-400' 
-                          : healthCheck.status === 'warning'
-                          ? 'text-yellow-400'
-                          : 'text-red-400'
-                      }`}>
-                        Status: {healthCheck.status.toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="text-sm text-slate-400">
-                      {new Date(healthCheck.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 text-sm">
-                    <div className="text-center">
-                      <div className="font-semibold text-slate-300">Total</div>
-                      <div className="text-xl font-bold text-[#F1F5F9]">{healthCheck.summary.total}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-emerald-400">Passed</div>
-                      <div className="text-xl font-bold text-emerald-400">{healthCheck.summary.passed}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-red-400">Failed</div>
-                      <div className="text-xl font-bold text-red-400">{healthCheck.summary.failed}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-yellow-400">Warnings</div>
-                      <div className="text-xl font-bold text-yellow-400">{healthCheck.summary.warnings}</div>
-                    </div>
+            {/* Generate Improved Prompt */}
+            <div className="mb-6">
+              <button
+                onClick={generateAndSavePrompt}
+                disabled={promptGeneratorLoading || incorrectDetectionsLoading}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+              >
+                {promptGeneratorLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Generating improved prompt...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    <span>Generate & Save Improved Prompt</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Generated Prompt Display */}
+            {improvedPrompt && improvedPrompt.improvedPrompt && (
+              <div className="mb-6 bg-slate-800 border-2 border-purple-500 border-opacity-30 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-semibold text-purple-400">Generated Prompt (Version {improvedPrompt.version || 'new'})</div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const promptText = improvedPrompt.improvedPrompt
+                        navigator.clipboard.writeText(promptText).then(() => {
+                          setMessage('✅ Prompt copied to clipboard!')
+                          setTimeout(() => setMessage(''), 3000)
+                        })
+                      }}
+                      className="p-1 hover:bg-slate-700 rounded transition-colors"
+                      title="Copy prompt"
+                    >
+                      <Copy className="w-4 h-4 text-emerald-400" />
+                    </button>
+                    {improvedPrompt.version && (
+                      <button
+                        onClick={() => deployPromptVersion(improvedPrompt.version)}
+                        className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded transition-colors"
+                        title="Deploy this version"
+                      >
+                        Deploy
+                      </button>
+                    )}
                   </div>
                 </div>
+                {improvedPrompt.telemetry && (
+                  <div className="mb-3 text-xs text-slate-400 space-y-1">
+                    <div>Based on: {improvedPrompt.telemetry.totalScans || 0} scans</div>
+                    <div>FP Rate: {improvedPrompt.telemetry.fpRate || '0.0'}% | FN Rate: {improvedPrompt.telemetry.fnRate || '0.0'}%</div>
+                  </div>
+                )}
+                <pre className="text-xs text-slate-300 bg-slate-900 rounded p-3 overflow-x-auto max-h-64 overflow-y-auto border border-slate-700 font-mono whitespace-pre-wrap">
+                  {improvedPrompt.improvedPrompt}
+                </pre>
+              </div>
+            )}
 
-                {/* Check Results */}
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold text-slate-300 mb-2">Check Details:</div>
-                  {healthCheck.checks.map((check: any, index: number) => (
+            {/* Prompt Version History */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-slate-300">Prompt Versions</h3>
+                {activePromptVersion && (
+                  <span className="text-xs text-emerald-400">Active: {activePromptVersion}</span>
+                )}
+              </div>
+              {promptVersionsLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
+                </div>
+              ) : promptVersions.length > 0 ? (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {promptVersions.slice(0, 10).map((version: any) => (
                     <div
-                      key={index}
-                      className={`p-4 rounded-xl border-2 ${
-                        check.status === 'pass'
+                      key={version.version}
+                      className={`p-3 rounded-lg border-2 ${
+                        version.isActive
                           ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-30'
-                          : check.status === 'fail'
-                          ? 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
-                          : 'bg-yellow-500 bg-opacity-10 border-yellow-500 border-opacity-30'
+                          : 'bg-slate-800 border-slate-700'
                       }`}
                     >
-                      <div className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
-                          {check.status === 'pass' ? (
-                            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                          ) : check.status === 'fail' ? (
-                            <X className="w-5 h-5 text-red-400" />
-                          ) : (
-                            <AlertCircle className="w-5 h-5 text-yellow-400" />
+                    <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#F1F5F9]">{version.version}</span>
+                            {version.isActive && (
+                              <span className="text-xs px-2 py-0.5 bg-emerald-500 bg-opacity-20 text-emerald-400 rounded">Active</span>
+                            )}
+                            {version.source && (
+                              <span className="text-xs text-slate-400">({version.source})</span>
+                            )}
+                          </div>
+                          {version.notes && (
+                            <div className="text-xs text-slate-400 mt-1">{version.notes}</div>
+                          )}
+                          {version.createdAtISO && (
+                            <div className="text-xs text-slate-500 mt-1">
+                              {new Date(version.createdAtISO).toLocaleString()}
+                            </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[#F1F5F9] mb-1">{check.name}</div>
-                          <div className={`text-sm ${
-                            check.status === 'pass'
-                              ? 'text-emerald-300'
-                              : check.status === 'fail'
-                              ? 'text-red-300'
-                              : 'text-yellow-300'
-                          }`}>
-                            {check.message}
-                          </div>
-                          {check.details && (
-                            <div className="mt-2 text-xs text-slate-400 bg-slate-800 bg-opacity-50 rounded px-2 py-1 font-mono">
-                              {check.details}
-                            </div>
+                        <div className="flex gap-2">
+                          {!version.isActive && (
+                            <>
+                              <button
+                                onClick={() => activatePromptVersion(version.version)}
+                                className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition-colors"
+                                title="Activate this version"
+                              >
+                                Activate
+                              </button>
+                              <button
+                                onClick={() => deployPromptVersion(version.version)}
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded transition-colors"
+                                title="Deploy this version"
+                              >
+                                Deploy
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="text-center py-4 text-slate-500 text-sm">
+                  No prompt versions yet. Generate an improved prompt to get started.
+                </div>
+              )}
+            </div>
 
-                {/* Refresh Button */}
-                <button
-                  onClick={runHealthCheck}
-                  disabled={healthCheckLoading}
-                  className="w-full bg-slate-700 hover:bg-slate-600 disabled:bg-slate-700 text-[#F1F5F9] rounded-xl px-4 py-2 font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
-                >
-                  <RefreshCw className={`w-4 h-4 ${healthCheckLoading ? 'animate-spin' : ''}`} />
-                  Refresh Results
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* AI Training Insights */}
-          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
-                <Brain className="w-6 h-6 text-purple-400" />
-                AI Training Insights
-              </h2>
+            {/* Export & Actions */}
+            <div className="flex flex-wrap gap-3">
               <button
-                onClick={fetchTrainingData}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
-                title="Refresh training data"
+                onClick={exportTrainingDataCSV}
+                disabled={!trainingData || !trainingData.missedIngredients || trainingData.missedIngredients.length === 0}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 text-[#F1F5F9] rounded-xl px-4 py-3 font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
               >
-                <RefreshCw className={`w-5 h-5 text-purple-400 ${trainingDataLoading ? 'animate-spin' : ''}`} />
+                <Download className="w-4 h-4" />
+                Export CSV
               </button>
             </div>
-            <p className="text-slate-400 mb-4">
-              Analyze which ingredients the AI misses most often and get suggestions to improve detection accuracy.
-            </p>
-            
-            {trainingDataLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-purple-400" />
-                <span className="ml-2 text-slate-400">Loading training data...</span>
-              </div>
-            ) : trainingData ? (
-              <div className="space-y-6">
-                {/* Accuracy Score */}
-                <div className={`p-4 rounded-xl border-2 ${
-                  trainingData.accuracyScore >= 85 
-                    ? 'bg-emerald-500 bg-opacity-10 border-emerald-500 border-opacity-30' 
-                    : trainingData.accuracyScore >= 70
-                    ? 'bg-yellow-500 bg-opacity-10 border-yellow-500 border-opacity-30'
-                    : 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-300 mb-1">Current Accuracy</div>
-                      <div className={`text-3xl font-extrabold ${
-                        trainingData.accuracyScore >= 85 
-                          ? 'text-emerald-400' 
-                          : trainingData.accuracyScore >= 70
-                          ? 'text-yellow-400'
-                          : 'text-red-400'
-                      }`}>
-                        {trainingData.accuracyScore}%
-                      </div>
-                    </div>
-                    <TrendingUp className="w-8 h-8 text-emerald-400" />
-                  </div>
-                  <div className="mt-2 text-xs text-slate-400">
-                    Based on {trainingData.summary.totalMissed} missed ingredients out of {trainingData.summary.totalManual} manual additions
-                  </div>
-                </div>
-
-                {/* Top Missed Ingredients */}
-                {trainingData.missedIngredients && trainingData.missedIngredients.length > 0 ? (
-                  <div>
-                    <div className="text-sm font-semibold text-slate-300 mb-3">Top Missed Ingredients (Last 7 Days)</div>
-                    <div className="space-y-2">
-                      {trainingData.missedIngredients.slice(0, 10).map((item: any, index: number) => (
-                        <div
-                          key={item.ingredient}
-                          className={`p-4 rounded-xl border-2 ${
-                            item.missRate > 50
-                              ? 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
-                              : item.missRate > 30
-                              ? 'bg-yellow-500 bg-opacity-10 border-yellow-500 border-opacity-30'
-                              : 'bg-slate-800 border-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                                index === 0 ? 'bg-yellow-400 text-yellow-900' :
-                                index === 1 ? 'bg-gray-300 text-gray-700' :
-                                index === 2 ? 'bg-orange-300 text-orange-900' :
-                                'bg-gray-200 text-gray-600'
-                              }`}>
-                                {index + 1}
-                              </div>
-                              <div>
-                                <div className="font-bold text-[#F1F5F9] capitalize">{item.ingredient}</div>
-                                <div className="text-xs text-slate-400">
-                                  Missed {item.count}x ({item.missRate}% miss rate)
-                                </div>
-                              </div>
-                            </div>
-                            {item.missRate > 30 && (
-                              <AlertCircle className={`w-5 h-5 ${
-                                item.missRate > 50 ? 'text-red-400' : 'text-yellow-400'
-                              }`} />
-                            )}
-                          </div>
-                          {item.commonIssues && item.commonIssues.length > 0 && (
-                            <div className="text-xs text-slate-400 mt-2">
-                              Common issues: {item.commonIssues.join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-slate-500">
-                    No missed ingredients tracked yet. Start scanning to collect training data!
-                  </div>
-                )}
-
-                {/* Improvement Suggestions */}
-                {trainingData.improvementSuggestions && trainingData.improvementSuggestions.length > 0 && (
-                  <div className="bg-purple-500 bg-opacity-10 border-2 border-purple-500 border-opacity-30 rounded-xl p-4">
-                    <div className="text-sm font-semibold text-purple-400 mb-2 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Improvement Suggestions
-                    </div>
-                    <ul className="space-y-1">
-                      {trainingData.improvementSuggestions.map((suggestion: string, index: number) => (
-                        <li key={index} className="text-sm text-purple-300 flex items-start gap-2">
-                          <span className="text-purple-400 mt-1">•</span>
-                          <span>{suggestion}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={exportTrainingDataCSV}
-                    disabled={!trainingData || trainingData.missedIngredients.length === 0}
-                    className="flex-1 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 text-[#F1F5F9] rounded-xl px-4 py-3 font-semibold transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
-                  >
-                    <Download className="w-4 h-4" />
-                    Export CSV
-                  </button>
-                  <button
-                    onClick={generateImprovedPrompt}
-                    disabled={promptLoading || !trainingData || trainingData.missedIngredients.length === 0}
-                    className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl px-4 py-3 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:cursor-not-allowed text-sm"
-                  >
-                    {promptLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Generate Improved Prompt
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Improved Prompt Display */}
-                {improvedPrompt && (
-                  <div className="bg-slate-800 border-2 border-slate-700 rounded-xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="text-sm font-semibold text-[#F1F5F9]">Improved Detection Prompt</div>
-                      <button
-                        onClick={copyImprovedPrompt}
-                        className="p-1 hover:bg-slate-700 rounded transition-colors"
-                        title="Copy prompt"
-                      >
-                        <Copy className="w-4 h-4 text-emerald-400" />
-                      </button>
-                    </div>
-                    <pre className="text-xs text-slate-300 bg-slate-900 rounded p-3 overflow-x-auto max-h-64 overflow-y-auto border border-slate-700 font-mono whitespace-pre-wrap">
-                      {improvedPrompt.improvedPrompt}
-                    </pre>
-                    <div className="mt-2 text-xs text-slate-400">
-                      💡 Copy this prompt and update <code className="bg-slate-700 px-1 rounded">app/api/scan-pantry/route.ts</code>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <button
-                onClick={fetchTrainingData}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white rounded-xl px-6 py-3 font-bold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-              >
-                <Brain className="w-5 h-5" />
-                Load Training Data
-              </button>
-            )}
           </div>
 
           {/* User Behavior Analytics */}
@@ -1559,7 +1732,7 @@ ${healthCheck.checks.map((check: any) =>
                 </div>
                 
                 {recipePerformance.mostFavorited && recipePerformance.mostFavorited.length > 0 && (
-                  <div>
+                      <div>
                     <div className="text-sm font-semibold text-slate-300 mb-3">Most Favorited Recipes</div>
                     <div className="space-y-2">
                       {recipePerformance.mostFavorited.slice(0, 5).map((recipe: any, index: number) => (
@@ -1654,6 +1827,231 @@ ${healthCheck.checks.map((check: any) =>
             )}
           </div>
 
+          {/* AI Accuracy Widget */}
+          {incorrectDetections && typeof incorrectDetections.overallAccuracy === 'number' && (
+            <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                  <Target className="w-6 h-6 text-emerald-400" />
+                  AI Detection Accuracy
+                </h2>
+                <button
+                  onClick={fetchIncorrectDetections}
+                  className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                  title="Refresh accuracy"
+                >
+                  <RefreshCw className={`w-5 h-5 text-emerald-400 ${incorrectDetectionsLoading ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Overall Accuracy</div>
+                  <div className={`text-3xl font-mono font-bold ${
+                    (incorrectDetections.overallAccuracy || 0) >= 90 ? 'text-emerald-400' :
+                    (incorrectDetections.overallAccuracy || 0) >= 80 ? 'text-yellow-400' :
+                    'text-red-400'
+                  }`}>
+                    {incorrectDetections.overallAccuracy || 0}%
+                        </div>
+                      </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">False Positive Rate</div>
+                  <div className="text-2xl font-mono font-bold text-orange-400">{incorrectDetections.overallFalsePositiveRate || 0}%</div>
+                    </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">False Negative Rate</div>
+                  <div className="text-2xl font-mono font-bold text-blue-400">{incorrectDetections.overallFalseNegativeRate || 0}%</div>
+                    </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                  <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Total Scans</div>
+                  <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{stats?.totalScans || 0}</div>
+                  </div>
+              </div>
+            </div>
+          )}
+
+          {/* Incorrect Detections Dashboard */}
+          <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-[#F1F5F9] flex items-center gap-2">
+                <AlertCircle className="w-6 h-6 text-orange-400" />
+                Detection Analytics (False Positives & Negatives)
+              </h2>
+              <button
+                onClick={fetchIncorrectDetections}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
+                title="Refresh incorrect detections"
+              >
+                <RefreshCw className={`w-5 h-5 text-orange-400 ${incorrectDetectionsLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            {incorrectDetectionsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-orange-400" />
+              </div>
+            ) : incorrectDetections ? (
+              <div className="space-y-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">False Positives</div>
+                    <div className="text-2xl font-mono font-bold text-orange-400">{incorrectDetections.total}</div>
+                    <div className="text-xs text-slate-400 mt-1">{incorrectDetections.overallFalsePositiveRate}% rate</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">False Negatives</div>
+                    <div className="text-2xl font-mono font-bold text-blue-400">
+                      {Array.isArray(incorrectDetections.topMissed) 
+                        ? incorrectDetections.topMissed.reduce((sum: number, item: any) => sum + (item.missedCount || 0), 0)
+                        : 0}
+                    </div>
+                    <div className="text-xs text-slate-400 mt-1">{incorrectDetections.overallFalseNegativeRate || 0}% rate</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Top FP Ingredients</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{Array.isArray(incorrectDetections.topIncorrect) ? incorrectDetections.topIncorrect.length : 0}</div>
+                  </div>
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Top FN Ingredients</div>
+                    <div className="text-2xl font-mono font-bold text-[#F1F5F9]">{Array.isArray(incorrectDetections.topMissed) ? incorrectDetections.topMissed.length : 0}</div>
+                  </div>
+                </div>
+
+                {/* Top False Negatives (Missed Detections) */}
+                {incorrectDetections.topMissed && Array.isArray(incorrectDetections.topMissed) && incorrectDetections.topMissed.length > 0 && (
+                    <div>
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Most Missed Ingredients (False Negatives)</div>
+                    <div className="space-y-2 mb-6">
+                      {incorrectDetections.topMissed.map((item: any, index: number) => (
+                          <div
+                            key={item.ingredient}
+                            className={`p-4 rounded-xl border-2 ${
+                            item.falseNegativeRate > 10
+                              ? 'bg-blue-500 bg-opacity-10 border-blue-500 border-opacity-30'
+                              : item.falseNegativeRate > 5
+                              ? 'bg-cyan-500 bg-opacity-10 border-cyan-500 border-opacity-30'
+                              : 'bg-slate-800 border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                index === 0 ? 'bg-blue-400 text-blue-900' :
+                                index === 1 ? 'bg-cyan-400 text-cyan-900' :
+                                index === 2 ? 'bg-teal-400 text-teal-900' :
+                                  'bg-gray-200 text-gray-600'
+                                }`}>
+                                  {index + 1}
+                                </div>
+                                <div>
+                                <div className="font-bold text-[#F1F5F9] capitalize">{item.ingredient}</div>
+                                <div className="text-xs text-slate-400">
+                                  Missed {item.missedCount}x ({item.falseNegativeRate}% false negative rate)
+                                  </div>
+                                </div>
+                              </div>
+                            {item.falseNegativeRate > 10 && (
+                              <AlertCircle className="w-5 h-5 text-blue-400" />
+                              )}
+                            </div>
+                        </div>
+                      ))}
+                    </div>
+                              </div>
+                            )}
+
+                {/* Top Incorrectly Detected Ingredients */}
+                {incorrectDetections.topIncorrect && Array.isArray(incorrectDetections.topIncorrect) && incorrectDetections.topIncorrect.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Most Incorrectly Detected Ingredients (False Positives)</div>
+                    <div className="space-y-2">
+                      {incorrectDetections.topIncorrect.map((item: any, index: number) => (
+                        <div
+                          key={item.ingredient}
+                          className={`p-4 rounded-xl border-2 ${
+                            item.falsePositiveRate > 10
+                              ? 'bg-red-500 bg-opacity-10 border-red-500 border-opacity-30'
+                              : item.falsePositiveRate > 5
+                              ? 'bg-orange-500 bg-opacity-10 border-orange-500 border-opacity-30'
+                              : 'bg-slate-800 border-slate-700'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                index === 0 ? 'bg-red-400 text-red-900' :
+                                index === 1 ? 'bg-orange-400 text-orange-900' :
+                                index === 2 ? 'bg-yellow-400 text-yellow-900' :
+                                'bg-gray-200 text-gray-600'
+                              }`}>
+                                {index + 1}
+                          </div>
+                              <div>
+                                <div className="font-bold text-[#F1F5F9] capitalize">{item.ingredient}</div>
+                                <div className="text-xs text-slate-400">
+                                  Incorrectly detected {item.incorrectCount}x ({item.falsePositiveRate}% false positive rate)
+                      </div>
+                    </div>
+                            </div>
+                            {item.falsePositiveRate > 10 && (
+                              <AlertCircle className="w-5 h-5 text-red-400" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    </div>
+                  )}
+
+                  {/* Improvement Suggestions */}
+                {incorrectDetections.improvementSuggestions && Array.isArray(incorrectDetections.improvementSuggestions) && incorrectDetections.improvementSuggestions.length > 0 && (
+                  <div className="bg-orange-500 bg-opacity-10 border-2 border-orange-500 border-opacity-30 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-orange-400 mb-2 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4" />
+                      Prompt Improvement Suggestions
+                      </div>
+                      <ul className="space-y-1">
+                      {incorrectDetections.improvementSuggestions.map((suggestion: string, index: number) => (
+                        <li key={index} className="text-sm text-orange-300 flex items-start gap-2">
+                          <span className="text-orange-400 mt-1">•</span>
+                            <span>{suggestion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                {/* Daily Breakdown */}
+                {incorrectDetections.dailyBreakdown && typeof incorrectDetections.dailyBreakdown === 'object' && Object.keys(incorrectDetections.dailyBreakdown).length > 0 && (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+                    <div className="text-sm font-semibold text-[#F1F5F9] mb-3">Daily False Positives (Last 7 Days)</div>
+                    <div className="space-y-2">
+                      {Object.entries(incorrectDetections.dailyBreakdown)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([date, count]: [string, any]) => (
+                        <div key={date} className="flex items-center justify-between text-sm py-1 border-b border-slate-700 last:border-0">
+                          <span className="text-slate-400">
+                            {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                          </span>
+                          <span className="font-mono font-semibold text-orange-400">{count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-400">
+                <div className="mb-2">No incorrect detections tracked yet</div>
+                <div className="text-xs text-slate-500">
+                  This data will appear when users remove AI-detected ingredients
+                </div>
+              </div>
+            )}
+                  </div>
+
           {/* Customer & Revenue Dashboard */}
           <div className="bg-[#1E293B] border border-slate-700 rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
@@ -1661,14 +2059,14 @@ ${healthCheck.checks.map((check: any) =>
                 <DollarSign className="w-6 h-6 text-emerald-400" />
                 Customers & Revenue
               </h2>
-              <button
+                        <button
                 onClick={fetchCustomerData}
                 className="p-2 hover:bg-slate-700 rounded-lg transition-all duration-200"
                 title="Refresh customer data"
               >
                 <RefreshCw className={`w-5 h-5 text-emerald-400 ${customerDataLoading ? 'animate-spin' : ''}`} />
-              </button>
-            </div>
+                        </button>
+                      </div>
             
             {customerDataLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -1770,33 +2168,33 @@ ${healthCheck.checks.map((check: any) =>
                           </div>
                         </div>
                       ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ) : (
+                  )}
+                </div>
+              ) : (
               <div className="text-center py-8 text-slate-400">
                 <div className="mb-2">No paying customers yet</div>
                 <div className="text-xs text-slate-500">
                   Revenue dashboard will appear once customers upgrade to Pro or Family plans
                 </div>
               </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Quick Links */}
+            {/* Quick Links */}
           <div className="bg-emerald-900 bg-opacity-20 rounded-lg p-6 border border-emerald-800">
-            <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
-            <div className="space-y-2">
-              <a href="/" className="block text-emerald-400 hover:text-emerald-300">
-                Back to Home
-              </a>
-              <a href="/?founder=true" className="block text-emerald-400 hover:text-emerald-300">
-                Enable Founder Mode via URL (?founder=true)
-              </a>
-              <a href="/waitlist" className="block text-emerald-400 hover:text-emerald-300">
-                View Waitlist
-              </a>
+              <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
+              <div className="space-y-2">
+                <a href="/" className="block text-emerald-400 hover:text-emerald-300">
+                  Back to Home
+                </a>
+                <a href="/?founder=true" className="block text-emerald-400 hover:text-emerald-300">
+                  Enable Founder Mode via URL (?founder=true)
+                </a>
+                <a href="/waitlist" className="block text-emerald-400 hover:text-emerald-300">
+                  View Waitlist
+                </a>
             </div>
           </div>
         </div>

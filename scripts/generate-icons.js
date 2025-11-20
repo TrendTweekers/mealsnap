@@ -1,72 +1,49 @@
-// Simple script to generate icons from SVG
-// Run: node scripts/generate-icons.js
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
 
-const fs = require('fs')
-const path = require('path')
-
-// Check if sharp is available
-let sharp
-try {
-  sharp = require('sharp')
-} catch (e) {
-  console.error('❌ Sharp not installed. Run: npm install sharp')
-  console.log('📦 Installing sharp...')
-  const { execSync } = require('child_process')
-  try {
-    execSync('npm install sharp', { stdio: 'inherit' })
-    sharp = require('sharp')
-    console.log('✅ Sharp installed!')
-  } catch (err) {
-    console.error('❌ Failed to install sharp. Please run: npm install sharp')
-    process.exit(1)
-  }
-}
-
-const svgPath = path.join(__dirname, '../icons/snapledger-icon.svg')
-const appDir = path.join(__dirname, '../app')
-const publicDir = path.join(__dirname, '../public')
-
-// Ensure directories exist
-if (!fs.existsSync(appDir)) fs.mkdirSync(appDir, { recursive: true })
-if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true })
+const logoPath = path.join(__dirname, '../public/logo-chefai.png');
+const outputDir = path.join(__dirname, '../public');
 
 async function generateIcons() {
   try {
-    const svgBuffer = fs.readFileSync(svgPath)
-    
-    // Generate app/icon.png (512x512 for Next.js App Router)
-    await sharp(svgBuffer)
-      .resize(512, 512)
-      .png()
-      .toFile(path.join(appDir, 'icon.png'))
-    console.log('✅ Generated app/icon.png (512x512)')
+    // Check if logo exists
+    if (!fs.existsSync(logoPath)) {
+      console.error('Logo file not found:', logoPath);
+      process.exit(1);
+    }
 
-    // Generate app/apple-icon.png (180x180 for Apple)
-    await sharp(svgBuffer)
-      .resize(180, 180)
-      .png()
-      .toFile(path.join(appDir, 'apple-icon.png'))
-    console.log('✅ Generated app/apple-icon.png (180x180)')
+    console.log('Generating icons from logo...');
 
-    // Generate public icons for PWA
-    await sharp(svgBuffer)
-      .resize(192, 192)
-      .png()
-      .toFile(path.join(publicDir, 'icon-192x192.png'))
-    console.log('✅ Generated public/icon-192x192.png')
+    // Generate apple-icon.png (180x180)
+    await sharp(logoPath)
+      .resize(180, 180, { fit: 'contain', background: { r: 15, g: 23, b: 42, alpha: 1 } })
+      .toFile(path.join(outputDir, 'apple-icon.png'));
+    console.log('✓ Created apple-icon.png (180x180)');
 
-    await sharp(svgBuffer)
-      .resize(512, 512)
-      .png()
-      .toFile(path.join(publicDir, 'icon-512x512.png'))
-    console.log('✅ Generated public/icon-512x512.png')
+    // Generate apple-touch-icon.png (180x180) - same as apple-icon
+    await sharp(logoPath)
+      .resize(180, 180, { fit: 'contain', background: { r: 15, g: 23, b: 42, alpha: 1 } })
+      .toFile(path.join(outputDir, 'apple-touch-icon.png'));
+    console.log('✓ Created apple-touch-icon.png (180x180)');
 
-    console.log('\n🎉 All icons generated successfully!')
+    // Generate icon-192x192.png
+    await sharp(logoPath)
+      .resize(192, 192, { fit: 'contain', background: { r: 15, g: 23, b: 42, alpha: 1 } })
+      .toFile(path.join(outputDir, 'icon-192x192.png'));
+    console.log('✓ Created icon-192x192.png');
+
+    // Generate icon-512x512.png
+    await sharp(logoPath)
+      .resize(512, 512, { fit: 'contain', background: { r: 15, g: 23, b: 42, alpha: 1 } })
+      .toFile(path.join(outputDir, 'icon-512x512.png'));
+    console.log('✓ Created icon-512x512.png');
+
+    console.log('\n✅ All icons generated successfully!');
   } catch (error) {
-    console.error('❌ Error generating icons:', error)
-    process.exit(1)
+    console.error('Error generating icons:', error);
+    process.exit(1);
   }
 }
 
-generateIcons()
-
+generateIcons();

@@ -1,58 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { kv } from '@vercel/kv'
+import { cookies } from 'next/headers'
 
-type PromptType = 'scan' | 'recipes'
-
-type PromptVersion = {
-  version: number
-  prompt: string
-  created_at: string
-  created_by: string
-  accuracy?: number
-  test_results?: {
-    scans_tested?: number
-    success_rate?: number
-  }
-  notes?: string
-  is_active?: boolean
+async function checkAdminAuth() {
+  const cookieStore = await cookies()
+  const authCookie = cookieStore.get('admin_auth')
+  return authCookie?.value === 'authenticated'
 }
 
-// GET: List all prompt versions
+// GET: Fetch all prompt versions or current active prompt
 export async function GET(req: NextRequest) {
+  const isLocalAuth = req.nextUrl.searchParams.get('localAuth') === 'true'
+  if (!isLocalAuth) {
+    const isAuthenticated = await checkAdminAuth()
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { ok: false, error: 'Unauthorized. Admin authentication required.' },
+        { status: 401 }
+      )
+    }
+  }
+
   try {
-    const { searchParams } = new URL(req.url)
-    const type = (searchParams.get('type') || 'scan') as PromptType
+    const version = req.nextUrl.searchParams.get('version')
+    
+    if (version) {
+      // Get specific version
+      const promptData = await kv.get(`prompt:version:${version}`)
+      if (!promptData) {
+        return NextResponse.json(
+          { ok: false, error: 'Prompt version not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json({ ok: true, prompt: promptData })
+    }
 
-    // Get current version number
-    const currentVersion = await kv.get<number>(`prompts:${type}:current_version`) || 1
+    // Get active prompt version
+    const activeVersion = await kv.get<string>('prompt:active:version') || 'v1'
+    const activePrompt = await kv.get(`prompt:version:${activeVersion}`)
 
-    // Get all versions
-    const versions: PromptVersion[] = []
-    let versionNum = currentVersion
-    let found = true
-
-    while (found && versionNum > 0) {
-      const versionKey = `prompts:${type}:v${versionNum}`
-      const version = await kv.get<PromptVersion>(versionKey)
-
-      if (version) {
-        versions.push({ ...version, is_active: versionNum === currentVersion })
-        versionNum--
-      } else {
-        found = false
+    // Get all versions (for history)
+    const allVersions: any[] = []
+    const versionKeys = await kv.keys('prompt:version:*')
+    
+    for (const key of versionKeys) {
+      const versionId = key.replace('prompt:version:', '')
+      const promptData = await kv.get(key)
+      if (promptData) {
+        allVersions.push({
+          version: versionId,
+          ...promptData,
+          isActive: versionId === activeVersion,
+        })
       }
     }
 
+    // Sort by timestamp (newest first)
+    allVersions.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+
     return NextResponse.json({
       ok: true,
-      type,
-      current_version: currentVersion,
-      versions: versions.reverse(), // Oldest first
+      activeVersion,
+      activePrompt: activePrompt || null,
+      versions: allVersions,
     })
   } catch (err: any) {
-    console.error('Prompts API error:', err)
+    console.error('admin/prompts GET error:', err)
     return NextResponse.json(
-      { ok: false, error: 'Failed to fetch prompts', details: err.message },
+      { ok: false, error: 'Failed to fetch prompts', details: String(err?.message ?? err) },
       { status: 500 }
     )
   }
@@ -60,124 +76,146 @@ export async function GET(req: NextRequest) {
 
 // POST: Create new prompt version
 export async function POST(req: NextRequest) {
+  const isLocalAuth = req.nextUrl.searchParams.get('localAuth') === 'true'
+  if (!isLocalAuth) {
+    const isAuthenticated = await checkAdminAuth()
+    if (!isAuthenticated) {
+      return NextResponse.json(
+        { ok: false, error: 'Unauthorized. Admin authentication required.' },
+        { status: 401 }
+      )
+    }
+  }
+
   try {
-    const body = await req.json()
-    const { type = 'scan', prompt, notes, created_by = 'admin' } = body
+    const { prompt, telemetry, source, notes } = await req.json()
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json(
-        { ok: false, error: 'Prompt is required' },
+        { ok: false, error: 'Prompt text is required' },
         { status: 400 }
       )
     }
 
-    const promptType = type as PromptType
+    // Generate version ID
+    const versionId = `v${Date.now()}`
+    const timestamp = Date.now()
+    const createdAt = new Date().toISOString()
 
-    // Get current version
-    const currentVersion = await kv.get<number>(`prompts:${promptType}:current_version`) || 0
-    const newVersion = currentVersion + 1
+    // Get current active version for comparison
+    const activeVersion = await kv.get<string>('prompt:active:version') || 'v1'
+    const currentPrompt = await kv.get(`prompt:version:${activeVersion}`)
 
-    // Create new version
-    const versionData: PromptVersion = {
-      version: newVersion,
+    // Store new version
+    const promptData = {
+      version: versionId,
       prompt,
-      created_at: new Date().toISOString(),
-      created_by,
+      telemetry: telemetry || {},
+      source: source || 'manual',
       notes: notes || '',
-      is_active: false, // Not active until explicitly deployed
+      createdAt: timestamp,
+      createdAtISO: createdAt,
+      previousVersion: activeVersion,
+      isActive: false,
     }
 
-    const versionKey = `prompts:${promptType}:v${newVersion}`
-    await kv.set(versionKey, versionData)
+    await kv.set(`prompt:version:${versionId}`, promptData, { ex: 60 * 60 * 24 * 365 }) // Store for 1 year
+
+    // Add to versions list
+    await kv.sadd('prompt:versions:list', versionId)
 
     return NextResponse.json({
       ok: true,
-      version: newVersion,
-      prompt: versionData,
+      version: versionId,
+      prompt: promptData,
     })
   } catch (err: any) {
-    console.error('Prompts API error:', err)
+    console.error('admin/prompts POST error:', err)
     return NextResponse.json(
-      { ok: false, error: 'Failed to create prompt version', details: err.message },
+      { ok: false, error: 'Failed to create prompt version', details: String(err?.message ?? err) },
       { status: 500 }
     )
   }
 }
 
-// PATCH: Update current version (deploy)
+// PATCH: Activate a prompt version (set as active)
 export async function PATCH(req: NextRequest) {
-  try {
-    const body = await req.json()
-    const { type = 'scan', version, strategy = 'safe' } = body
-
-    if (!version || typeof version !== 'number') {
+  const isLocalAuth = req.nextUrl.searchParams.get('localAuth') === 'true'
+  if (!isLocalAuth) {
+    const isAuthenticated = await checkAdminAuth()
+    if (!isAuthenticated) {
       return NextResponse.json(
-        { ok: false, error: 'Version number is required' },
+        { ok: false, error: 'Unauthorized. Admin authentication required.' },
+        { status: 401 }
+      )
+    }
+  }
+
+  try {
+    const { version, deploy } = await req.json()
+
+    if (!version || typeof version !== 'string') {
+      return NextResponse.json(
+        { ok: false, error: 'Version ID is required' },
         { status: 400 }
       )
     }
 
-    const promptType = type as PromptType
-
     // Verify version exists
-    const versionKey = `prompts:${promptType}:v${version}`
-    const versionData = await kv.get<PromptVersion>(versionKey)
-
-    if (!versionData) {
+    const promptData = await kv.get(`prompt:version:${version}`)
+    if (!promptData) {
       return NextResponse.json(
-        { ok: false, error: 'Version not found' },
+        { ok: false, error: 'Prompt version not found' },
         { status: 404 }
       )
     }
 
-    // Get current version
-    const currentVersion = await kv.get<number>(`prompts:${promptType}:current_version`) || 0
+    // Set as active
+    await kv.set('prompt:active:version', version)
 
-    // Store previous version as backup
-    if (currentVersion > 0) {
-      const oldVersionKey = `prompts:${promptType}:v${currentVersion}`
-      const oldVersion = await kv.get<PromptVersion>(oldVersionKey)
-      if (oldVersion) {
-        await kv.set(`prompts:${promptType}:v${currentVersion}:backup`, oldVersion)
+    // Update version data
+    const updatedData = {
+      ...promptData,
+      isActive: true,
+      activatedAt: Date.now(),
+      activatedAtISO: new Date().toISOString(),
+    }
+    await kv.set(`prompt:version:${version}`, updatedData)
+
+    // Deactivate previous active version
+    const previousActive = await kv.get<string>('prompt:active:version')
+    if (previousActive && previousActive !== version) {
+      const prevData = await kv.get(`prompt:version:${previousActive}`)
+      if (prevData) {
+        await kv.set(`prompt:version:${previousActive}`, {
+          ...prevData,
+          isActive: false,
+        })
       }
     }
 
-    // Update current version
-    await kv.set(`prompts:${promptType}:current_version`, version)
-
-    // Mark as active
-    versionData.is_active = true
-    await kv.set(versionKey, { ...versionData, is_active: true })
-
-    // Mark old version as inactive
-    if (currentVersion > 0) {
-      const oldVersionKey = `prompts:${promptType}:v${currentVersion}`
-      const oldVersion = await kv.get<PromptVersion>(oldVersionKey)
-      if (oldVersion) {
-        oldVersion.is_active = false
-        await kv.set(oldVersionKey, oldVersion)
-      }
+    // If deploy=true, also update the codebase
+    if (deploy === true) {
+      // This will be handled by a separate deployment API
+      // For now, just mark as deployed
+      await kv.set(`prompt:version:${version}`, {
+        ...updatedData,
+        deployed: true,
+        deployedAt: Date.now(),
+      })
     }
-
-    // Store deployment info
-    await kv.set(`prompts:${promptType}:deployment:${version}`, {
-      deployed_at: new Date().toISOString(),
-      strategy,
-      previous_version: currentVersion,
-    })
 
     return NextResponse.json({
       ok: true,
-      deployed_version: version,
-      previous_version: currentVersion,
-      strategy,
+      version,
+      prompt: updatedData,
+      message: deploy ? 'Prompt activated and marked for deployment' : 'Prompt activated',
     })
   } catch (err: any) {
-    console.error('Prompts API error:', err)
+    console.error('admin/prompts PATCH error:', err)
     return NextResponse.json(
-      { ok: false, error: 'Failed to deploy prompt', details: err.message },
+      { ok: false, error: 'Failed to activate prompt version', details: String(err?.message ?? err) },
       { status: 500 }
     )
   }
 }
-

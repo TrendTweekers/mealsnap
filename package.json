@@ -11,7 +11,8 @@
     "health-check": "bash scripts/health-check.sh",
     "start": "next start",
     "deploy": "bash scripts/quick-deploy.sh",
-    "admin": "bash scripts/automate-admin-tasks.sh"
+    "admin": "bash scripts/automate-admin-tasks.sh",
+    "generate-icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",

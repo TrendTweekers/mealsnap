@@ -29,6 +29,8 @@ type View = 'home' | 'ingredients' | 'recipes' | 'favorites'
 export default function ChefAI() {
   const [currentView, setCurrentView] = useState<View>('home')
   const [ingredients, setIngredients] = useState<string[]>([])
+  const [originalDetectedIngredients, setOriginalDetectedIngredients] = useState<string[]>([]) // Track AI-detected ingredients
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null) // Track current scan ID
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [favorites, setFavorites] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -633,13 +635,27 @@ export default function ChefAI() {
       
       if (data.items && Array.isArray(data.items) && data.items.length > 0) {
         console.log('[ChefAI] Ingredients detected:', data.items.length)
-        setIngredients(data.items)
+        const detectedItems = data.items
+        setIngredients(detectedItems)
+        
+        // Store original AI-detected ingredients for tracking incorrect detections
+        setOriginalDetectedIngredients(detectedItems)
+        
+        // Generate scan ID for tracking (store timestamp for false negative detection)
+        const scanTimestamp = Date.now()
+        const scanId = `scan_${scanTimestamp}_${userId || 'anonymous'}`
+        setCurrentScanId(scanId)
+        
+        // Store scan timestamp for false negative tracking (within 120 seconds)
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('lastScanTimestamp', scanTimestamp.toString())
+        }
         
         // Set view FIRST to ensure it persists even if modals appear
         setCurrentView('ingredients')
         
         // Use scanMethod determined at the start of the function (e.target might be stale on mobile)
-        incrementScanCount(scanMethod, data.items.length)
+        incrementScanCount(scanMethod, detectedItems.length)
         
         // Track scan completed with processing time
         try {
@@ -659,6 +675,8 @@ export default function ChefAI() {
         console.log('[ChefAI] No ingredients detected')
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
+        setOriginalDetectedIngredients([]) // Clear original detected list
+        setCurrentScanId(null) // Clear scan ID
         
         // Set view FIRST to ensure it persists even if modals appear
         setCurrentView('ingredients')
@@ -854,7 +872,7 @@ export default function ChefAI() {
     localStorage.setItem('chefai_dietary', JSON.stringify(updated))
   }
 
-  const addIngredient = async (wasVisible?: boolean, reason?: string) => {
+  const addIngredient = async (wasVisible?: boolean, reason?: string, isManualAdd?: boolean) => {
     if (newIngredient.trim()) {
       const cleanIngredient = newIngredient.trim().toLowerCase()
       if (!ingredients.includes(cleanIngredient)) {
@@ -876,7 +894,38 @@ export default function ChefAI() {
         }
         
         // Track manually added ingredient for AI training
-        const scanIdToUse = wasVisible !== undefined ? (pendingIngredient?.scanId || null) : null
+        const scanIdToUse = wasVisible !== undefined ? (pendingIngredient?.scanId || null) : currentScanId
+        
+        // Track false negative if ingredient was added within 120 seconds of scan
+        // and it wasn't in the original detected ingredients
+        let wasMissedByAI = false
+        if (currentScanId && typeof window !== 'undefined') {
+          const lastScanTimestamp = sessionStorage.getItem('lastScanTimestamp')
+          if (lastScanTimestamp) {
+            const timeSinceScan = Date.now() - parseInt(lastScanTimestamp)
+            wasMissedByAI = timeSinceScan < 120000 && // Within 120 seconds
+                           !originalDetectedIngredients.includes(cleanIngredient)
+          }
+        }
+        
+        if (wasMissedByAI) {
+          // Track as missed detection (false negative)
+          try {
+            await fetch('/api/track-missed-detection', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ingredient: cleanIngredient,
+                userId: userId || 'anonymous',
+                scanId: currentScanId,
+                timestamp: new Date().toISOString(),
+              }),
+            }).catch(() => {}) // Silent fail
+          } catch (err) {
+            console.warn('Failed to track missed detection:', err)
+          }
+        }
+        
         try {
           await fetch('/api/track-ingredient', {
             method: 'POST',
@@ -908,8 +957,29 @@ export default function ChefAI() {
     }
   }
 
-  const removeIngredient = (ingredient: string) => {
+  const removeIngredient = async (ingredient: string) => {
+    // Check if this was originally AI-detected (not manually added)
+    const wasAIDetected = originalDetectedIngredients.includes(ingredient)
+    
+    // Remove from state
     setIngredients(ingredients.filter(i => i !== ingredient))
+    
+    // Track as incorrectly detected if it was AI-detected
+    if (wasAIDetected) {
+      try {
+        await fetch('/api/track-incorrect-detection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ingredient: ingredient.toLowerCase().trim(),
+            userId: userId || 'anonymous',
+            scanId: currentScanId || null,
+          }),
+        }).catch(() => {}) // Silent fail - don't block UI
+      } catch (err) {
+        console.warn('Failed to track incorrect detection:', err)
+      }
+    }
   }
 
   const copyShoppingList = () => {
@@ -934,15 +1004,22 @@ export default function ChefAI() {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => setCurrentView('home')}
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault()
+              setCurrentView('home')
+            }}
+            className="flex items-center gap-2 hover:opacity-90 transition-all duration-200 hover:scale-[1.02]"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-cyan to-teal rounded-xl flex items-center justify-center shadow-lg">
-              <Camera className="w-6 h-6 text-primary-foreground" />
-        </div>
-            <span className="text-xl font-bold text-gradient">ChefAI</span>
-          </button>
+            <img 
+              src="/logo-chefai.png" 
+              alt="ChefAI Logo" 
+              className="h-7 w-7 object-contain"
+              style={{ minWidth: '28px', minHeight: '28px' }}
+            />
+            <span className="text-xl font-bold text-gradient" style={{ fontWeight: 700 }}>ChefAI</span>
+          </a>
 
           <div className="hidden md:flex items-center gap-6">
             {userPlan === 'free' && (
@@ -1607,6 +1684,8 @@ export default function ChefAI() {
               <button
                   onClick={() => {
                     setIngredients([])
+                    setOriginalDetectedIngredients([]) // Clear original detected list
+                    setCurrentScanId(null) // Clear scan ID
                     setCurrentView('ingredients')
                   }}
                   className="text-sm text-emerald-400 hover:text-emerald-300 font-semibold hover:underline transition-colors"

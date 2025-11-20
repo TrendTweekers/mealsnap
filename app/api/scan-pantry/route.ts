@@ -55,11 +55,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Fetch dynamic prompt extras (non-blocking)
+    let promptExtras = { falsePositiveSection: '', falseNegativeSection: '', adaptiveRulesSection: '' }
+    try {
+      const extrasRes = await fetch(`${req.nextUrl.origin}/api/admin/prompt-extras?localAuth=true`)
+      if (extrasRes.ok) {
+        const extrasData = await extrasRes.json()
+        if (extrasData.ok && extrasData.promptExtras) {
+          promptExtras = extrasData.promptExtras
+        }
+      }
+    } catch (err) {
+      // Silent fail - use base prompt if extras fail
+      console.warn('[scan-pantry] Failed to fetch prompt extras:', err)
+    }
+
     const prompt = `
 You are an expert at identifying food items in fridge/pantry photos.
 
 TASK:
 Analyze the image and list ALL visible food ingredients with high confidence (80%+).
+${promptExtras.falsePositiveSection}
+${promptExtras.falseNegativeSection}
+${promptExtras.adaptiveRulesSection}
 
 RULES:
 1. Include items you can clearly see or identify from packaging/labels

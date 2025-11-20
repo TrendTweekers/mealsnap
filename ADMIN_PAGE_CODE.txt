@@ -1,0 +1,45 @@
+Here's the complete raw code for the admin page (app/admin/page.tsx):
+
+[The full code is in app/admin/page.tsx - 1807 lines]
+
+Key Features:
+- Password-protected admin panel
+- Statistics Dashboard (scans, recipes, users, conversion rates)
+- Cost Tracking Dashboard (OpenAI costs, DALL-E images, infrastructure)
+- Manual Ingredient Tracking
+- System Health Check
+- AI Training Insights
+- User Behavior Analytics
+- Recipe Performance
+- Error Tracking
+- Customer & Revenue Dashboard
+- Founder Mode controls
+- Reset scan count
+
+Tech Stack:
+- Next.js 16 App Router
+- React hooks (useState, useEffect)
+- TypeScript
+- Tailwind CSS (dark theme)
+- Lucide React icons
+- Vercel KV for data storage
+- Multiple API routes for data fetching
+
+Authentication:
+- localStorage-based authentication
+- Password check via /api/admin/auth
+- Auto-logout on 401 errors
+
+Data Fetching:
+- All data fetched from separate API routes
+- Loading states for each section
+- Error handling with fallback UI
+- Refresh buttons for manual updates
+
+UI Design:
+- Dark theme (#0F172A background)
+- Card-based layout
+- Responsive grid system
+- Hover effects and transitions
+- Color-coded status indicators
+
