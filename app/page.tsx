@@ -1429,7 +1429,7 @@ export default function ChefAI() {
               <div className="flex gap-2">
                 <button
                   onClick={handleInstall}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl px-4 py-2 font-semibold transition-all shadow-lg hover:shadow-xl touch-manipulation text-sm"
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-400 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl px-4 py-2 font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-[1.03] duration-150 touch-manipulation text-sm focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Install
                 </button>
