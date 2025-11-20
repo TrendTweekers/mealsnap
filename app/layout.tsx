@@ -12,20 +12,20 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'MealSnap – AI Recipe Generator from Your Pantry',
-  description: 'Snap a photo of your fridge, get instant recipe ideas, and never wonder "what\'s for dinner" again.',
+  title: 'ChefAI – Your AI Chef for Instant Recipes',
+  description: 'Snap a photo of your fridge, get instant recipe ideas powered by AI. Your personal chef that turns ingredients into delicious meals.',
   generator: 'v0.app',
   openGraph: {
-    title: 'MealSnap – AI Recipe Generator from Your Pantry',
-    description: 'Snap a photo of your fridge, get instant recipe ideas, and never wonder "what\'s for dinner" again.',
-    url: 'https://mealsnap.app',
-    siteName: 'MealSnap',
+    title: 'ChefAI – Your AI Chef for Instant Recipes',
+    description: 'Snap a photo of your fridge, get instant recipe ideas powered by AI. Your personal chef that turns ingredients into delicious meals.',
+    url: 'https://chefai.app',
+    siteName: 'ChefAI',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'MealSnap – AI Recipe Generator from Your Pantry',
-    description: 'Snap a photo of your fridge, get instant recipe ideas, and never wonder "what\'s for dinner" again.',
+    title: 'ChefAI – Your AI Chef for Instant Recipes',
+    description: 'Snap a photo of your fridge, get instant recipe ideas powered by AI. Your personal chef that turns ingredients into delicious meals.',
   },
   manifest: '/manifest.json',
   icons: {
@@ -52,7 +52,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="MealSnap" />
+        <meta name="apple-mobile-web-app-title" content="ChefAI" />
         {/* iOS camera permissions prompt */}
         <meta name="format-detection" content="telephone=no" />
         {/* PWA install prompt */}

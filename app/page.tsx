@@ -26,7 +26,7 @@ type ShoppingItem = {
 
 type View = 'home' | 'ingredients' | 'recipes' | 'favorites'
 
-export default function MealSnap() {
+export default function ChefAI() {
   const [currentView, setCurrentView] = useState<View>('home')
   const [ingredients, setIngredients] = useState<string[]>([])
   const [recipes, setRecipes] = useState<Recipe[]>([])
@@ -290,13 +290,13 @@ export default function MealSnap() {
       }
       
       // Auto-trigger native share when saving
-      const shareText = `I just made ${recipe.title} from my fridge with MealSnap! Get 5 free scans: https://mealsnap-chi.vercel.app?ref=${userId}`
-      const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://mealsnap-chi.vercel.app'
+        const shareText = `I just made ${recipe.title} from my fridge with ChefAI! Get 5 free scans: https://chefai.app?ref=${userId}`
+        const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chefai.app'
 
       try {
         if (navigator.share) {
           await navigator.share({
-            title: 'MealSnap Recipe',
+            title: 'ChefAI Recipe',
             text: shareText,
             url: `${shareUrl}?ref=${userId}`,
           })
@@ -322,13 +322,13 @@ export default function MealSnap() {
   const handleShare = async () => {
     if (!sharedRecipe || !userId) return
 
-    const shareText = `I just made ${sharedRecipe.title} from my fridge with MealSnap! Get 5 free scans: https://mealsnap-chi.vercel.app?ref=${userId}`
-    const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://mealsnap-chi.vercel.app'
+    const shareText = `I just made ${sharedRecipe.title} from my fridge with ChefAI! Get 5 free scans: https://chefai.app?ref=${userId}`
+    const shareUrl = typeof window !== 'undefined' ? window.location.origin : 'https://chefai.app'
 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'MealSnap Recipe',
+          title: 'ChefAI Recipe',
           text: shareText,
           url: `${shareUrl}?ref=${userId}`,
         })
@@ -391,12 +391,12 @@ export default function MealSnap() {
 
   // Compress image using browser-image-compression (faster, better quality)
   const compressImage = async (file: File): Promise<string> => {
-    console.log('[MealSnap] compressImage called:', file.name, file.size, 'bytes', isMobile ? '(mobile)' : '(desktop)')
+    console.log('[ChefAI] compressImage called:', file.name, file.size, 'bytes', isMobile ? '(mobile)' : '(desktop)')
     
     // Check file size first (10MB limit before compression)
     const maxSize = 10 * 1024 * 1024 // 10MB
     if (file.size > maxSize) {
-      console.error('[MealSnap] File too large:', file.size)
+      console.error('[ChefAI] File too large:', file.size)
       throw new Error('Image is too large. Please use an image under 10MB.')
     }
 
@@ -410,19 +410,19 @@ export default function MealSnap() {
         fileType: 'image/jpeg', // Force JPEG for smaller size
       }
 
-      console.log('[MealSnap] Compressing with options:', options)
+      console.log('[ChefAI] Compressing with options:', options)
       let compressedFile
       
       try {
         compressedFile = await imageCompression(file, options)
       } catch (webWorkerError) {
         // Fallback: try without web worker if it fails
-        console.warn('[MealSnap] Web worker compression failed, trying without web worker:', webWorkerError)
+        console.warn('[ChefAI] Web worker compression failed, trying without web worker:', webWorkerError)
         const fallbackOptions = { ...options, useWebWorker: false }
         compressedFile = await imageCompression(file, fallbackOptions)
       }
       
-      console.log('[MealSnap] Compression complete:', {
+      console.log('[ChefAI] Compression complete:', {
         original: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
         compressed: `${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`,
         reduction: `${Math.round((1 - compressedFile.size / file.size) * 100)}%`,
@@ -443,17 +443,17 @@ export default function MealSnap() {
             reject(new Error('Failed to extract base64 data'))
             return
           }
-          console.log('[MealSnap] Compression successful, base64 length:', base64Data.length)
+          console.log('[ChefAI] Compression successful, base64 length:', base64Data.length)
           resolve(base64Data)
         }
         reader.onerror = (error) => {
-          console.error('[MealSnap] FileReader error:', error)
+          console.error('[ChefAI] FileReader error:', error)
           reject(new Error('Failed to read compressed image'))
         }
         reader.readAsDataURL(compressedFile)
       })
     } catch (error: any) {
-      console.error('[MealSnap] Image compression error:', error)
+      console.error('[ChefAI] Image compression error:', error)
       // Provide more helpful error message
       if (error.message && error.message.includes('Web Worker')) {
         throw new Error('Image processing failed. Please try a smaller image or different format.')
@@ -463,15 +463,15 @@ export default function MealSnap() {
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('[MealSnap] handleImageUpload called', e.target.files)
+    console.log('[ChefAI] handleImageUpload called', e.target.files)
     
     const file = e.target.files?.[0]
     if (!file) {
-      console.log('[MealSnap] No file selected')
+      console.log('[ChefAI] No file selected')
       return
     }
 
-    console.log('[MealSnap] File selected:', file.name, file.size, 'bytes', 'type:', file.type)
+    console.log('[ChefAI] File selected:', file.name, file.size, 'bytes', 'type:', file.type)
 
     // Determine scan method BEFORE resetting input
     const scanMethod = (e.target as HTMLInputElement).hasAttribute('capture') ? 'camera' : 'upload'
@@ -487,10 +487,10 @@ export default function MealSnap() {
 
     // Check scan limit
     const canScan = checkScanLimit()
-    console.log('[MealSnap] Scan limit check:', canScan, 'scanCount:', scanCount, 'userPlan:', userPlan)
+    console.log('[ChefAI] Scan limit check:', canScan, 'scanCount:', scanCount, 'userPlan:', userPlan)
     
     if (!canScan) {
-      console.log('[MealSnap] Scan limit reached, showing pricing modal')
+      console.log('[ChefAI] Scan limit reached, showing pricing modal')
       // Reset input AFTER checking limit
       e.target.value = ''
       setShowPricingModal(true)
@@ -505,15 +505,15 @@ export default function MealSnap() {
     const inputElement = e.target
     
     try {
-      console.log('[MealSnap] Starting image compression...')
+      console.log('[ChefAI] Starting image compression...')
       // Compress image before sending
       const base64Image = await compressImage(file)
-      console.log('[MealSnap] Image compressed, size:', base64Image.length, 'chars')
+      console.log('[ChefAI] Image compressed, size:', base64Image.length, 'chars')
       
       // Reset file input AFTER we've successfully read the file
       inputElement.value = ''
       
-      console.log('[MealSnap] Sending to /api/scan-pantry...')
+      console.log('[ChefAI] Sending to /api/scan-pantry...')
       const response = await fetch('/api/scan-pantry', {
         method: 'POST',
         headers: {
@@ -525,7 +525,7 @@ export default function MealSnap() {
         }),
       })
 
-      console.log('[MealSnap] Response status:', response.status, response.ok)
+      console.log('[ChefAI] Response status:', response.status, response.ok)
 
       if (!response.ok) {
         // Handle 413 specifically with better mobile messaging
@@ -544,7 +544,7 @@ export default function MealSnap() {
         }
         
         const errorData = await response.json().catch(() => ({}))
-        console.error('[MealSnap] API error:', errorData)
+        console.error('[ChefAI] API error:', errorData)
         
         // Better error messages for mobile
         let errorMessage = errorData.error || `Server error: ${response.status}`
@@ -556,7 +556,7 @@ export default function MealSnap() {
       }
 
       const data = await response.json()
-      console.log('[MealSnap] API response:', data)
+      console.log('[ChefAI] API response:', data)
       
       if (!data.ok || data.error) {
         setError(data.error || 'Failed to scan pantry')
@@ -567,7 +567,7 @@ export default function MealSnap() {
       const processingTime = Date.now() - scanStartTime
       
       if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-        console.log('[MealSnap] Ingredients detected:', data.items.length)
+        console.log('[ChefAI] Ingredients detected:', data.items.length)
         setIngredients(data.items)
         
         // Set view FIRST to ensure it persists even if modals appear
@@ -591,7 +591,7 @@ export default function MealSnap() {
           console.error('Failed to track Scan Completed:', err)
         }
       } else {
-        console.log('[MealSnap] No ingredients detected')
+        console.log('[ChefAI] No ingredients detected')
         setError('No ingredients detected. Try a clearer photo or add ingredients manually.')
         setIngredients([])
         
@@ -616,7 +616,7 @@ export default function MealSnap() {
         }
       }
     } catch (err: any) {
-      console.error('[MealSnap] Scan error:', err)
+      console.error('[ChefAI] Scan error:', err)
       const errorMessage = err.message || 'Failed to scan image. Please try again.'
       setError(errorMessage)
       
@@ -688,7 +688,7 @@ export default function MealSnap() {
           name: item,
         }))
         
-        console.log('[MealSnap] Shopping list items:', uniqueItems.length, uniqueItems)
+        console.log('[ChefAI] Shopping list items:', uniqueItems.length, uniqueItems)
         setShoppingList(uniqueItems)
         setCurrentView('recipes')
         
@@ -817,7 +817,7 @@ export default function MealSnap() {
             <div className="w-10 h-10 bg-gradient-to-br from-cyan to-teal rounded-xl flex items-center justify-center shadow-lg">
               <Camera className="w-6 h-6 text-primary-foreground" />
         </div>
-            <span className="text-xl font-bold text-gradient">MealSnap</span>
+            <span className="text-xl font-bold text-gradient">ChefAI</span>
           </button>
 
           <div className="hidden md:flex items-center gap-6">
@@ -836,7 +836,7 @@ export default function MealSnap() {
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                console.log('[MealSnap] Upgrade to Pro clicked, showing pricing modal')
+                console.log('[ChefAI] Upgrade to Pro clicked, showing pricing modal')
                 
                 // Track upgrade click
                 try {
@@ -1210,7 +1210,7 @@ export default function MealSnap() {
       
       // Instructions for iOS
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-        alert('To install MealSnap:\n1. Tap the Share button (bottom of screen)\n2. Select "Add to Home Screen"\n3. Tap "Add"')
+        alert('To install ChefAI:\n1. Tap the Share button (bottom of screen)\n2. Select "Add to Home Screen"\n3. Tap "Add"')
       } else if (/Android/i.test(navigator.userAgent)) {
         // Android PWA install prompt
         const deferredPrompt = (window as any).deferredPrompt
@@ -1236,7 +1236,7 @@ export default function MealSnap() {
               <Sparkles className="w-6 h-6 text-emerald-400" />
           </div>
             <div className="flex-1">
-              <h3 className="font-bold text-[#E6FFFF] mb-1">📱 Install MealSnap</h3>
+              <h3 className="font-bold text-[#E6FFFF] mb-1">📱 Install ChefAI</h3>
               <p className="text-sm text-[#B8D4D4] mb-3">
                 Add to your home screen for the best experience
               </p>
@@ -1296,12 +1296,12 @@ export default function MealSnap() {
                   </div>
                   
                   <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                    MealSnap – AI Recipe Generator{" "}
-                    <span className="text-gradient">from Your Pantry</span>
+                    ChefAI – Your AI Chef{" "}
+                    <span className="text-gradient">for Instant Recipes</span>
                   </h1>
                   
                   <p className="text-lg text-muted-foreground max-w-xl">
-                    Snap a photo of your fridge, get instant recipe ideas, and never wonder "what's for dinner" again.{" "}
+                    Snap a photo of your fridge, get instant recipe ideas powered by AI. Your personal chef that turns ingredients into delicious meals.{" "}
                     <span className="text-primary font-semibold">5-7 recipes</span> in seconds.{" "}
                     Missing ingredients? Add to Instacart in <span className="text-accent font-semibold">1 tap</span>.
                   </p>
@@ -1385,7 +1385,7 @@ export default function MealSnap() {
                     Join 1,000+ home cooks saving money
                   </p>
                   <p className="text-lg text-[#B8D4D4]">
-                    Real MealSnap users, real results
+                    Real ChefAI users, real results
                   </p>
                 </div>
                 
@@ -1565,7 +1565,7 @@ export default function MealSnap() {
                   Everything You Need to Cook Smarter
                 </h2>
                 <p className="text-xl text-[#B8D4D4] max-w-3xl mx-auto font-medium">
-                  MealSnap combines cutting-edge AI with beautiful design to revolutionize your cooking experience
+                  ChefAI combines cutting-edge AI with beautiful design to revolutionize your cooking experience
                 </p>
               </div>
 
@@ -2165,7 +2165,7 @@ export default function MealSnap() {
           onClick={(e) => {
             // Close modal when clicking backdrop
             if (e.target === e.currentTarget) {
-              console.log('[MealSnap] Closing pricing modal via backdrop click')
+              console.log('[ChefAI] Closing pricing modal via backdrop click')
               setShowPricingModal(false)
             }
           }}
@@ -2348,13 +2348,13 @@ function RecipeCard({
   }, [])
 
   const handleShareRecipe = async () => {
-    const shareText = `I just made ${recipe.title} from my fridge with MealSnap! Try it free: https://mealsnap-o6mndxvie-peter-hallanders-projects.vercel.app?ref=${userId}`
-    const shareUrl = `https://mealsnap-o6mndxvie-peter-hallanders-projects.vercel.app?ref=${userId}`
+    const shareText = `I just made ${recipe.title} from my fridge with ChefAI! Try it free: https://chefai.app?ref=${userId}`
+    const shareUrl = `https://chefai.app?ref=${userId}`
 
     try {
       if (navigator.share) {
         await navigator.share({
-          title: 'MealSnap Recipe',
+          title: 'ChefAI Recipe',
           text: shareText,
           url: shareUrl,
         })

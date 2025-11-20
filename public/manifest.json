@@ -1,6 +1,6 @@
 {
-  "name": "MealSnap - AI Recipe Generator",
-  "short_name": "MealSnap",
+  "name": "ChefAI - Your AI Chef",
+  "short_name": "ChefAI",
   "description": "Snap your fridge, get instant recipes",
   "start_url": "/",
   "display": "standalone",

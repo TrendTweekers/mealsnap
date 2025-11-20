@@ -248,7 +248,7 @@ export default function AdminPage() {
   const copyHealthCheckResults = () => {
     if (!healthCheck) return
     
-    const text = `MealSnap Health Check Results
+    const text = `ChefAI Health Check Results
 Timestamp: ${healthCheck.timestamp}
 Overall Status: ${healthCheck.status.toUpperCase()}
 
@@ -355,7 +355,7 @@ ${healthCheck.checks.map((check: any) =>
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `mealsnap-training-data-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `chefai-training-data-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
     
@@ -432,7 +432,7 @@ ${healthCheck.checks.map((check: any) =>
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `mealsnap-profit-${profitPeriod}-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `chefai-profit-${profitPeriod}-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     URL.revokeObjectURL(url)
     
